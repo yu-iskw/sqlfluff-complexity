@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from sqlfluff.core.rules import LintResult
 
 from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
+from sqlfluff_complexity.core.segment_tree import is_nested_select_statement
 
 if TYPE_CHECKING:
     from sqlfluff.core.rules import RuleContext
@@ -25,6 +26,14 @@ class MetricRuleSpec:
     policy_key: str
     description_label: str
     guidance: str
+
+
+def skip_nested_select_statement(context: RuleContext) -> bool:
+    """True when this crawl hit should be skipped as a nested select_statement."""
+    return (
+        getattr(context.segment, "type", "") == "select_statement"
+        and is_nested_select_statement(context.segment)
+    )
 
 
 def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:

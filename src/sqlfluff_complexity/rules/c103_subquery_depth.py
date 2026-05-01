@@ -13,6 +13,7 @@ from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     metric_lint_result,
     resolve_context_policy,
+    skip_nested_select_statement,
 )
 
 
@@ -36,6 +37,8 @@ class Rule_CPX_C103(BaseRule):  # noqa: N801
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
+        if skip_nested_select_statement(context):
+            return None
         policy = resolve_context_policy(
             context,
             ComplexityPolicy(max_subquery_depth=int(self.max_subquery_depth)),

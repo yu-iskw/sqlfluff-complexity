@@ -24,7 +24,10 @@ from sqlfluff_complexity.report import (
     ComplexityReport,
     analyze_paths,
     format_console_report,
+    format_json_report,
     format_sarif_report,
+    load_fluff_config,
+    validate_cpx_plugin_config,
 )
 
 if TYPE_CHECKING:
@@ -38,6 +41,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "report":
         return _run_report(args)
+    if args.command == "config-check":
+        return _run_config_check(args)
 
     return 0
 
@@ -58,7 +63,7 @@ def _build_parser() -> argparse.ArgumentParser:
     report_parser.add_argument("--config", type=Path, help="SQLFluff config file to apply.")
     report_parser.add_argument(
         "--format",
-        choices=("console", "sarif"),
+        choices=("console", "json", "sarif"),
         default="console",
         dest="output_format",
         help="Report output format.",
@@ -69,6 +74,13 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Return a non-zero status if any input cannot be parsed or read.",
     )
+
+    check_parser = subparsers.add_parser(
+        "config-check",
+        help="Validate CPX-related SQLFluff configuration (weights, path overrides, mode).",
+    )
+    check_parser.add_argument("--dialect", default="ansi", help="SQLFluff dialect to parse with.")
+    check_parser.add_argument("--config", type=Path, help="SQLFluff config file to apply.")
     return parser
 
 
@@ -89,8 +101,24 @@ def _run_report(args: argparse.Namespace) -> int:
 def _format_report(report: ComplexityReport, output_format: str) -> str:
     if output_format == "console":
         return format_console_report(report)
+    if output_format == "json":
+        return format_json_report(report)
     if output_format == "sarif":
         return format_sarif_report(report)
 
     message = f"Unsupported report format: {output_format}"
     raise ValueError(message)
+
+
+def _run_config_check(args: argparse.Namespace) -> int:
+    try:
+        config = load_fluff_config(dialect=args.dialect, config_path=args.config)
+        validate_cpx_plugin_config(config)
+    except ValueError as exc:
+        print(f"config-check failed: {exc}", flush=True)
+        return 1
+    except OSError as exc:
+        print(f"config-check failed: could not load config: {exc}", flush=True)
+        return 1
+    print("CPX configuration is valid.", flush=True)
+    return 0

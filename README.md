@@ -5,7 +5,7 @@ SQLFluff rules and reports for finding SQL and dbt models that are too complex t
 `sqlfluff-complexity` adds CPX rules to SQLFluff for CTE count, join count, nested
 subquery depth, `CASE` expressions, boolean predicates, window functions, and an
 aggregate weighted complexity score. The same metric engine also powers a companion
-`sqlfluff-complexity report` command for non-blocking console and SARIF reports.
+`sqlfluff-complexity report` command for non-blocking console, JSON, and SARIF reports.
 
 ## Who It Is For
 

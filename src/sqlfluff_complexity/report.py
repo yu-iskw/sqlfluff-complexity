@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 
 from sqlfluff.core import FluffConfig, Linter
 
-from sqlfluff_complexity.core.policy import ComplexityPolicy, resolve_policy
+from sqlfluff_complexity.core.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
 from sqlfluff_complexity.core.scoring import parse_weights
 from sqlfluff_complexity.core.segment_tree import collect_metrics
 
@@ -17,8 +18,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from sqlfluff.core.types import ConfigMappingType
-
-    from sqlfluff_complexity.core.metrics import ComplexityMetrics
 
 
 DEFAULT_MAX_JOINS = 8
@@ -138,6 +137,16 @@ def format_sarif_report(report: ComplexityReport) -> str:
     return json.dumps(sarif, indent=2, sort_keys=True)
 
 
+def format_json_report(report: ComplexityReport) -> str:
+    """Format a complexity report as stable JSON for automation."""
+    payload = {
+        "schema_version": "1.0",
+        "tool": "sqlfluff-complexity",
+        "entries": [_json_entry(entry) for entry in report.entries],
+    }
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
 def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntry:
     try:
         sql = path.read_text(encoding="utf-8")
@@ -157,6 +166,40 @@ def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntr
     return ReportEntry(
         path=path, metrics=metrics, score=score, findings=_findings(metrics, score, policy)
     )
+
+
+def load_fluff_config(*, dialect: str, config_path: Path | None = None) -> FluffConfig:
+    """Load a FluffConfig the same way as the report command."""
+    return _build_config(dialect=dialect, config_path=config_path)
+
+
+def validate_cpx_plugin_config(config: FluffConfig) -> None:
+    """Validate CPX-related config keys using existing parsers.
+
+    Raises ValueError with a clear message on invalid weights or path overrides.
+    """
+    parse_weights(config.get("complexity_weights", section=("rules", "CPX_C201"), default=None))
+    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
+    mode = str(config.get("mode", section=("rules", "CPX_C201"), default="enforce"))
+    if mode not in POLICY_MODES:
+        message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
+        raise ValueError(message)
+    base_policy = ComplexityPolicy(
+        max_ctes=_config_int(config, "CPX_C101", "max_ctes", 8),
+        max_joins=_config_int(config, "CPX_C102", "max_joins", DEFAULT_MAX_JOINS),
+        max_subquery_depth=_config_int(config, "CPX_C103", "max_subquery_depth", 3),
+        max_case_expressions=_config_int(config, "CPX_C104", "max_case_expressions", 10),
+        max_boolean_operators=_config_int(config, "CPX_C105", "max_boolean_operators", 20),
+        max_window_functions=_config_int(config, "CPX_C106", "max_window_functions", 10),
+        max_complexity_score=_config_int(
+            config,
+            "CPX_C201",
+            "max_complexity_score",
+            DEFAULT_MAX_COMPLEXITY_SCORE,
+        ),
+        mode=mode,
+    )
+    resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
 
 
 def _build_config(dialect: str, config_path: Path | None) -> FluffConfig:
@@ -232,6 +275,37 @@ def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> 
     return int(value)
 
 
+def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
+    return {
+        "boolean_operators": metrics.boolean_operators,
+        "case_expressions": metrics.case_expressions,
+        "ctes": metrics.ctes,
+        "joins": metrics.joins,
+        "subqueries": metrics.subqueries,
+        "subquery_depth": metrics.subquery_depth,
+        "window_functions": metrics.window_functions,
+    }
+
+
+def _json_entry(entry: ReportEntry) -> dict[str, object]:
+    findings = [
+        {"level": finding.level, "message": finding.message, "rule_id": finding.rule_id}
+        for finding in entry.findings
+    ]
+    base: dict[str, object] = {
+        "errors": list(entry.errors),
+        "findings": findings,
+        "path": str(entry.path),
+    }
+    if entry.metrics is None or entry.score is None:
+        base["metrics"] = None
+        base["score"] = None
+        return base
+    base["metrics"] = _metrics_dict(entry.metrics)
+    base["score"] = entry.score
+    return base
+
+
 def _format_console_entry(entry: ReportEntry) -> list[str]:
     if entry.errors:
         detail = "; ".join(entry.errors)
@@ -269,7 +343,9 @@ def _sarif_results(report: ComplexityReport) -> list[dict[str, object]]:
     results = []
     for entry in report.entries:
         results.extend(_sarif_error_results(entry))
-        results.extend(_sarif_finding_result(entry, finding) for finding in entry.findings)
+        results.extend(
+            _sarif_finding_result(entry, finding) for finding in entry.findings
+        )
     return results
 
 
@@ -291,11 +367,21 @@ def _sarif_finding_result(entry: ReportEntry, finding: ReportFinding) -> dict[st
         rule_id=finding.rule_id,
         level=finding.level,
         message=finding.message,
+        score=entry.score,
+        metrics=entry.metrics,
     )
 
 
-def _sarif_result(path: Path, rule_id: str, level: str, message: str) -> dict[str, object]:
-    return {
+def _sarif_result(
+    path: Path,
+    rule_id: str,
+    level: str,
+    message: str,
+    *,
+    score: int | None = None,
+    metrics: ComplexityMetrics | None = None,
+) -> dict[str, object]:
+    result: dict[str, object] = {
         "ruleId": rule_id,
         "level": level,
         "message": {"text": message},
@@ -307,3 +393,9 @@ def _sarif_result(path: Path, rule_id: str, level: str, message: str) -> dict[st
             },
         ],
     }
+    if score is not None and metrics is not None:
+        result["properties"] = {
+            "score": score,
+            "metrics": _metrics_dict(metrics),
+        }
+    return result

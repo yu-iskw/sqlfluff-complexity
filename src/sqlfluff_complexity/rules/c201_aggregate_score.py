@@ -7,6 +7,7 @@ from typing import ClassVar
 from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
+from sqlfluff_complexity.core.analysis import format_contributor_examples
 from sqlfluff_complexity.core.explainability import (
     explain_score_contributors,
     ranked_weighted_contributions,
@@ -14,8 +15,8 @@ from sqlfluff_complexity.core.explainability import (
 )
 from sqlfluff_complexity.core.policy import ComplexityPolicy
 from sqlfluff_complexity.core.scoring import parse_weights
-from sqlfluff_complexity.core.segment_tree import collect_metrics
-from sqlfluff_complexity.rules.base import resolve_context_policy
+from sqlfluff_complexity.core.segment_tree import analyze_segment_tree
+from sqlfluff_complexity.rules.base import resolve_context_policy, skip_nested_select_statement
 
 
 class Rule_CPX_C201(BaseRule):  # noqa: N801
@@ -48,7 +49,10 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
-        metrics = collect_metrics(context.segment)
+        if skip_nested_select_statement(context):
+            return None
+        analysis = analyze_segment_tree(context.segment)
+        metrics = analysis.metrics
         weights = parse_weights(self.complexity_weights)
         score = metrics.score(weights)
         policy = resolve_context_policy(
@@ -67,12 +71,18 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
             for name, _ in ranked_weighted_contributions(metrics, weights)[:top_contributor_limit]
         ]
         hint = refactoring_hint_for_contributors(top_keys)
+        examples = format_contributor_examples(
+            analysis.contributors,
+            weights,
+            max_items=top_contributor_limit,
+        )
+        examples_clause = f" {examples}" if examples else ""
 
         return LintResult(
             anchor=context.segment,
             description=(
                 f"CPX_C201: aggregate complexity score {score} exceeds "
                 f"max_complexity_score={limit}. Metrics: {metrics.format_breakdown()}. "
-                f"Top contributors: {contributors}. {hint}"
+                f"Top contributors: {contributors}.{examples_clause} {hint}"
             ),
         )
