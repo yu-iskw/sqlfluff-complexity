@@ -37,7 +37,7 @@ jobs:
       - build
     runs-on: ubuntu-latest
     environment:
-      name: pypi
+      name: release
       url: https://pypi.org/p/sqlfluff-complexity
     permissions:
       id-token: write
