@@ -7,6 +7,11 @@ from typing import ClassVar
 from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
+from sqlfluff_complexity.core.explainability import (
+    explain_score_contributors,
+    ranked_weighted_contributions,
+    refactoring_hint_for_contributors,
+)
 from sqlfluff_complexity.core.policy import ComplexityPolicy
 from sqlfluff_complexity.core.scoring import parse_weights
 from sqlfluff_complexity.core.segment_tree import collect_metrics
@@ -55,10 +60,18 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         if policy.mode == "report" or score <= limit:
             return None
 
+        top_contributor_limit = 3
+        contributors = explain_score_contributors(metrics, weights, max_items=top_contributor_limit)
+        top_keys = [
+            name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_contributor_limit]
+        ]
+        hint = refactoring_hint_for_contributors(top_keys)
+
         return LintResult(
             anchor=context.segment,
             description=(
                 f"CPX_C201: aggregate complexity score {score} exceeds "
-                f"max_complexity_score={limit}. Metrics: {metrics.format_breakdown()}."
+                f"max_complexity_score={limit}. Metrics: {metrics.format_breakdown()}. "
+                f"Top contributors: {contributors}. {hint}"
             ),
         )
