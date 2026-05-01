@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "'/Users/yu/local/src/github/sqlfluff-complexity/.codex/hooks/block-dangerous.sh'"
+          },
+          {
+            "type": "command",
+            "command": "'/Users/yu/local/src/github/sqlfluff-complexity/.codex/hooks/validate-commit.sh'"
+          }
+        ]
+      }
+    ]
+  }
+}
