@@ -1,0 +1,8 @@
+{
+  "type": "workspace_readwrite",
+  "enableSharedBuildCache": true,
+  "networkPolicy": {
+    "default": "deny",
+    "allow": ["github.com", "pypi.org", "*.trunk.io"]
+  }
+}

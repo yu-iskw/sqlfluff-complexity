@@ -1,0 +1,88 @@
+# Progressive Ruff configuration for AI-assisted coding harness.
+# Catches bugs, AI-generated anti-patterns, and maintains consistency.
+# RUF100 (unused noqa) is included via the RUF group — keep noqa clean.
+
+target-version = "py311"
+line-length = 100
+
+[lint]
+# Rule sets (grouped by purpose):
+#   Core:  F (Pyflakes), E/W (pycodestyle), I (isort), B (flake8-bugbear)
+#   Modern: UP (pyupgrade), SIM (flake8-simplify), RUF (Ruff-specific, incl. RUF100)
+#   Complexity: C901 (McCabe) — cap aligned with AGENTS.md
+#   AI safety net (Phase 1):
+#     TRY, BLE, RET, PERF, PIE, FURB, C4, ISC, ERA, LOG, A
+#   Robustness: DTZ, PTH, N, PLC0415
+#   Type safety: ANN, ARG, PL
+#   Security smell (Ruff, fast; Bandit in Trunk for depth): S
+#   Type-checking imports: TC (pairs with Pyright)
+#   No debugger: T10; Pytest style: PT
+select = [
+  "F",
+  "E",
+  "W",
+  "I",
+  "B",
+  "UP",
+  "SIM",
+  "RUF",
+  "C901",
+  "TRY",
+  "BLE",
+  "RET",
+  "PERF",
+  "PIE",
+  "FURB",
+  "C4",
+  "ISC",
+  "ERA",
+  "LOG",
+  "A",
+  "DTZ",
+  "PTH",
+  "N",
+  "PLC0415",
+  "ANN",
+  "ARG",
+  "PL",
+  "S",
+  "TC",
+  "T10",
+  "PT",
+]
+
+ignore = [
+  "E501",   # line length handled by formatter
+  "TRY003", # long exception messages OK in CLI tools
+  "ANN401", # Any type allowed
+  "COM812", # conflicts with ruff format (trailing commas)
+  "ISC001", # implicit string concat vs formatter; use explicit policy
+]
+
+[lint.per-file-ignores]
+"src/your_package/tests/**" = [
+  "S101", # assert used in tests
+]
+
+# NOTE: Prefer narrow noqa comments over broad file-level bypasses.
+
+[lint.pylint]
+max-args = 6
+max-nested-blocks = 2
+max-returns = 3
+max-statements = 50
+max-branches = 5
+max-locals = 10
+
+[lint.mccabe]
+max-complexity = 10
+
+[lint.isort]
+# Sort imports into sections.
+combine-as-imports = true
+
+[format]
+# Keep formatting consistent with defaults.
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false

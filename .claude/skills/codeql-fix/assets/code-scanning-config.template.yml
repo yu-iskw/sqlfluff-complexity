@@ -1,0 +1,17 @@
+# Code scanning configuration (template — do not pass this file directly to codeql).
+# Render a repo-specific file with: scripts/render-code-scanning-config.sh
+#
+# Skill reference: ../references/code-scanning-config.md (from this template file)
+# Official schema and fields: https://aka.ms/code-scanning-docs/config-file
+#
+# The renderer replaces the "name:" line and appends "paths-ignore" when needed.
+# After rendering, you may hand-edit the output (e.g. query suites) before
+# codeql database create --codescanning-config=<file>
+#
+# Optional: enable a query suite in the generated file (examples — uncomment in output):
+# queries:
+#   - uses: security-extended
+#   - uses: security-and-quality
+#
+# Placeholder name — replaced by render-code-scanning-config.sh (or override via CODEQL_CONFIG_NAME)
+name: local-codeql

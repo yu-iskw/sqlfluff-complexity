@@ -1,0 +1,4 @@
+# Bandit project defaults. Trunk invokes bandit from the repo root; assert (B101) is
+# expected in pytest tests, so the colocated test package is excluded (see Ruff S101 per-file-ignores).
+[bandit]
+exclude = src/your_package/tests
