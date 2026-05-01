@@ -104,6 +104,8 @@ Flags a statement when the weighted aggregate complexity score exceeds `max_comp
 
 `CPX_C201` is useful when no single metric is extreme but the combination of joins, nested queries, predicates, windows, and expressions makes a model hard to review.
 
+Violation messages include the computed score, the configured `max_complexity_score`, a metric breakdown, the top weighted contributors, and a short refactoring hint.
+
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60

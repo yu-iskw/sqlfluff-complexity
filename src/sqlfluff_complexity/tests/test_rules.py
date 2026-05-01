@@ -63,9 +63,14 @@ def test_c201_reports_aggregate_score_violation() -> None:
     violations = rule_violations(linted, "CPX_C201")
 
     assert len(violations) == 1
-    assert "aggregate complexity score" in violations[0].desc()
-    assert "joins=1" in violations[0].desc()
-    assert "case_expressions=1" in violations[0].desc()
+    desc = violations[0].desc()
+    assert "aggregate complexity score" in desc
+    assert "max_complexity_score=" in desc
+    assert "Metrics:" in desc
+    assert "Top contributors:" in desc
+    assert "Consider" in desc
+    assert "joins=1" in desc
+    assert "case_expressions=1" in desc
 
 
 def test_c101_reports_cte_count_violation() -> None:
