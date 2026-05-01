@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from sqlfluff.core.rules import LintResult
 
 from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
+from sqlfluff_complexity.core.segment_tree import is_nested_select_statement
 
 if TYPE_CHECKING:
     from sqlfluff.core.rules import RuleContext
@@ -25,6 +26,18 @@ class MetricRuleSpec:
     policy_key: str
     description_label: str
     guidance: str
+
+
+def metric_lint_result_outer_select_only(
+    context: RuleContext,
+    metrics: ComplexityMetrics,
+    policy: ComplexityPolicy,
+    spec: MetricRuleSpec,
+) -> LintResult | None:
+    """Like ``metric_lint_result`` but skip nested ``select_statement`` crawl hits."""
+    if is_nested_select_statement(context.segment):
+        return None
+    return metric_lint_result(context, metrics, policy, spec)
 
 
 def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:

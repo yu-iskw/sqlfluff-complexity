@@ -63,6 +63,9 @@ ignore = [
 "src/sqlfluff_complexity/tests/**" = [
   "S101", # assert used in tests
 ]
+# Dataclass field annotations need runtime symbols; TC001 would force TYPE_CHECKING-only imports.
+"src/sqlfluff_complexity/core/analysis.py" = ["TC001"]
+"src/sqlfluff_complexity/report.py" = ["TC001", "TC003"]
 
 # NOTE: Prefer narrow noqa comments over broad file-level bypasses.
 

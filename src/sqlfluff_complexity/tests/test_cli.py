@@ -88,6 +88,125 @@ def test_report_writes_sarif_without_sql_text(tmp_path: Path) -> None:
     assert "CPX_C102" in result_rule_ids
     assert "select * from base" not in sarif_text
 
+    c102_results = [r for r in sarif["runs"][0]["results"] if r["ruleId"] == "CPX_C102"]
+    assert c102_results
+    assert "properties" in c102_results[0]
+    assert c102_results[0]["properties"]["score"] >= 0
+    assert "metrics" in c102_results[0]["properties"]
+    assert "joins" in c102_results[0]["properties"]["metrics"]
+
+
+def test_report_json_roundtrip(tmp_path: Path) -> None:
+    """JSON report should parse and include metrics for valid SQL."""
+    sql_file = tmp_path / "m.sql"
+    sql_file.write_text("select 1", encoding="utf-8")
+    out = tmp_path / "out.json"
+    assert (
+        main(
+            ["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]
+        )
+        == 0
+    )
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["schema_version"] == "1.0"
+    assert data["tool"] == "sqlfluff-complexity"
+    entry = data["entries"][0]
+    assert entry["path"] == str(sql_file)
+    assert entry["score"] is not None
+    assert entry["metrics"]["joins"] == 0
+    assert entry["errors"] == []
+
+
+def test_report_json_parse_error_has_null_metrics(tmp_path: Path) -> None:
+    """Parse errors should serialize with null score and metrics."""
+    sql_file = tmp_path / "bad.sql"
+    sql_file.write_text("select from", encoding="utf-8")
+    out = tmp_path / "out.json"
+    assert (
+        main(
+            ["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]
+        )
+        == 0
+    )
+    data = json.loads(out.read_text(encoding="utf-8"))
+    entry = data["entries"][0]
+    assert entry["score"] is None
+    assert entry["metrics"] is None
+    assert entry["errors"]
+
+
+def test_config_check_valid_returns_zero(tmp_path: Path) -> None:
+    """config-check should succeed for default-valid config file."""
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(
+        """
+        [sqlfluff:rules:CPX_C201]
+        complexity_weights = joins:2
+        path_overrides =
+            models/*.sql:max_joins=4
+        """,
+        encoding="utf-8",
+    )
+    assert main(["config-check", "--dialect", "ansi", "--config", str(cfg)]) == 0
+
+
+def test_config_check_invalid_weights_nonzero(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(
+        """
+        [sqlfluff:rules:CPX_C201]
+        complexity_weights = joins:not-an-int
+        """,
+        encoding="utf-8",
+    )
+    assert main(["config-check", "--dialect", "ansi", "--config", str(cfg)]) == 1
+    assert "config-check failed" in capsys.readouterr().out
+
+
+def test_config_check_invalid_path_override(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(
+        """
+        [sqlfluff:rules:CPX_C201]
+        path_overrides =
+            models/*.sql:max_joins=not-int
+        """,
+        encoding="utf-8",
+    )
+    assert main(["config-check", "--dialect", "ansi", "--config", str(cfg)]) == 1
+    assert "config-check failed" in capsys.readouterr().out
+
+
+def test_report_sarif_parse_error_has_no_metric_properties(tmp_path: Path) -> None:
+    """Parse error SARIF rows should omit score/metrics properties."""
+    sql_file = tmp_path / "bad.sql"
+    sql_file.write_text("select from", encoding="utf-8")
+    out = tmp_path / "e.sarif"
+    assert (
+        main(
+            [
+                "report",
+                "--dialect",
+                "ansi",
+                "--format",
+                "sarif",
+                "--output",
+                str(out),
+                str(sql_file),
+            ]
+        )
+        == 0
+    )
+    sarif = json.loads(out.read_text(encoding="utf-8"))
+    parse_results = [r for r in sarif["runs"][0]["results"] if r["ruleId"] == "CPX_PARSE_ERROR"]
+    assert parse_results
+    assert "properties" not in parse_results[0]
+
 
 def test_report_fail_on_error_returns_nonzero_for_parse_error(tmp_path: Path) -> None:
     """--fail-on-error should make parse errors visible to automation."""

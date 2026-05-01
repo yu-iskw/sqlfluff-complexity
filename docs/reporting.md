@@ -29,6 +29,19 @@ sqlfluff-complexity report \
   models/staging/orders.sql
 ```
 
+## JSON Report
+
+For automation and lightweight CI artifacts, use `--format json`. The payload uses `schema_version` `1.0`, lists one object per input path under `entries`, and includes per-file `score`, `metrics`, `findings`, and `errors`. Parse failures use `score: null` and `metrics: null`.
+
+```bash
+sqlfluff-complexity report \
+  --dialect postgres \
+  --config .sqlfluff \
+  --format json \
+  --output complexity.json \
+  models/
+```
+
 ## SARIF Report
 
 Generate SARIF for code-scanning workflows:
@@ -42,7 +55,7 @@ sqlfluff-complexity report \
   models/
 ```
 
-The SARIF output includes CPX rule IDs such as `CPX_C102` and `CPX_C201`, but does not embed full SQL text.
+The SARIF output includes CPX rule IDs such as `CPX_C102` and `CPX_C201`, but does not embed full SQL text. When metrics are available for a file, each finding may include a `properties` object with `score` and a `metrics` map (file-level values, including for threshold findings).
 
 ## Parse And Read Errors
 

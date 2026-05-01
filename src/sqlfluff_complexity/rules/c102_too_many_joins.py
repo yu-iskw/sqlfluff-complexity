@@ -25,7 +25,7 @@ from sqlfluff_complexity.core.policy import ComplexityPolicy
 from sqlfluff_complexity.core.segment_tree import collect_metrics
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
-    metric_lint_result,
+    metric_lint_result_outer_select_only,
     resolve_context_policy,
 )
 
@@ -59,4 +59,9 @@ class Rule_CPX_C102(BaseRule):  # noqa: N801
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
         policy = resolve_context_policy(context, ComplexityPolicy(max_joins=int(self.max_joins)))
-        return metric_lint_result(context, collect_metrics(context.segment), policy, self._spec)
+        return metric_lint_result_outer_select_only(
+            context,
+            collect_metrics(context.segment),
+            policy,
+            self._spec,
+        )

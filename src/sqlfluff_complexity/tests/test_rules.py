@@ -71,6 +71,7 @@ def test_c201_reports_aggregate_score_violation() -> None:
     assert "Consider" in desc
     assert "joins=1" in desc
     assert "case_expressions=1" in desc
+    assert "Examples:" in desc
 
 
 def test_c101_reports_cte_count_violation() -> None:

@@ -83,6 +83,16 @@ Supported override keys:
 
 `mode` can be `enforce` or `report`. A matching `mode=report` override suppresses SQLFluff rule enforcement for the affected CPX rule path while keeping the policy useful for report mode.
 
+## Config Check
+
+Before running lint or report in CI, validate CPX-related settings (aggregate weights, `path_overrides`, and `mode`) with:
+
+```bash
+sqlfluff-complexity config-check --dialect postgres --config .sqlfluff
+```
+
+The command loads the same SQLFluff config as report mode, runs the existing parsers, and exits non-zero on invalid values.
+
 ## Enforcement Versus Reporting
 
 Native CPX rules run through `sqlfluff lint` and can fail lint. The companion [report command](reporting.md) uses the same metric and threshold semantics, but emits console or SARIF output for non-blocking analysis.

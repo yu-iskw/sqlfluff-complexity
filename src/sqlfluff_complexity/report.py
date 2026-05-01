@@ -3,22 +3,21 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from sqlfluff.core import FluffConfig, Linter
 
-from sqlfluff_complexity.core.policy import ComplexityPolicy, resolve_policy
+from sqlfluff_complexity.core.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
 from sqlfluff_complexity.core.scoring import parse_weights
 from sqlfluff_complexity.core.segment_tree import collect_metrics
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from pathlib import Path
 
     from sqlfluff.core.types import ConfigMappingType
-
-    from sqlfluff_complexity.core.metrics import ComplexityMetrics
 
 
 DEFAULT_MAX_JOINS = 8
@@ -138,6 +137,16 @@ def format_sarif_report(report: ComplexityReport) -> str:
     return json.dumps(sarif, indent=2, sort_keys=True)
 
 
+def format_json_report(report: ComplexityReport) -> str:
+    """Format a complexity report as stable JSON for automation."""
+    payload = {
+        "schema_version": "1.0",
+        "tool": "sqlfluff-complexity",
+        "entries": [_json_entry(entry) for entry in report.entries],
+    }
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
 def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntry:
     try:
         sql = path.read_text(encoding="utf-8")
@@ -157,6 +166,26 @@ def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntr
     return ReportEntry(
         path=path, metrics=metrics, score=score, findings=_findings(metrics, score, policy)
     )
+
+
+def load_fluff_config(*, dialect: str, config_path: Path | None = None) -> FluffConfig:
+    """Load a FluffConfig the same way as the report command."""
+    return _build_config(dialect=dialect, config_path=config_path)
+
+
+def validate_cpx_plugin_config(config: FluffConfig) -> None:
+    """Validate CPX-related config keys using existing parsers.
+
+    Raises ValueError with a clear message on invalid weights or path overrides.
+    """
+    parse_weights(config.get("complexity_weights", section=("rules", "CPX_C201"), default=None))
+    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
+    mode = str(config.get("mode", section=("rules", "CPX_C201"), default="enforce"))
+    if mode not in POLICY_MODES:
+        message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
+        raise ValueError(message)
+    base_policy = replace(_threshold_policy_from_config(config), mode=mode)
+    resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
 
 
 def _build_config(dialect: str, config_path: Path | None) -> FluffConfig:
@@ -204,7 +233,24 @@ def _metric_finding(
 
 
 def _policy_for_path(config: FluffConfig, path: Path) -> ComplexityPolicy:
-    base_policy = ComplexityPolicy(
+    base_policy = _threshold_policy_from_config(config)
+    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
+    return resolve_policy(base_policy, raw_overrides, str(path))
+
+
+def _weights_from_config(config: FluffConfig) -> dict[str, int]:
+    raw_weights = config.get("complexity_weights", section=("rules", "CPX_C201"), default=None)
+    return parse_weights(raw_weights)
+
+
+def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> int:
+    value = config.get(key, section=("rules", rule_code), default=default)
+    return int(value)
+
+
+def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
+    """Numeric CPX thresholds from FluffConfig (default ``mode`` for report scoring)."""
+    return ComplexityPolicy(
         max_ctes=_config_int(config, "CPX_C101", "max_ctes", 8),
         max_joins=_config_int(config, "CPX_C102", "max_joins", DEFAULT_MAX_JOINS),
         max_subquery_depth=_config_int(config, "CPX_C103", "max_subquery_depth", 3),
@@ -218,18 +264,37 @@ def _policy_for_path(config: FluffConfig, path: Path) -> ComplexityPolicy:
             DEFAULT_MAX_COMPLEXITY_SCORE,
         ),
     )
-    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
-    return resolve_policy(base_policy, raw_overrides, str(path))
 
 
-def _weights_from_config(config: FluffConfig) -> dict[str, int]:
-    raw_weights = config.get("complexity_weights", section=("rules", "CPX_C201"), default=None)
-    return parse_weights(raw_weights)
+def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
+    return {
+        "boolean_operators": metrics.boolean_operators,
+        "case_expressions": metrics.case_expressions,
+        "ctes": metrics.ctes,
+        "joins": metrics.joins,
+        "subqueries": metrics.subqueries,
+        "subquery_depth": metrics.subquery_depth,
+        "window_functions": metrics.window_functions,
+    }
 
 
-def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> int:
-    value = config.get(key, section=("rules", rule_code), default=default)
-    return int(value)
+def _json_entry(entry: ReportEntry) -> dict[str, object]:
+    findings = [
+        {"level": finding.level, "message": finding.message, "rule_id": finding.rule_id}
+        for finding in entry.findings
+    ]
+    base: dict[str, object] = {
+        "errors": list(entry.errors),
+        "findings": findings,
+        "path": str(entry.path),
+    }
+    if entry.metrics is None or entry.score is None:
+        base["metrics"] = None
+        base["score"] = None
+        return base
+    base["metrics"] = _metrics_dict(entry.metrics)
+    base["score"] = entry.score
+    return base
 
 
 def _format_console_entry(entry: ReportEntry) -> list[str]:
@@ -286,15 +351,26 @@ def _sarif_error_results(entry: ReportEntry) -> list[dict[str, object]]:
 
 
 def _sarif_finding_result(entry: ReportEntry, finding: ReportFinding) -> dict[str, object]:
-    return _sarif_result(
+    result = _sarif_result(
         path=entry.path,
         rule_id=finding.rule_id,
         level=finding.level,
         message=finding.message,
     )
+    if entry.score is not None and entry.metrics is not None:
+        result["properties"] = {
+            "score": entry.score,
+            "metrics": _metrics_dict(entry.metrics),
+        }
+    return result
 
 
-def _sarif_result(path: Path, rule_id: str, level: str, message: str) -> dict[str, object]:
+def _sarif_result(
+    path: Path,
+    rule_id: str,
+    level: str,
+    message: str,
+) -> dict[str, object]:
     return {
         "ruleId": rule_id,
         "level": level,
