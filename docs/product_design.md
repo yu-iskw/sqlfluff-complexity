@@ -24,11 +24,11 @@ The plugin will expose both:
 
 The first metric set will cover:
 
-| Category | Metrics |
-|---|---|
-| Structural complexity | CTE count, join count, nested subquery depth |
+| Category              | Metrics                                                                |
+| --------------------- | ---------------------------------------------------------------------- |
+| Structural complexity | CTE count, join count, nested subquery depth                           |
 | Expression complexity | `CASE` expression count, boolean operator count, window function count |
-| Aggregate complexity | weighted total score derived from the above metrics |
+| Aggregate complexity  | weighted total score derived from the above metrics                    |
 
 The design intentionally prioritizes:
 
@@ -45,9 +45,9 @@ The plugin should support multiple SQL dialects from day one by relying primaril
 
 ### 2.1 Current repository state
 
-The repository currently appears to be initialized from a Python package template. The GitHub repository is public, has an Apache-2.0 license, and contains template package paths such as `src/your_package`, along with modern Python tooling including `uv`, Hatchling, Trunk, Ruff, Pyright, Pylint, Bandit, pytest, CodeQL, and dependency/security scanners.
+The repository was initialized from a Python package template and is being reshaped into `sqlfluff-complexity`. The GitHub repository is public, has an Apache-2.0 license, and keeps modern Python tooling including `uv`, Hatchling, Trunk, Ruff, Pyright, Pylint, Bandit, pytest, CodeQL, and dependency/security scanners.
 
-The project will need to be renamed and reshaped from a generic Python package template into an installable SQLFluff plugin package.
+The current implementation slice is turning that foundation into an installable SQLFluff plugin package.
 
 ### 2.2 Problem
 
@@ -263,29 +263,29 @@ Future releases may include:
 
 Recommended public rule codes:
 
-| Rule | Name | Purpose |
-|---|---|---|
-| `CPX_C101` | Too many CTEs | Detect excessive `WITH` decomposition inside one model |
-| `CPX_C102` | Too many joins | Detect high relational fan-in inside one statement |
-| `CPX_C103` | Nested subquery depth too high | Detect deeply nested query structures |
-| `CPX_C104` | Too many CASE expressions | Detect dense embedded business logic |
-| `CPX_C105` | Boolean predicate complexity too high | Detect complex `AND`/`OR` logic |
-| `CPX_C106` | Too many window functions | Detect dense analytic/window logic |
-| `CPX_C201` | Aggregate complexity score too high | Enforce total model complexity budget |
+| Rule       | Name                                  | Purpose                                                |
+| ---------- | ------------------------------------- | ------------------------------------------------------ |
+| `CPX_C101` | Too many CTEs                         | Detect excessive `WITH` decomposition inside one model |
+| `CPX_C102` | Too many joins                        | Detect high relational fan-in inside one statement     |
+| `CPX_C103` | Nested subquery depth too high        | Detect deeply nested query structures                  |
+| `CPX_C104` | Too many CASE expressions             | Detect dense embedded business logic                   |
+| `CPX_C105` | Boolean predicate complexity too high | Detect complex `AND`/`OR` logic                        |
+| `CPX_C106` | Too many window functions             | Detect dense analytic/window logic                     |
+| `CPX_C201` | Aggregate complexity score too high   | Enforce total model complexity budget                  |
 
 ### 8.2 Default thresholds
 
 Initial defaults should be conservative and easy to tune:
 
-| Metric | Default limit | Rationale |
-|---|---:|---|
-| CTE count | 8 | Long CTE chains often hide multiple transformation layers. |
-| Join count | 8 | Many joins increase review and correctness risk. |
-| Subquery depth | 3 | Deep nesting sharply reduces readability. |
-| CASE expressions | 10 | Dense branching often represents embedded business rules. |
-| Boolean operators | 20 | Large predicates become difficult to validate. |
-| Window functions | 10 | Many windows often indicate complex analytics logic. |
-| Aggregate score | 60 | Allows moderate complexity while blocking extreme cases. |
+| Metric            | Default limit | Rationale                                                  |
+| ----------------- | ------------: | ---------------------------------------------------------- |
+| CTE count         |             8 | Long CTE chains often hide multiple transformation layers. |
+| Join count        |             8 | Many joins increase review and correctness risk.           |
+| Subquery depth    |             3 | Deep nesting sharply reduces readability.                  |
+| CASE expressions  |            10 | Dense branching often represents embedded business rules.  |
+| Boolean operators |            20 | Large predicates become difficult to validate.             |
+| Window functions  |            10 | Many windows often indicate complex analytics logic.       |
+| Aggregate score   |            60 | Allows moderate complexity while blocking extreme cases.   |
 
 ### 8.3 Default aggregate score
 
@@ -303,14 +303,14 @@ score =
 
 Default weights:
 
-| Metric | Weight |
-|---|---:|
-| `ctes` | 2 |
-| `joins` | 2 |
-| `subquery_depth` | 4 |
-| `case_expressions` | 2 |
-| `boolean_operators` | 1 |
-| `window_functions` | 2 |
+| Metric              | Weight |
+| ------------------- | -----: |
+| `ctes`              |      2 |
+| `joins`             |      2 |
+| `subquery_depth`    |      4 |
+| `case_expressions`  |      2 |
+| `boolean_operators` |      1 |
+| `window_functions`  |      2 |
 
 ### 8.4 Why individual rules plus aggregate rule
 
@@ -347,16 +347,16 @@ flowchart TD
 
 ### 9.2 Component responsibilities
 
-| Component | Responsibility |
-|---|---|
-| SQLFluff plugin hooks | Register rules and default config with SQLFluff. |
-| Rule classes | Thin wrappers that evaluate thresholds and emit `LintResult`. |
-| Metric collector | Traverse SQLFluff segment tree and produce `ComplexityMetrics`. |
-| Scoring module | Parse weights and compute aggregate score. |
-| Policy resolver | Merge global config and path-specific overrides. |
-| Report CLI | Run analysis in report mode and emit console/SARIF. |
-| SARIF writer | Convert metrics and violations into SARIF results. |
-| Tests | Validate rules, metrics, reports, and policy behavior. |
+| Component             | Responsibility                                                  |
+| --------------------- | --------------------------------------------------------------- |
+| SQLFluff plugin hooks | Register rules and default config with SQLFluff.                |
+| Rule classes          | Thin wrappers that evaluate thresholds and emit `LintResult`.   |
+| Metric collector      | Traverse SQLFluff segment tree and produce `ComplexityMetrics`. |
+| Scoring module        | Parse weights and compute aggregate score.                      |
+| Policy resolver       | Merge global config and path-specific overrides.                |
+| Report CLI            | Run analysis in report mode and emit console/SARIF.             |
+| SARIF writer          | Convert metrics and violations into SARIF results.              |
+| Tests                 | Validate rules, metrics, reports, and policy behavior.          |
 
 ### 9.3 Design principle
 
@@ -370,7 +370,7 @@ This prevents enforcement and reporting from drifting apart.
 
 ## 10. Repository Structure
 
-The current template uses `src/your_package`. The implementation should rename it to `src/sqlfluff_complexity`.
+The package source lives under `src/sqlfluff_complexity`.
 
 Recommended structure:
 
@@ -442,20 +442,20 @@ sqlfluff-complexity/
 
 ### 10.1 Colocated tests
 
-The repository template currently expects tests under the source package path. Keeping tests under `src/sqlfluff_complexity/tests` aligns with the existing template and avoids an immediate build-system redesign.
+Tests stay under `src/sqlfluff_complexity/tests`, matching the current package layout and avoiding an immediate build-system redesign.
 
 ### 10.2 Documentation files
 
 Recommended documentation:
 
-| File | Purpose |
-|---|---|
-| `README.md` | User installation, configuration, and examples |
-| `docs/product-design.md` | This product design |
-| `docs/adr/0001-...md` | Architecture decision records |
-| `docs/rule-reference.md` | Detailed rule behavior and examples |
-| `docs/reporting.md` | SARIF and console report guide |
-| `docs/development.md` | Maintainer development guide |
+| File                     | Purpose                                        |
+| ------------------------ | ---------------------------------------------- |
+| `README.md`              | User installation, configuration, and examples |
+| `docs/product-design.md` | This product design                            |
+| `docs/adr/0001-...md`    | Architecture decision records                  |
+| `docs/rule-reference.md` | Detailed rule behavior and examples            |
+| `docs/reporting.md`      | SARIF and console report guide                 |
+| `docs/development.md`    | Maintainer development guide                   |
 
 ---
 
@@ -674,15 +674,15 @@ This keeps rule evaluation statement-scoped and reduces duplicate violations.
 
 Alternative trigger segments may be needed after fixture validation:
 
-| Rule | Candidate trigger |
-|---|---|
-| CTE count | `with_compound_statement`, `select_statement` |
-| Join count | `select_statement` |
-| Subquery depth | `select_statement` |
-| CASE count | `select_statement` |
-| Boolean count | `select_statement` |
-| Window count | `select_statement` |
-| Aggregate score | `select_statement` |
+| Rule            | Candidate trigger                             |
+| --------------- | --------------------------------------------- |
+| CTE count       | `with_compound_statement`, `select_statement` |
+| Join count      | `select_statement`                            |
+| Subquery depth  | `select_statement`                            |
+| CASE count      | `select_statement`                            |
+| Boolean count   | `select_statement`                            |
+| Window count    | `select_statement`                            |
+| Aggregate score | `select_statement`                            |
 
 The development workflow should use:
 
@@ -768,14 +768,14 @@ The SQLFluff rule path can emit `LintResult` directly, while the report path can
 
 Preferred metric extraction:
 
-| Metric | Preferred signal | Fallback |
-|---|---|---|
-| CTE count | segment type `common_table_expression` | parse-tree fixture refinement |
-| Join count | segment type `join_clause` | keyword `JOIN` only as last resort |
-| CASE count | segment type `case_expression` | raw keyword `CASE` only as last resort |
-| Boolean operator count | keyword segments `AND`, `OR` in expressions | raw matching with context filter |
-| Window count | segment type `over_clause` | function segment containing `OVER` |
-| Subquery depth | nested `select_statement` under bracket/expression/from element | conservative depth algorithm |
+| Metric                 | Preferred signal                                                | Fallback                               |
+| ---------------------- | --------------------------------------------------------------- | -------------------------------------- |
+| CTE count              | segment type `common_table_expression`                          | parse-tree fixture refinement          |
+| Join count             | segment type `join_clause`                                      | keyword `JOIN` only as last resort     |
+| CASE count             | segment type `case_expression`                                  | raw keyword `CASE` only as last resort |
+| Boolean operator count | keyword segments `AND`, `OR` in expressions                     | raw matching with context filter       |
+| Window count           | segment type `over_clause`                                      | function segment containing `OVER`     |
+| Subquery depth         | nested `select_statement` under bracket/expression/from element | conservative depth algorithm           |
 
 ### 14.2 Traversal implementation sketch
 
@@ -958,12 +958,12 @@ def parse_weights(raw: str) -> dict[str, int]:
 
 ### 15.2 Score interpretation
 
-| Score | Meaning | Suggested action |
-|---:|---|---|
-| `0–20` | Simple | Allow |
-| `21–40` | Moderate | Allow |
-| `41–60` | Complex | Allow or review carefully |
-| `61+` | Too complex | Fail unless suppressed or policy overridden |
+|   Score | Meaning     | Suggested action                            |
+| ------: | ----------- | ------------------------------------------- |
+|  `0–20` | Simple      | Allow                                       |
+| `21–40` | Moderate    | Allow                                       |
+| `41–60` | Complex     | Allow or review carefully                   |
+|   `61+` | Too complex | Fail unless suppressed or policy overridden |
 
 v1 should not hard-code these bands except as documentation. Enforcement uses configured thresholds.
 
@@ -1073,10 +1073,10 @@ Rules:
 
 Supported values:
 
-| Mode | Meaning |
-|---|---|
-| `enforce` | Emit lint violations when thresholds are exceeded. |
-| `report` | Do not emit lint violations from SQLFluff rules. Used for calibration/reporting. |
+| Mode      | Meaning                                                                          |
+| --------- | -------------------------------------------------------------------------------- |
+| `enforce` | Emit lint violations when thresholds are exceeded.                               |
+| `report`  | Do not emit lint violations from SQLFluff rules. Used for calibration/reporting. |
 
 Important: the report CLI should be able to report findings regardless of SQLFluff rule mode.
 
@@ -1177,14 +1177,14 @@ models/marts/fct_revenue.sql                12    11          4    14    29    8
 
 SARIF fields:
 
-| Internal field | SARIF mapping |
-|---|---|
-| rule ID | `ruleId` |
-| rule title | `tool.driver.rules[].shortDescription.text` |
-| detailed message | `results[].message.text` |
-| file path | `artifactLocation.uri` |
-| line/column | `region.startLine`, `region.startColumn` |
-| severity | `level` |
+| Internal field   | SARIF mapping                               |
+| ---------------- | ------------------------------------------- |
+| rule ID          | `ruleId`                                    |
+| rule title       | `tool.driver.rules[].shortDescription.text` |
+| detailed message | `results[].message.text`                    |
+| file path        | `artifactLocation.uri`                      |
+| line/column      | `region.startLine`, `region.startColumn`    |
+| severity         | `level`                                     |
 
 Minimal SARIF shape:
 
@@ -1294,13 +1294,13 @@ flowchart TD
 
 Future metrics:
 
-| Metric | Source |
-|---|---|
-| upstream ref count | `manifest.json` |
-| source count | `manifest.json` |
-| model fan-in | `manifest.json` |
-| model fan-out | `manifest.json` |
-| layer violations | path + manifest metadata |
+| Metric                      | Source                    |
+| --------------------------- | ------------------------- |
+| upstream ref count          | `manifest.json`           |
+| source count                | `manifest.json`           |
+| model fan-in                | `manifest.json`           |
+| model fan-out               | `manifest.json`           |
+| layer violations            | path + manifest metadata  |
 | compiled/source score delta | source SQL + compiled SQL |
 
 This should be implemented as an optional extra, not a hard dependency.
@@ -1329,69 +1329,69 @@ Count `common_table_expression` segments.
 CPX_C101: CTE count 11 exceeds max_ctes=8. Consider splitting transformation layers into separate dbt models.
 ```
 
-#### Edge cases
+#### Edge cases (CPX_C101)
 
-| Case | Expected behavior |
-|---|---|
-| recursive CTE | Count each CTE definition. |
-| nested CTE in subquery | Count if inside evaluated statement. |
+| Case                     | Expected behavior                                 |
+| ------------------------ | ------------------------------------------------- |
+| recursive CTE            | Count each CTE definition.                        |
+| nested CTE in subquery   | Count if inside evaluated statement.              |
 | templated CTE generation | Count what SQLFluff parser sees after templating. |
 
 ### 20.2 `CPX_C102`: Too many joins
 
-#### Count
+#### Count (CPX_C102)
 
 Count `join_clause` segments.
 
-#### Default
+#### Default (CPX_C102)
 
 `max_joins = 8`
 
-#### Violation message
+#### Violation message (CPX_C102)
 
 ```text
 CPX_C102: join count 12 exceeds max_joins=8. Consider decomposing the model or moving joins upstream.
 ```
 
-#### Edge cases
+#### Edge cases (CPX_C102)
 
-| Case | Expected behavior |
-|---|---|
-| implicit comma joins | v1 may not count; document limitation. |
-| lateral joins | count as joins if parsed as `join_clause`. |
-| dialect-specific joins | rely on SQLFluff parser. |
+| Case                   | Expected behavior                          |
+| ---------------------- | ------------------------------------------ |
+| implicit comma joins   | v1 may not count; document limitation.     |
+| lateral joins          | count as joins if parsed as `join_clause`. |
+| dialect-specific joins | rely on SQLFluff parser.                   |
 
 ### 20.3 `CPX_C103`: Nested subquery depth too high
 
-#### Count
+#### Count (CPX_C103)
 
 Track maximum depth of nested `select_statement` segments.
 
-#### Default
+#### Default (CPX_C103)
 
 `max_subquery_depth = 3`
 
-#### Violation message
+#### Violation message (CPX_C103)
 
 ```text
 CPX_C103: nested subquery depth 4 exceeds max_subquery_depth=3. Consider extracting nested logic into CTEs or intermediate models.
 ```
 
-#### Edge cases
+#### Edge cases (CPX_C103)
 
 Subquery detection is the most likely metric to require dialect-specific fixture hardening.
 
 ### 20.4 `CPX_C104`: Too many CASE expressions
 
-#### Count
+#### Count (CPX_C104)
 
 Count `case_expression` segments.
 
-#### Default
+#### Default (CPX_C104)
 
 `max_case_expressions = 10`
 
-#### Violation message
+#### Violation message (CPX_C104)
 
 ```text
 CPX_C104: CASE expression count 14 exceeds max_case_expressions=10. Consider extracting business rules into upstream models or mapping tables.
@@ -1399,21 +1399,21 @@ CPX_C104: CASE expression count 14 exceeds max_case_expressions=10. Consider ext
 
 ### 20.5 `CPX_C105`: Boolean complexity too high
 
-#### Count
+#### Count (CPX_C105)
 
 Count boolean `AND` and `OR` operators in expression contexts.
 
-#### Default
+#### Default (CPX_C105)
 
 `max_boolean_operators = 20`
 
-#### Violation message
+#### Violation message (CPX_C105)
 
 ```text
 CPX_C105: boolean operator count 25 exceeds max_boolean_operators=20. Consider simplifying predicates or extracting filters into named CTEs.
 ```
 
-#### Edge cases
+#### Edge cases (CPX_C105)
 
 - `BETWEEN ... AND ...` should ideally not count as boolean complexity.
 - `AND` inside non-expression syntax should not count.
@@ -1421,15 +1421,15 @@ CPX_C105: boolean operator count 25 exceeds max_boolean_operators=20. Consider s
 
 ### 20.6 `CPX_C106`: Too many window functions
 
-#### Count
+#### Count (CPX_C106)
 
 Count `over_clause` segments.
 
-#### Default
+#### Default (CPX_C106)
 
 `max_window_functions = 10`
 
-#### Violation message
+#### Violation message (CPX_C106)
 
 ```text
 CPX_C106: window function count 13 exceeds max_window_functions=10. Consider extracting analytic calculations into intermediate models.
@@ -1437,15 +1437,15 @@ CPX_C106: window function count 13 exceeds max_window_functions=10. Consider ext
 
 ### 20.7 `CPX_C201`: Aggregate complexity score too high
 
-#### Count
+#### Count (CPX_C201)
 
 Compute all metrics and weighted score.
 
-#### Default
+#### Default (CPX_C201)
 
 `max_complexity_score = 60`
 
-#### Violation message
+#### Violation message (CPX_C201)
 
 ```text
 CPX_C201: aggregate complexity score 91 exceeds max_complexity_score=60. Metrics: ctes=12, joins=11, subquery_depth=4, case=14, boolean_ops=29, windows=8.
@@ -1530,24 +1530,24 @@ Validate:
 
 ### 21.6 Dialect fixture matrix
 
-| Dialect | Fixtures |
-|---|---|
-| ANSI | baseline simple queries |
-| Snowflake | CTEs, joins, QUALIFY, window functions |
-| BigQuery | backticks, arrays, STRUCTs, window functions |
-| Postgres | CTEs, lateral joins, filters |
-| Spark / Databricks | CTEs, complex expressions, window functions |
+| Dialect            | Fixtures                                     |
+| ------------------ | -------------------------------------------- |
+| ANSI               | baseline simple queries                      |
+| Snowflake          | CTEs, joins, QUALIFY, window functions       |
+| BigQuery           | backticks, arrays, STRUCTs, window functions |
+| Postgres           | CTEs, lateral joins, filters                 |
+| Spark / Databricks | CTEs, complex expressions, window functions  |
 
 ### 21.7 Version matrix
 
 Initial CI matrix:
 
-| Python | SQLFluff |
-|---|---|
-| 3.10 | latest supported 3.x |
-| 3.11 | latest supported 3.x |
-| 3.12 | latest supported 3.x |
-| 3.13 | latest supported 3.x |
+| Python | SQLFluff             |
+| ------ | -------------------- |
+| 3.10   | latest supported 3.x |
+| 3.11   | latest supported 3.x |
+| 3.12   | latest supported 3.x |
+| 3.13   | latest supported 3.x |
 
 Optional later:
 
@@ -1575,13 +1575,13 @@ The plugin implementation should preserve this workflow.
 
 ### 22.2 Required CI jobs
 
-| Job | Command | Purpose |
-|---|---|---|
-| Lint | `make lint` | Static analysis and formatting checks |
-| Test | `make test` | Unit and integration tests |
-| Build | `make build` | Validate wheel/sdist |
-| Plugin discovery | `sqlfluff rules | grep CPX` | Ensure entry point works |
-| Security | CodeQL / Trivy / OSV | Existing repo security posture |
+| Job              | Command              | Purpose                               |
+| ---------------- | -------------------- | ------------------------------------- | ------------------------ |
+| Lint             | `make lint`          | Static analysis and formatting checks |
+| Test             | `make test`          | Unit and integration tests            |
+| Build            | `make build`         | Validate wheel/sdist                  |
+| Plugin discovery | `sqlfluff rules      | grep CPX`                             | Ensure entry point works |
+| Security         | CodeQL / Trivy / OSV | Existing repo security posture        |
 
 ### 22.3 GitHub Actions example
 
@@ -1615,23 +1615,23 @@ jobs:
 ### 22.4 SARIF upload example
 
 ```yaml
-  complexity-report:
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - run: make setup
-      - run: |
-          uv run sqlfluff-complexity report models \
-            --dialect snowflake \
-            --format sarif \
-            --output sqlfluff-complexity.sarif
-      - uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: sqlfluff-complexity.sarif
+complexity-report:
+  runs-on: ubuntu-latest
+  permissions:
+    security-events: write
+    contents: read
+  steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v5
+    - run: make setup
+    - run: |
+        uv run sqlfluff-complexity report models \
+          --dialect snowflake \
+          --format sarif \
+          --output sqlfluff-complexity.sarif
+    - uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: sqlfluff-complexity.sarif
 ```
 
 ---
@@ -1640,14 +1640,14 @@ jobs:
 
 ### 23.1 Internal rollout phases
 
-| Phase | Behavior | Purpose |
-|---|---|---|
-| 0 | Develop on fixtures only | Build confidence in metrics |
-| 1 | Report-only on real repo | Calibrate thresholds |
-| 2 | Enforce individual high-signal rules | Fail only obvious problems |
-| 3 | Enforce aggregate score on new/changed models | Prevent new complexity |
-| 4 | Enforce path-specific policies | Align with dbt architecture |
-| 5 | Add dbt-aware metrics | Improve model graph insight |
+| Phase | Behavior                                      | Purpose                     |
+| ----- | --------------------------------------------- | --------------------------- |
+| 0     | Develop on fixtures only                      | Build confidence in metrics |
+| 1     | Report-only on real repo                      | Calibrate thresholds        |
+| 2     | Enforce individual high-signal rules          | Fail only obvious problems  |
+| 3     | Enforce aggregate score on new/changed models | Prevent new complexity      |
+| 4     | Enforce path-specific policies                | Align with dbt architecture |
+| 5     | Add dbt-aware metrics                         | Improve model graph insight |
 
 ### 23.2 Recommended first enforced rules
 
@@ -1741,7 +1741,7 @@ SQLFluff rule execution lifecycle may not guarantee segment object identity acro
 
 ### 26.1 Python
 
-Repository template supports Python 3.10+. Keep that.
+The project supports Python 3.10+. Keep that.
 
 ### 26.2 SQLFluff
 
@@ -1761,11 +1761,11 @@ Rationale:
 
 Use semantic versioning:
 
-| Version type | Meaning |
-|---|---|
-| Patch | bug fixes, fixture updates, message improvements |
-| Minor | new rules, new metrics, new report formats |
-| Major | rule semantics changes, config breaking changes, score formula breaking changes |
+| Version type | Meaning                                                                         |
+| ------------ | ------------------------------------------------------------------------------- |
+| Patch        | bug fixes, fixture updates, message improvements                                |
+| Minor        | new rules, new metrics, new report formats                                      |
+| Major        | rule semantics changes, config breaking changes, score formula breaking changes |
 
 ### 26.4 Rule stability policy
 
@@ -1780,31 +1780,31 @@ Once v1 is released:
 
 ## 27. Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|---|---|---|
-| SQLFluff segment names vary by dialect | inaccurate metrics | fixture matrix and centralized traversal |
-| SQLFluff internal APIs change | plugin breakage | pin major range and isolate adapters |
-| Duplicate violations | poor developer experience | evaluate at statement-level and test output |
-| Aggregate score is perceived as arbitrary | low adoption | expose metric breakdown and allow tuning |
-| Boolean operator counting overcounts `BETWEEN AND` | false positives | fixture tests and expression-context filtering |
-| Report CLI drifts from rule behavior | inconsistent CI | shared metric/scoring engine |
-| Path overrides become too complex | confusing config | keep override syntax minimal |
-| SARIF schema errors | failed code-scanning upload | JSON schema validation test |
-| dbt macros hide generated complexity | undercounting | document limitation and add compiled SQL extension later |
+| Risk                                               | Impact                      | Mitigation                                               |
+| -------------------------------------------------- | --------------------------- | -------------------------------------------------------- |
+| SQLFluff segment names vary by dialect             | inaccurate metrics          | fixture matrix and centralized traversal                 |
+| SQLFluff internal APIs change                      | plugin breakage             | pin major range and isolate adapters                     |
+| Duplicate violations                               | poor developer experience   | evaluate at statement-level and test output              |
+| Aggregate score is perceived as arbitrary          | low adoption                | expose metric breakdown and allow tuning                 |
+| Boolean operator counting overcounts `BETWEEN AND` | false positives             | fixture tests and expression-context filtering           |
+| Report CLI drifts from rule behavior               | inconsistent CI             | shared metric/scoring engine                             |
+| Path overrides become too complex                  | confusing config            | keep override syntax minimal                             |
+| SARIF schema errors                                | failed code-scanning upload | JSON schema validation test                              |
+| dbt macros hide generated complexity               | undercounting               | document limitation and add compiled SQL extension later |
 
 ---
 
 ## 28. Open Questions
 
-| Question | Proposed default |
-|---|---|
-| Should report mode support JSON in v1? | No; console + SARIF only. |
-| Should implicit comma joins count as joins? | Document as limitation initially. |
-| Should `BETWEEN ... AND ...` count as boolean complexity? | Ideally no; validate with fixtures. |
-| Should aggregate score count raw subquery count or max depth? | Max depth in v1. |
-| Should rules evaluate one statement or whole file? | Statement-level in v1. |
-| Should path overrides apply to all rules or only aggregate? | All rules where matching keys exist. |
-| Should thresholds have warning and failure levels? | Not in v1 SQLFluff enforcement; report mode can label status. |
+| Question                                                      | Proposed default                                              |
+| ------------------------------------------------------------- | ------------------------------------------------------------- |
+| Should report mode support JSON in v1?                        | No; console + SARIF only.                                     |
+| Should implicit comma joins count as joins?                   | Document as limitation initially.                             |
+| Should `BETWEEN ... AND ...` count as boolean complexity?     | Ideally no; validate with fixtures.                           |
+| Should aggregate score count raw subquery count or max depth? | Max depth in v1.                                              |
+| Should rules evaluate one statement or whole file?            | Statement-level in v1.                                        |
+| Should path overrides apply to all rules or only aggregate?   | All rules where matching keys exist.                          |
+| Should thresholds have warning and failure levels?            | Not in v1 SQLFluff enforcement; report mode can label status. |
 
 ---
 
@@ -1814,12 +1814,12 @@ Once v1 is released:
 
 Tasks:
 
-- rename `src/your_package` to `src/sqlfluff_complexity`
+- use `src/sqlfluff_complexity` as the package source
 - update `pyproject.toml` package metadata
 - add SQLFluff dependency
 - add SQLFluff entry point
 - add `plugin_default_config.cfg`
-- add one dummy rule
+- add an initial CPX rule
 - verify plugin discovery
 
 Acceptance criteria:
@@ -1928,7 +1928,7 @@ Acceptance criteria:
 
 - package renamed to `sqlfluff_complexity`
 - `pyproject.toml` entry point added
-- `sqlfluff rules` discovers a dummy CPX rule
+- `sqlfluff rules` discovers an initial CPX rule
 
 ### Issue 2: Implement core metric model and scoring
 
@@ -2208,8 +2208,8 @@ This sequence delivers value early while protecting the long-term maintainabilit
 
 ## 37. References
 
-- SQLFluff custom rules guide: https://docs.sqlfluff.com/en/stable/guides/setup/developing_custom_rules.html
-- SQLFluff plugin development docs: https://docs.sqlfluff.com/en/2.1.3/developingplugins.html
-- SQLFluff example plugin: https://github.com/sqlfluff/sqlfluff/tree/main/plugins/sqlfluff-plugin-example
-- SQLFluff dbt templater plugin: https://github.com/sqlfluff/sqlfluff/tree/main/plugins/sqlfluff-templater-dbt
-- Target repository: https://github.com/yu-iskw/sqlfluff-complexity
+- SQLFluff custom rules guide: <https://docs.sqlfluff.com/en/stable/guides/setup/developing_custom_rules.html>
+- SQLFluff plugin development docs: <https://docs.sqlfluff.com/en/2.1.3/developingplugins.html>
+- SQLFluff example plugin: <https://github.com/sqlfluff/sqlfluff/tree/main/plugins/sqlfluff-plugin-example>
+- SQLFluff dbt templater plugin: <https://github.com/sqlfluff/sqlfluff/tree/main/plugins/sqlfluff-templater-dbt>
+- Target repository: <https://github.com/yu-iskw/sqlfluff-complexity>

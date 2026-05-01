@@ -27,7 +27,7 @@ lint:
     - actionlint@1.7.12
     - markdown-link-check@3.14.2
     - pyright@1.1.409
-    - ruff@0.15.11:
+    - ruff@0.15.12:
         commands: [lint, format]
     - pylint@4.0.5
     - semgrep@1.161.0

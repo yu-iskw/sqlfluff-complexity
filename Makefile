@@ -47,6 +47,14 @@ dead-code vulture:
 test:
 	bash ./dev/test_python.sh
 
+.PHONY: test-dialect-extra
+test-dialect-extra:
+	NOX_SESSION=dialect_extra bash ./dev/test_python.sh
+
+.PHONY: test-dbt-templater
+test-dbt-templater:
+	NOX_SESSION=dbt_templater bash ./dev/test_python.sh
+
 # Run local CodeQL analysis.
 .PHONY: codeql
 codeql:

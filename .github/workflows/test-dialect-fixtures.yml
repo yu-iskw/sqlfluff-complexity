@@ -1,0 +1,48 @@
+name: Dialect fixture tests (optional)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly: optional dialect_extra marker suite when fixtures exist.
+    - cron: 15 7 * * 1
+
+jobs:
+  dialect-extra:
+    name: Dialect bucket (${{ matrix.dialect-bucket }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dialect-bucket: core
+            dialects: postgres,redshift
+          - dialect-bucket: cloud-warehouses
+            dialects: bigquery,snowflake
+          - dialect-bucket: spark-family
+            dialects: sparksql,databricks
+          - dialect-bucket: trino-family
+            dialects: athena,trino
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTEST_XDIST_WORKERS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          bash dev/setup.sh --deps "development"
+      - name: Run dialect_extra tests
+        run: |
+          fixture_root="src/sqlfluff_complexity/tests/fixtures/sql"
+          pytest_k="test_dbt_adapter_mapping_uses_sqlfluff_dialect_labels"
+          IFS="," read -r -a dialects <<< "${{ matrix.dialects }}"
+          for dialect in "${dialects[@]}"; do
+            if [[ -d "${fixture_root}/${dialect}" ]]; then
+              pytest_k="${pytest_k} or ${dialect}"
+            fi
+          done
+          uv run nox -s dialect_extra -- -k "${pytest_k}"

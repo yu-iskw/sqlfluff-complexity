@@ -1,0 +1,24 @@
+name: dbt templater tests (optional)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dbt-templater:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTEST_XDIST_WORKERS: "2"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          bash dev/setup.sh --deps "development"
+      - name: Run dbt_templater tests
+        run: |
+          uv run nox -s dbt_templater

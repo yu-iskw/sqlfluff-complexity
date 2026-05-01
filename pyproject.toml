@@ -13,16 +13,19 @@ exclude = [
   ".github",
   ".trunk",
   "dev",
-  "src/your_package/tests",
+  "src/sqlfluff_complexity/tests",
   "dist",
   ".python-version",
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/your_package"]
+packages = ["src/sqlfluff_complexity"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/sqlfluff_complexity/plugin_default_config.cfg" = "sqlfluff_complexity/plugin_default_config.cfg"
 
 [project]
-name = "your-package"
+name = "sqlfluff-complexity"
 version = "0.1.0"
 authors = [{ name = "yu-iskw" }]
 readme = "README.md"
@@ -45,35 +48,49 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
 ]
-description = "A dbt artifacts parser in python"
-dependencies = []
+description = "SQLFluff plugin for SQL and dbt model complexity rules"
+dependencies = ["sqlfluff>=3.0.0,<4.0.0"]
 
 [project.scripts]
+sqlfluff-complexity = "sqlfluff_complexity.cli:main"
+
+[project.entry-points.sqlfluff]
+sqlfluff_complexity = "sqlfluff_complexity"
 
 [tool.pytest.ini_options]
-testpaths = ["src/your_package/tests"]
+testpaths = ["src/sqlfluff_complexity/tests"]
+markers = [
+  "dialect_extra: optional dialect-specific fixture tests (not default PR suite).",
+  "dbt_templater: optional SQLFluff dbt templater integration tests.",
+]
 
 [dependency-groups]
+dbt = ["dbt-duckdb>=1.10.1", "sqlfluff-templater-dbt>=3.5.0"]
 dev = [
   "xenon>=0.9.3",
+  "nox>=2026.4.10",
   "pytest>=8.3.5",
   "bandit>=1.8.3",
   "ruff>=0.15.0",
   "pyright>=1.1.0",
   "pylint>=3.3.5",
   "vulture>=2.16",
+  "pytest-xdist>=3.8.0",
 ]
 
 [tool.pyright]
 include = ["src"]
 extraPaths = ["src"]
-pythonVersion = "3.13"
+pythonVersion = "3.10"
 typeCheckingMode = "standard"
 venvPath = "."
 venv = ".venv"
 reportMissingImports = true
 reportMissingTypeStubs = "warning"
+# SQLFluff BaseRule sets dynamic kwargs on instances; ClassVar on config_keywords is required
+# for correct RUF012 semantics on rule subclasses.
+reportIncompatibleVariableOverride = false
 
 [tool.vulture]
-paths = ["src/your_package"]
+paths = ["src/sqlfluff_complexity"]
 min_confidence = 80

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Template tests."""
+"""Module entry point for `python -m sqlfluff_complexity`."""
 
+from sqlfluff_complexity.cli import main
 
-def test_dummy() -> None:
-    """Placeholder test; replace with real cases when the package grows."""
-    assert True
+if __name__ == "__main__":
+    raise SystemExit(main())

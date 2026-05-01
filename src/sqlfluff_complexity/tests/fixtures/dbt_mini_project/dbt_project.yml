@@ -1,0 +1,12 @@
+name: dbt_mini_project
+version: 1.0.0
+config-version: 2
+
+profile: dbt_mini_project
+
+model-paths:
+  - models
+
+models:
+  dbt_mini_project:
+    +materialized: view
