@@ -79,5 +79,6 @@ def refactoring_hint_for_contributors(contributor_keys: Sequence[str]) -> str:
     if len(phrases) == pair_len:
         middle = f"{phrases[0]} or {phrases[1]}"
     else:
-        middle = f"{', '.join(phrases[:-1])}, or {phrases[-1]}"
+        joined = ", ".join(phrases[:-1])
+        middle = f"{joined}, or {phrases[-1]}"
     return f"Consider {middle}{suffix}"

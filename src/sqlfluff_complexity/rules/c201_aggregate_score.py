@@ -63,7 +63,8 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         top_contributor_limit = 3
         contributors = explain_score_contributors(metrics, weights, max_items=top_contributor_limit)
         top_keys = [
-            name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_contributor_limit]
+            name
+            for name, _ in ranked_weighted_contributions(metrics, weights)[:top_contributor_limit]
         ]
         hint = refactoring_hint_for_contributors(top_keys)
 
