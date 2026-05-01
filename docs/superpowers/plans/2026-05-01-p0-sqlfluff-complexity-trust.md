@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Analysis API and segment tree
+## Task 1: Analysis API and segment tree
 
 **Files:**
 
@@ -19,7 +19,7 @@
 
 - [x] Implement `MetricContributor`, `ComplexityAnalysis`, `analyze_segment_tree`, helpers; extend `_MetricCounter`; wire `collect_metrics` to analysis.
 
-### Task 2: Rules and CPX_C201 messaging
+## Task 2: Rules and CPX_C201 messaging
 
 **Files:**
 
@@ -27,7 +27,7 @@
 
 - [x] Add `metric_lint_result_outer_select_only`; C201 uses `format_contributor_examples`.
 
-### Task 3: Report JSON, SARIF properties, config-check
+## Task 3: Report JSON, SARIF properties, config-check
 
 **Files:**
 
@@ -35,7 +35,7 @@
 
 - [x] `format_json_report`, SARIF `properties`, `load_fluff_config`, `validate_cpx_plugin_config`, `config-check` subcommand.
 
-### Task 4: Tests and docs
+## Task 4: Tests and docs
 
 **Files:**
 

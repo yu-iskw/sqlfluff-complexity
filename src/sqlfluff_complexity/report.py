@@ -334,9 +334,7 @@ def _sarif_results(report: ComplexityReport) -> list[dict[str, object]]:
     results = []
     for entry in report.entries:
         results.extend(_sarif_error_results(entry))
-        results.extend(
-            _sarif_finding_result(entry, finding) for finding in entry.findings
-        )
+        results.extend(_sarif_finding_result(entry, finding) for finding in entry.findings)
     return results
 
 

@@ -101,7 +101,12 @@ def test_report_json_roundtrip(tmp_path: Path) -> None:
     sql_file = tmp_path / "m.sql"
     sql_file.write_text("select 1", encoding="utf-8")
     out = tmp_path / "out.json"
-    assert main(["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]) == 0
+    assert (
+        main(
+            ["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]
+        )
+        == 0
+    )
     data = json.loads(out.read_text(encoding="utf-8"))
     assert data["schema_version"] == "1.0"
     assert data["tool"] == "sqlfluff-complexity"
@@ -117,7 +122,12 @@ def test_report_json_parse_error_has_null_metrics(tmp_path: Path) -> None:
     sql_file = tmp_path / "bad.sql"
     sql_file.write_text("select from", encoding="utf-8")
     out = tmp_path / "out.json"
-    assert main(["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]) == 0
+    assert (
+        main(
+            ["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]
+        )
+        == 0
+    )
     data = json.loads(out.read_text(encoding="utf-8"))
     entry = data["entries"][0]
     assert entry["score"] is None
@@ -140,7 +150,9 @@ def test_config_check_valid_returns_zero(tmp_path: Path) -> None:
     assert main(["config-check", "--dialect", "ansi", "--config", str(cfg)]) == 0
 
 
-def test_config_check_invalid_weights_nonzero(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_config_check_invalid_weights_nonzero(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     cfg = tmp_path / ".sqlfluff"
     cfg.write_text(
         """
@@ -175,7 +187,21 @@ def test_report_sarif_parse_error_has_no_metric_properties(tmp_path: Path) -> No
     sql_file = tmp_path / "bad.sql"
     sql_file.write_text("select from", encoding="utf-8")
     out = tmp_path / "e.sarif"
-    assert main(["report", "--dialect", "ansi", "--format", "sarif", "--output", str(out), str(sql_file)]) == 0
+    assert (
+        main(
+            [
+                "report",
+                "--dialect",
+                "ansi",
+                "--format",
+                "sarif",
+                "--output",
+                str(out),
+                str(sql_file),
+            ]
+        )
+        == 0
+    )
     sarif = json.loads(out.read_text(encoding="utf-8"))
     parse_results = [r for r in sarif["runs"][0]["results"] if r["ruleId"] == "CPX_PARSE_ERROR"]
     assert parse_results

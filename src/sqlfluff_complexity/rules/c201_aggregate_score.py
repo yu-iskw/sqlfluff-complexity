@@ -66,10 +66,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
 
         top_n = 3
         contributors = explain_score_contributors(metrics, weights, max_items=top_n)
-        top_keys = [
-            name
-            for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]
-        ]
+        top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
         hint = refactoring_hint_for_contributors(top_keys)
         examples = format_contributor_examples(
             analysis.contributors,

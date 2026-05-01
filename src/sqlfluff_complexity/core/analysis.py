@@ -150,4 +150,4 @@ def format_contributor_examples(
 
     if not parts:
         return ""
-    return f"Examples: {', '.join(parts)}"
+    return "Examples: " + ", ".join(parts)
