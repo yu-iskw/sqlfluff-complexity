@@ -15,7 +15,19 @@ aggregate weighted complexity score. The same metric engine also powers a compan
 
 ## Quick Start
 
-Install the package, enable CPX rules in `.sqlfluff`, then run SQLFluff:
+Install the custom SQLFluff plugin in the same Python environment where you run SQLFluff:
+
+```bash
+pip install sqlfluff-complexity
+```
+
+If your project uses `uv`:
+
+```bash
+uv add --dev sqlfluff-complexity
+```
+
+Then enable CPX rules in `.sqlfluff` and run SQLFluff:
 
 ```ini
 [sqlfluff]

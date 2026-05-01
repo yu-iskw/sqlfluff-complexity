@@ -41,7 +41,9 @@ uv run nox -s dbt_templater
 
 ## Test Suites
 
-The default suite excludes optional markers so pull-request feedback stays fast.
+The default suite excludes optional markers so pull-request feedback stays fast. It includes
+SQLFluff integration smoke tests that verify plugin discovery, CPX rule config, default plugin
+config, and `python -m sqlfluff lint` behavior.
 
 - `dialect_extra`: optional parser/fixture matrix for non-ANSI dialects
 - `dbt_templater`: optional SQLFluff dbt templater compatibility tests

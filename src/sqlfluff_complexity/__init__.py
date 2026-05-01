@@ -21,14 +21,6 @@ from typing import TYPE_CHECKING, Any
 from sqlfluff.core.config import load_config_resource
 from sqlfluff.core.plugin import hookimpl
 
-from sqlfluff_complexity.rules.c101_too_many_ctes import Rule_CPX_C101
-from sqlfluff_complexity.rules.c102_too_many_joins import Rule_CPX_C102
-from sqlfluff_complexity.rules.c103_subquery_depth import Rule_CPX_C103
-from sqlfluff_complexity.rules.c104_too_many_case import Rule_CPX_C104
-from sqlfluff_complexity.rules.c105_boolean_complexity import Rule_CPX_C105
-from sqlfluff_complexity.rules.c106_too_many_windows import Rule_CPX_C106
-from sqlfluff_complexity.rules.c201_aggregate_score import Rule_CPX_C201
-
 if TYPE_CHECKING:
     from sqlfluff.core.rules import BaseRule
 
@@ -36,6 +28,30 @@ if TYPE_CHECKING:
 @hookimpl
 def get_rules() -> list[type[BaseRule]]:
     """Register SQLFluff complexity rules."""
+    # SQLFluff expects plugin rule classes to be imported lazily from this hook.
+    # pylint: disable=import-outside-toplevel
+    from sqlfluff_complexity.rules.c101_too_many_ctes import (  # noqa: PLC0415
+        Rule_CPX_C101,
+    )
+    from sqlfluff_complexity.rules.c102_too_many_joins import (  # noqa: PLC0415
+        Rule_CPX_C102,
+    )
+    from sqlfluff_complexity.rules.c103_subquery_depth import (  # noqa: PLC0415
+        Rule_CPX_C103,
+    )
+    from sqlfluff_complexity.rules.c104_too_many_case import (  # noqa: PLC0415
+        Rule_CPX_C104,
+    )
+    from sqlfluff_complexity.rules.c105_boolean_complexity import (  # noqa: PLC0415
+        Rule_CPX_C105,
+    )
+    from sqlfluff_complexity.rules.c106_too_many_windows import (  # noqa: PLC0415
+        Rule_CPX_C106,
+    )
+    from sqlfluff_complexity.rules.c201_aggregate_score import (  # noqa: PLC0415
+        Rule_CPX_C201,
+    )
+
     return [
         Rule_CPX_C101,
         Rule_CPX_C102,
