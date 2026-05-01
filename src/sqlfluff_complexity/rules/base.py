@@ -28,12 +28,16 @@ class MetricRuleSpec:
     guidance: str
 
 
-def skip_nested_select_statement(context: RuleContext) -> bool:
-    """True when this crawl hit should be skipped as a nested select_statement."""
-    return (
-        getattr(context.segment, "type", "") == "select_statement"
-        and is_nested_select_statement(context.segment)
-    )
+def metric_lint_result_outer_select_only(
+    context: RuleContext,
+    metrics: ComplexityMetrics,
+    policy: ComplexityPolicy,
+    spec: MetricRuleSpec,
+) -> LintResult | None:
+    """Like ``metric_lint_result`` but skip nested ``select_statement`` crawl hits."""
+    if is_nested_select_statement(context.segment):
+        return None
+    return metric_lint_result(context, metrics, policy, spec)
 
 
 def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:

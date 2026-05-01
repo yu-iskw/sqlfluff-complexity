@@ -46,7 +46,7 @@ def is_nested_select_statement(segment: BaseSegment) -> bool:
     for _ in range(256):
         parent = _parent_segment(current)
         if parent is None:
-            return False
+            break
         if getattr(parent, "type", "") == "select_statement":
             return True
         current = parent

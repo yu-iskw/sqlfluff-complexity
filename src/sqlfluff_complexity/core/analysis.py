@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from sqlfluff_complexity.core.metrics import ComplexityMetrics
+
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
@@ -13,6 +15,7 @@ if TYPE_CHECKING:
 
 
 _RAW_MAX_LEN = 120
+RAW_SNIPPET_WORK_CAP = _RAW_MAX_LEN + 80
 
 
 @dataclass(frozen=True)
@@ -31,7 +34,7 @@ class MetricContributor:
 class ComplexityAnalysis:
     """Metrics plus per-segment contributors for explainability."""
 
-    metrics: "ComplexityMetrics"
+    metrics: ComplexityMetrics
     contributors: tuple[MetricContributor, ...]
 
 
@@ -41,6 +44,10 @@ def compact_segment_raw(segment: BaseSegment | None) -> str:
         return ""
     raw = getattr(segment, "raw", "") or ""
     raw = raw.strip()
+    # Cap work before whitespace normalization (very large segment.raw is rare).
+    work_cap = RAW_SNIPPET_WORK_CAP
+    if len(raw) > work_cap:
+        raw = raw[:work_cap]
     raw = re.sub(r"\s+", " ", raw)
     if len(raw) > _RAW_MAX_LEN:
         end = _RAW_MAX_LEN - 3
@@ -68,6 +75,62 @@ def segment_position(segment: BaseSegment | None) -> tuple[int | None, int | Non
     return line_int, col_int
 
 
+def _pick_contributor_examples(
+    contributors: Sequence[MetricContributor],
+    weights: Mapping[str, int],
+    max_items: int,
+) -> list[MetricContributor]:
+    indexed = _contributors_sorted_by_weight(contributors, weights)
+    chosen = _unique_metrics_from_sorted(indexed, max_items)
+    return _backfill_contributors(chosen, contributors, max_items)
+
+
+def _contributors_sorted_by_weight(
+    contributors: Sequence[MetricContributor],
+    weights: Mapping[str, int],
+) -> list[tuple[int, MetricContributor]]:
+    indexed = list(enumerate(contributors))
+    indexed.sort(
+        key=lambda pair: (
+            -int(weights.get(pair[1].metric, 0)),
+            pair[1].metric,
+            pair[0],
+        ),
+    )
+    return indexed
+
+
+def _unique_metrics_from_sorted(
+    indexed: list[tuple[int, MetricContributor]],
+    max_items: int,
+) -> list[MetricContributor]:
+    chosen: list[MetricContributor] = []
+    seen_metrics: set[str] = set()
+    for _, contributor in indexed:
+        if len(chosen) >= max_items:
+            break
+        if contributor.metric in seen_metrics:
+            continue
+        chosen.append(contributor)
+        seen_metrics.add(contributor.metric)
+    return chosen
+
+
+def _backfill_contributors(
+    chosen: list[MetricContributor],
+    contributors: Sequence[MetricContributor],
+    max_items: int,
+) -> list[MetricContributor]:
+    if len(chosen) >= max_items:
+        return chosen[:max_items]
+    for contributor in contributors:
+        if len(chosen) >= max_items:
+            break
+        if contributor not in chosen:
+            chosen.append(contributor)
+    return chosen[:max_items]
+
+
 def format_contributor_examples(
     contributors: Sequence[MetricContributor],
     weights: Mapping[str, int],
@@ -78,34 +141,9 @@ def format_contributor_examples(
     if max_items < 1 or not contributors:
         return ""
 
-    indexed = list(enumerate(contributors))
-    indexed.sort(
-        key=lambda pair: (
-            -int(weights.get(pair[1].metric, 0)),
-            pair[1].metric,
-            pair[0],
-        ),
-    )
-
-    chosen: list[MetricContributor] = []
-    seen_metrics: set[str] = set()
-    for _, contributor in indexed:
-        if len(chosen) >= max_items:
-            break
-        if contributor.metric in seen_metrics:
-            continue
-        chosen.append(contributor)
-        seen_metrics.add(contributor.metric)
-
-    if len(chosen) < max_items:
-        for contributor in contributors:
-            if len(chosen) >= max_items:
-                break
-            if contributor not in chosen:
-                chosen.append(contributor)
-
+    chosen = _pick_contributor_examples(contributors, weights, max_items)
     parts: list[str] = []
-    for contributor in chosen[:max_items]:
+    for contributor in chosen:
         line = contributor.line
         loc = f" at line {line}" if line is not None else ""
         parts.append(f"{contributor.metric}{loc}: {contributor.raw}")
@@ -113,7 +151,3 @@ def format_contributor_examples(
     if not parts:
         return ""
     return f"Examples: {', '.join(parts)}"
-
-
-if TYPE_CHECKING:
-    from sqlfluff_complexity.core.metrics import ComplexityMetrics

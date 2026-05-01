@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from sqlfluff.core import FluffConfig, Linter
@@ -15,7 +16,6 @@ from sqlfluff_complexity.core.segment_tree import collect_metrics
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from pathlib import Path
 
     from sqlfluff.core.types import ConfigMappingType
 
@@ -184,21 +184,7 @@ def validate_cpx_plugin_config(config: FluffConfig) -> None:
     if mode not in POLICY_MODES:
         message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
         raise ValueError(message)
-    base_policy = ComplexityPolicy(
-        max_ctes=_config_int(config, "CPX_C101", "max_ctes", 8),
-        max_joins=_config_int(config, "CPX_C102", "max_joins", DEFAULT_MAX_JOINS),
-        max_subquery_depth=_config_int(config, "CPX_C103", "max_subquery_depth", 3),
-        max_case_expressions=_config_int(config, "CPX_C104", "max_case_expressions", 10),
-        max_boolean_operators=_config_int(config, "CPX_C105", "max_boolean_operators", 20),
-        max_window_functions=_config_int(config, "CPX_C106", "max_window_functions", 10),
-        max_complexity_score=_config_int(
-            config,
-            "CPX_C201",
-            "max_complexity_score",
-            DEFAULT_MAX_COMPLEXITY_SCORE,
-        ),
-        mode=mode,
-    )
+    base_policy = replace(_threshold_policy_from_config(config), mode=mode)
     resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
 
 
@@ -247,7 +233,24 @@ def _metric_finding(
 
 
 def _policy_for_path(config: FluffConfig, path: Path) -> ComplexityPolicy:
-    base_policy = ComplexityPolicy(
+    base_policy = _threshold_policy_from_config(config)
+    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
+    return resolve_policy(base_policy, raw_overrides, str(path))
+
+
+def _weights_from_config(config: FluffConfig) -> dict[str, int]:
+    raw_weights = config.get("complexity_weights", section=("rules", "CPX_C201"), default=None)
+    return parse_weights(raw_weights)
+
+
+def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> int:
+    value = config.get(key, section=("rules", rule_code), default=default)
+    return int(value)
+
+
+def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
+    """Numeric CPX thresholds from FluffConfig (default ``mode`` for report scoring)."""
+    return ComplexityPolicy(
         max_ctes=_config_int(config, "CPX_C101", "max_ctes", 8),
         max_joins=_config_int(config, "CPX_C102", "max_joins", DEFAULT_MAX_JOINS),
         max_subquery_depth=_config_int(config, "CPX_C103", "max_subquery_depth", 3),
@@ -261,18 +264,6 @@ def _policy_for_path(config: FluffConfig, path: Path) -> ComplexityPolicy:
             DEFAULT_MAX_COMPLEXITY_SCORE,
         ),
     )
-    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
-    return resolve_policy(base_policy, raw_overrides, str(path))
-
-
-def _weights_from_config(config: FluffConfig) -> dict[str, int]:
-    raw_weights = config.get("complexity_weights", section=("rules", "CPX_C201"), default=None)
-    return parse_weights(raw_weights)
-
-
-def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> int:
-    value = config.get(key, section=("rules", rule_code), default=default)
-    return int(value)
 
 
 def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
@@ -362,14 +353,18 @@ def _sarif_error_results(entry: ReportEntry) -> list[dict[str, object]]:
 
 
 def _sarif_finding_result(entry: ReportEntry, finding: ReportFinding) -> dict[str, object]:
-    return _sarif_result(
+    result = _sarif_result(
         path=entry.path,
         rule_id=finding.rule_id,
         level=finding.level,
         message=finding.message,
-        score=entry.score,
-        metrics=entry.metrics,
     )
+    if entry.score is not None and entry.metrics is not None:
+        result["properties"] = {
+            "score": entry.score,
+            "metrics": _metrics_dict(entry.metrics),
+        }
+    return result
 
 
 def _sarif_result(
@@ -377,11 +372,8 @@ def _sarif_result(
     rule_id: str,
     level: str,
     message: str,
-    *,
-    score: int | None = None,
-    metrics: ComplexityMetrics | None = None,
 ) -> dict[str, object]:
-    result: dict[str, object] = {
+    return {
         "ruleId": rule_id,
         "level": level,
         "message": {"text": message},
@@ -393,9 +385,3 @@ def _sarif_result(
             },
         ],
     }
-    if score is not None and metrics is not None:
-        result["properties"] = {
-            "score": score,
-            "metrics": _metrics_dict(metrics),
-        }
-    return result

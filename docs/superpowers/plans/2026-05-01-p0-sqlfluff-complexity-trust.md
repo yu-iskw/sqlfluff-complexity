@@ -25,7 +25,7 @@
 
 - Modify: `src/sqlfluff_complexity/rules/base.py`, `c102`–`c106`, `c201_aggregate_score.py`
 
-- [x] Add `skip_nested_select_statement`; C201 uses `format_contributor_examples`.
+- [x] Add `metric_lint_result_outer_select_only`; C201 uses `format_contributor_examples`.
 
 ### Task 3: Report JSON, SARIF properties, config-check
 

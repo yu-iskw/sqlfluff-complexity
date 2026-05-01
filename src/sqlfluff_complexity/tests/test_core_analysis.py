@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from typing import Any
+from unittest import mock
 
 from sqlfluff.core import Linter
 
 from sqlfluff_complexity.core.analysis import (
+    RAW_SNIPPET_WORK_CAP,
     MetricContributor,
     compact_segment_raw,
     format_contributor_examples,
@@ -39,6 +41,15 @@ def test_analyze_segment_tree_records_join_and_boolean_contributors() -> None:
     kinds = {c.metric for c in analysis.contributors}
     assert "joins" in kinds
     assert "boolean_operators" in kinds
+
+
+def test_compact_segment_raw_truncates_before_regex_on_huge_raw() -> None:
+    """Avoid scanning megabyte literals when building contributor snippets."""
+    huge = "x" * 5000
+    fake_seg = mock.Mock()
+    fake_seg.raw = huge
+    out = compact_segment_raw(fake_seg)
+    assert len(out) <= RAW_SNIPPET_WORK_CAP
 
 
 def test_compact_segment_raw_collapses_whitespace() -> None:

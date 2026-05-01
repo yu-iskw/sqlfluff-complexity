@@ -15,8 +15,8 @@ from sqlfluff_complexity.core.explainability import (
 )
 from sqlfluff_complexity.core.policy import ComplexityPolicy
 from sqlfluff_complexity.core.scoring import parse_weights
-from sqlfluff_complexity.core.segment_tree import analyze_segment_tree
-from sqlfluff_complexity.rules.base import resolve_context_policy, skip_nested_select_statement
+from sqlfluff_complexity.core.segment_tree import analyze_segment_tree, is_nested_select_statement
+from sqlfluff_complexity.rules.base import resolve_context_policy
 
 
 class Rule_CPX_C201(BaseRule):  # noqa: N801
@@ -49,7 +49,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
-        if skip_nested_select_statement(context):
+        if is_nested_select_statement(context.segment):
             return None
         analysis = analyze_segment_tree(context.segment)
         metrics = analysis.metrics
@@ -64,17 +64,17 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         if policy.mode == "report" or score <= limit:
             return None
 
-        top_contributor_limit = 3
-        contributors = explain_score_contributors(metrics, weights, max_items=top_contributor_limit)
+        top_n = 3
+        contributors = explain_score_contributors(metrics, weights, max_items=top_n)
         top_keys = [
             name
-            for name, _ in ranked_weighted_contributions(metrics, weights)[:top_contributor_limit]
+            for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]
         ]
         hint = refactoring_hint_for_contributors(top_keys)
         examples = format_contributor_examples(
             analysis.contributors,
             weights,
-            max_items=top_contributor_limit,
+            max_items=top_n,
         )
         examples_clause = f" {examples}" if examples else ""
 
