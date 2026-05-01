@@ -15,9 +15,8 @@ set -Eeuo pipefail
 # See the License for the specific language governing permissions and
 
 # Constants
-SCRIPT_FILE="$(readlink -f "$0")"
-SCRIPT_DIR="$(dirname "${SCRIPT_FILE}")"
-MODULE_DIR="$(dirname "${SCRIPT_DIR}")"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+MODULE_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
 
 # Arguments
 deps="production"
@@ -42,7 +41,7 @@ cd "${MODULE_DIR}"
 pip install --force-reinstall -r "${MODULE_DIR}/requirements.setup.txt"
 
 # Create virtual environment
-uv venv
+uv venv --allow-existing
 
 # Install package and dependencies
 if [[ ${deps} == "production" ]]; then

@@ -16,13 +16,10 @@
 set -Eeuo pipefail
 
 # Constants
-SCRIPT_FILE="$(readlink -f "$0")"
-SCRIPT_DIR="$(dirname "${SCRIPT_FILE}")"
-MODULE_DIR="$(dirname "${SCRIPT_DIR}")"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+MODULE_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd -P)"
 
-tests_list_file="$(mktemp)"
-find "${MODULE_DIR}/src" -name "tests" -type d -print0 >"${tests_list_file}" || exit 1
-while IFS= read -r -d "" tests_dir; do
-	pytest -v -s --cache-clear "${tests_dir}"
-done <"${tests_list_file}"
-rm -f "${tests_list_file}"
+cd "${MODULE_DIR}"
+
+nox_session="${NOX_SESSION:-tests}"
+uv run nox -s "${nox_session}" -- "$@"

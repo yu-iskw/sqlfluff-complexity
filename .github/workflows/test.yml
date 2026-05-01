@@ -4,9 +4,13 @@ on:
   pull_request:
     paths:
       - .github/workflows/test.yml
+      - Makefile
+      - dev/test_python.sh
+      - noxfile.py
       - pyproject.toml
-      - src/your_package/**/*.py
-      - pylintrc
+      - src/sqlfluff_complexity/**/*.py
+      - src/sqlfluff_complexity/tests/fixtures/**
+      - .pylintrc
   push:
     branches:
       - main
@@ -14,30 +18,30 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-      fail-fast: false
     defaults:
       run:
         shell: bash
     env:
-      PYTHON_PACKAGE_NAME: YOUR_PYTHON_PACKAGE_NAME
+      PYTHON_PACKAGE_NAME: sqlfluff_complexity
+      PYTEST_XDIST_WORKERS: "2"
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
       - name: Install dependencies
         run: |
           bash dev/setup.sh --deps "development"
+      - name: Install test interpreters
+        run: |
+          uv python install 3.10 3.11 3.12
       - name: Vulture (dead code)
         run: |
           uv run vulture
       - name: Run tests
         run: |
-          uv run bash dev/test_python.sh
+          uv run nox -s tests
       - name: Test build
         run: |
           uv run bash dev/build.sh

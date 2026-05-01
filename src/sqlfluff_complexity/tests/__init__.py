@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for your_package (colocated under the source tree)."""
+"""Tests for sqlfluff_complexity."""

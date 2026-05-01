@@ -60,14 +60,14 @@ ignore = [
 ]
 
 [lint.per-file-ignores]
-"src/your_package/tests/**" = [
+"src/sqlfluff_complexity/tests/**" = [
   "S101", # assert used in tests
 ]
 
 # NOTE: Prefer narrow noqa comments over broad file-level bypasses.
 
 [lint.pylint]
-max-args = 6
+max-args = 5
 max-nested-blocks = 2
 max-returns = 3
 max-statements = 50

@@ -1,0 +1,9 @@
+{
+  "ctes": 2,
+  "joins": 1,
+  "subqueries": 0,
+  "subquery_depth": 0,
+  "case_expressions": 1,
+  "boolean_operators": 2,
+  "window_functions": 1
+}

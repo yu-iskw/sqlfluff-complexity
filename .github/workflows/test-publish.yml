@@ -40,8 +40,8 @@ jobs:
       run:
         shell: bash
     env:
-      PYTHON_PACKAGE_NAME: YOUR_PYTHON_PACKAGE_NAME
-      PYTHON_NAME_SPACE: YOUR_PYTHON_NAME_SPACE
+      PYTHON_PACKAGE_NAME: sqlfluff-complexity
+      PYTHON_NAME_SPACE: sqlfluff_complexity
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python

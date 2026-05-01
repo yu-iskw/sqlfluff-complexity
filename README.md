@@ -1,30 +1,64 @@
-# {{ project_name }}
+# sqlfluff-complexity
 
-A production-ready Python package using modern tooling.
+SQLFluff rules and reports for finding SQL and dbt models that are too complex to review safely.
 
-## Features
+`sqlfluff-complexity` adds CPX rules to SQLFluff for CTE count, join count, nested
+subquery depth, `CASE` expressions, boolean predicates, window functions, and an
+aggregate weighted complexity score. The same metric engine also powers a companion
+`sqlfluff-complexity report` command for non-blocking console and SARIF reports.
 
-- **Package Management**: [uv](https://github.com/astral-sh/uv)
-- **Build System**: [Hatchling](https://hatch.pypa.io/latest/)
-- **Linting & Formatting**: [Trunk](https://trunk.io/) (Ruff, Pyright, Pylint, Bandit; Ruff is also the formatter)
-- **Testing**: [pytest](https://docs.pytest.org/)
-- **CI/CD**: GitHub Actions
+## Who It Is For
 
-## Security & Quality
+- Analytics engineers who want dbt models to stay small enough to review.
+- Data platform teams that already run SQLFluff in local development or CI.
+- Teams that want gradual complexity reporting before turning on strict lint failures.
 
-This template enforces high security and maintainability standards:
+## Quick Start
 
-- **[GitHub CodeQL](https://codeql.github.com/)**: Deep analysis using the `security-and-quality` suite to track code health and catch vulnerabilities.
-- **Complexity Guardrails**: Cyclomatic complexity is capped at **10** per function (enforced via Ruff `C901`).
-- **Trunk Linters**: [Bandit](https://github.com/PyCQA/bandit) (security), [Semgrep](https://semgrep.dev/) (patterns), [Trivy](https://github.com/aquasecurity/trivy) (IaC/Secret scanning), and [OSV-Scanner](https://github.com/google/osv-scanner) (dependencies).
+Install the custom SQLFluff plugin in the same Python environment where you run SQLFluff:
+
+```bash
+pip install sqlfluff-complexity
+```
+
+If your project uses `uv`:
+
+```bash
+uv add --dev sqlfluff-complexity
+```
+
+Then enable CPX rules in `.sqlfluff` and run SQLFluff:
+
+```ini
+[sqlfluff]
+dialect = postgres
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C201
+```
+
+```bash
+sqlfluff lint models/
+```
+
+For a complete walkthrough, see [docs/quickstart.md](docs/quickstart.md).
+
+## Documentation
+
+- [Quick start](docs/quickstart.md): install, configure, and run the first lint.
+- [Configuration](docs/configuration.md): thresholds, aggregate weights, and path overrides.
+- [Rules reference](docs/rules.md): CPX rule codes and what each metric counts.
+- [Reporting](docs/reporting.md): console and SARIF report mode.
+- [dbt usage](docs/dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
+- [Dialects](docs/dialects.md): tested dialects and dbt adapter mapping caveats.
+- [Docs index](docs/index.md): all user, contributor, and design documents.
+
+## Project Status
+
+- Native SQLFluff plugin rules and the companion report CLI are available in the package.
+- v1 measures SQLFluff-parsed SQL; direct dbt `manifest.json` and DAG-level metrics are deferred.
+- Architecture decisions are recorded in [docs/adr/](docs/adr/).
 
 ## Development
 
-Conventions, build commands, and AI-agent instructions: see [AGENTS.md](AGENTS.md). Claude Code–specific config lives in `CLAUDE.md` (it imports [AGENTS.md](AGENTS.md)) and in [`.claude/`](.claude/).
-
-```bash
-make setup      # Install dependencies and set up environment
-make lint       # Run all linters via Trunk
-make format     # Auto-format code via Trunk
-make test       # Run pytest test suite
-```
+Contributor setup, Nox sessions, fixture authoring, ADR workflow, and verifier guidance live in
+[CONTRIBUTING.md](CONTRIBUTING.md). Agent-specific project instructions live in
+[AGENTS.md](AGENTS.md).

@@ -1,10 +1,11 @@
-# Python Package Template — project instructions
+# sqlfluff-complexity — project instructions
 
 Authoritative shared instructions for humans and coding agents. How each product loads this repo: [Coding agents & instruction files](#coding-agents--instruction-files).
 
 ## Project overview
 
-Python package template. Tooling:
+`sqlfluff-complexity` is a Python package for SQLFluff complexity rules and reporting.
+Tooling:
 
 - **Package manager**: [uv](https://github.com/astral-sh/uv)
 - **Build system**: [Hatchling](https://hatch.pypa.io/latest/)
@@ -37,7 +38,7 @@ make clean        # Clean build artifacts
 
 ## Testing
 
-- Tests live under `src/your_package/tests/` (colocated with the package)
+- Tests live under `src/sqlfluff_complexity/tests/` (colocated with the package)
 - Test files must match `test_*.py`
 - Run `make test` before commits
 - Aim for meaningful coverage on critical paths
@@ -71,7 +72,7 @@ make clean        # Clean build artifacts
 
 ## Architecture
 
-- Package source: `src/your_package/` (rename when initializing a real project)
+- Package source: `src/sqlfluff_complexity/`
 - Dev scripts: `dev/`
 - CI/CD: `.github/workflows/`
 - **Claude Code** automation: [`.claude/`](.claude/) — see [CLAUDE.md](CLAUDE.md) for how Claude loads this repo and the directory layout

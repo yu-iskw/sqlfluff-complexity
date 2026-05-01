@@ -1,15 +1,13 @@
-# OpenAI Codex — project-scoped defaults (loaded when this repository is trusted).
-# Precedence: https://developers.openai.com/codex/config-basic
-# Sandboxing: https://developers.openai.com/codex/concepts/sandboxing
-# On Linux/WSL2, install bubblewrap so `bwrap` is on PATH; macOS uses Seatbelt.
-# Config reference: https://developers.openai.com/codex/config-reference
-
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 
-# Used when sandbox_mode = "workspace-write". Outbound network is off in-sandbox
-# by default; commands that need the network (e.g. uv/pip fetches) use the
-# product approval flow when they must leave this boundary.
 [sandbox_workspace_write]
-writable_roots = []
 network_access = false
+writable_roots = []
+
+[shell_environment_policy]
+inherit = "core"
+
+[shell_environment_policy.set]
+PYTHONDONTWRITEBYTECODE = "1"
+PYTHONUNBUFFERED = "1"

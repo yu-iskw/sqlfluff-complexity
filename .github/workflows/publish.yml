@@ -6,14 +6,14 @@ on:
       - created
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
+    environment:
+      name: release
+      deployment: true
     defaults:
       run:
         shell: bash
-    env:
-      PYTHON_PACKAGE_NAME: YOUR_PYTHON_PACKAGE_NAME
-      PYTHON_NAME_SPACE: YOUR_PYTHON_NAME_SPACE
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -23,11 +23,38 @@ jobs:
       - name: Install uv
         run: |
           pip install -r requirements.setup.txt
-      - name: Publish
-        env:
-          UV_PUBLISH_TOKEN: "${{ secrets.PYPI_API_TOKEN }}"
+      - name: Build distributions
         run: |
-          bash dev/publish.sh "pypi"
+          uv build
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-distributions
+          path: dist/
+
+  publish:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sqlfluff-complexity
+    permissions:
+      id-token: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      PYTHON_PACKAGE_NAME: sqlfluff-complexity
+      PYTHON_NAME_SPACE: sqlfluff_complexity
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v5
+        with:
+          name: release-distributions
+          path: dist/
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@v1.13.0
 
   test-published-package:
     needs:
@@ -40,7 +67,8 @@ jobs:
       run:
         shell: bash
     env:
-      PYTHON_PACKAGE_NAME: YOUR_PYTHON_PACKAGE_NAME
+      PYTHON_PACKAGE_NAME: sqlfluff-complexity
+      PYTHON_NAME_SPACE: sqlfluff_complexity
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -56,4 +84,4 @@ jobs:
           python3 -m pip install -U "${{ env.PYTHON_PACKAGE_NAME}}"
       - name: Test package
         run: |
-          uv run python -m "${{ env.PYTHON_NAME_SPACE }}"
+          python3 -m "${{ env.PYTHON_NAME_SPACE }}"

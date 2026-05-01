@@ -1,0 +1,14 @@
+[sqlfluff]
+dialect = duckdb
+templater = dbt
+rules = CPX_C201
+
+[sqlfluff:templater:dbt]
+project_dir = .
+profiles_dir = .
+profile = dbt_mini_project
+target = dev
+dbt_skip_compilation_error = False
+
+[sqlfluff:rules:CPX_C201]
+max_complexity_score = 100
