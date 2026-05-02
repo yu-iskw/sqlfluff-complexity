@@ -188,12 +188,7 @@ def _cte_query_body(cte: BaseSegment) -> BaseSegment | None:
 
 
 def _table_reference_names(root: BaseSegment) -> set[str]:
-    """Collect normalized bare names from ``table_reference`` segments (best-effort).
-
-    Nested ``WITH`` blocks inside a CTE body are separate scopes; we do not descend into
-    ``with_compound_statement`` subtrees so inner-local references are not attributed as
-    edges between **this** WITH clause's CTEs (PR review: nested WITH scope).
-    """
+    """Bare ``table_reference`` names under ``root``, excluding nested ``WITH`` subtrees."""
     names: set[str] = set()
     stack: list[BaseSegment] = [root]
     while stack:
