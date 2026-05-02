@@ -34,6 +34,27 @@ def _parse(sql: str, *, dialect: str = "ansi") -> BaseSegment:
     return parsed.tree
 
 
+def test_metrics_nested_with_same_alias_does_not_false_edge_to_outer_cte() -> None:
+    """Inner WITH refs must not be attributed as edges among outer CTEs (same alias name)."""
+    sql = dedent("""
+        WITH
+          foo AS (SELECT 1 AS id),
+          bar AS (
+            WITH
+              foo AS (SELECT 2 AS id),
+              baz AS (SELECT * FROM foo)
+            SELECT * FROM baz
+          )
+        SELECT * FROM bar
+        """).strip()
+    tree = _parse(sql)
+    with_roots = list(_iter_with_compound_statements(tree))
+    assert len(with_roots) == 2
+    outer_with, inner_with = with_roots
+    assert cte_dependency_depth_for_with_clause(outer_with) == 1
+    assert cte_dependency_depth_for_with_clause(inner_with) == 2
+
+
 def test_metrics_independent_ctes_low_chain_depth() -> None:
     """Independent CTEs should have shallow dependency depth vs count."""
     sql = """

@@ -120,7 +120,9 @@ is still the **maximum** depth across all `WITH` blocks in the file (a broader s
 
 - Only dependencies expressed as **bare** `table_reference` names (single identifier segment) to another **CTE in the same `WITH`** are counted. Multi-part names (`schema.table`) are **ignored** for matching to avoid false edges—so a dependency that only appears as qualified may be **undercounted**.
 - Alias parsing uses the **first** `identifier` child of each `common_table_expression`; unusual structures could theoretically mismatch (rare with SQLFluff’s grammar).
-- Cyclic CTE reference graphs are handled safely but depth in a cycle is **approximate** (not expected in typical SQL).
+- Nested `WITH` blocks inside a CTE body are **not** traversed when collecting `table_reference`
+  names for edges between **this** clause's CTEs—so a bare name that resolves only inside an inner
+  `WITH` cannot be mistaken for a reference to an outer CTE that shares the same alias.
 
 CTE definitions may include an explicit column list (`WITH x (c1, c2) AS (...)`); the dependency
 walk uses the query body after `AS`, not the column list bracket.

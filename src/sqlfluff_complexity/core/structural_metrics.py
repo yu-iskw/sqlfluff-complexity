@@ -6,8 +6,6 @@ import weakref
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from sqlfluff.core.parser.segments.base import BaseSegment
 
 
@@ -190,12 +188,26 @@ def _cte_query_body(cte: BaseSegment) -> BaseSegment | None:
 
 
 def _table_reference_names(root: BaseSegment) -> set[str]:
-    """Collect normalized bare names from ``table_reference`` segments (best-effort)."""
+    """Collect normalized bare names from ``table_reference`` segments (best-effort).
+
+    Nested ``WITH`` blocks inside a CTE body are separate scopes; we do not descend into
+    ``with_compound_statement`` subtrees so inner-local references are not attributed as
+    edges between **this** WITH clause's CTEs (PR review: nested WITH scope).
+    """
     names: set[str] = set()
-    for seg in _iter_segments(root, "table_reference"):
-        name = _simple_table_reference_name(seg)
-        if name:
-            names.add(name)
+    stack: list[BaseSegment] = [root]
+    while stack:
+        seg = stack.pop()
+        st = getattr(seg, "type", "")
+        if st == "with_compound_statement":
+            continue
+        if st == "table_reference":
+            name = _simple_table_reference_name(seg)
+            if name:
+                names.add(name)
+            continue
+        children = getattr(seg, "segments", ()) or ()
+        stack.extend(reversed(children))
     return names
 
 
@@ -213,14 +225,3 @@ def _simple_table_reference_name(table_ref: BaseSegment) -> str:
         return ""
     raw = (getattr(table_ref, "raw", "") or "").strip()
     return raw.lower() if raw else ""
-
-
-def _iter_segments(root: BaseSegment, segment_type: str) -> Iterator[BaseSegment]:
-    """Depth-first iteration yielding segments of ``segment_type``."""
-    stack = [root]
-    while stack:
-        seg = stack.pop()
-        if getattr(seg, "type", "") == segment_type:
-            yield seg
-        children = getattr(seg, "segments", ()) or ()
-        stack.extend(reversed(children))
