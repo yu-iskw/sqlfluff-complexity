@@ -71,15 +71,15 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
             return None
 
         show_c201, cap = contributor_display_settings(context.config, "CPX_C201")
-        top_n = max(1, cap)
         remediation = remediation_for_rule("CPX_C201")
 
-        if not show_c201:
+        if not show_c201 or cap < 1:
             description = (
                 f"CPX_C201: aggregate complexity score {score} exceeds "
                 f"max_complexity_score={limit}. {remediation} Metrics: {metrics.format_breakdown()}."
             )
         else:
+            top_n = cap
             contributors_line = explain_score_contributors(metrics, weights, max_items=top_n)
             top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
             hint = refactoring_hint_for_contributors(top_keys)
