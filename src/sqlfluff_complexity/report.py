@@ -54,17 +54,33 @@ class ReportLimit:
     policy_key: str
     label: str
     config_key: str
+    message_label: str
 
 
 REPORT_LIMITS = (
-    ReportLimit("CPX_C101", "ctes", "max_ctes", "CTE count", "max_ctes"),
-    ReportLimit("CPX_C102", "joins", "max_joins", "Join count", "max_joins"),
+    ReportLimit(
+        "CPX_C101",
+        "ctes",
+        "max_ctes",
+        "CTE count",
+        "max_ctes",
+        message_label="cte count",
+    ),
+    ReportLimit(
+        "CPX_C102",
+        "joins",
+        "max_joins",
+        "Join count",
+        "max_joins",
+        message_label="join count",
+    ),
     ReportLimit(
         "CPX_C103",
         "subquery_depth",
         "max_subquery_depth",
         "Nested subquery depth",
         "max_subquery_depth",
+        message_label="nested subquery depth",
     ),
     ReportLimit(
         "CPX_C104",
@@ -72,6 +88,7 @@ REPORT_LIMITS = (
         "max_case_expressions",
         "CASE expression count",
         "max_case_expressions",
+        message_label="CASE expression count",
     ),
     ReportLimit(
         "CPX_C105",
@@ -79,6 +96,7 @@ REPORT_LIMITS = (
         "max_boolean_operators",
         "Boolean operator count",
         "max_boolean_operators",
+        message_label="boolean operator count",
     ),
     ReportLimit(
         "CPX_C106",
@@ -86,6 +104,7 @@ REPORT_LIMITS = (
         "max_window_functions",
         "Window function count",
         "max_window_functions",
+        message_label="window function count",
     ),
 )
 
@@ -155,6 +174,14 @@ def format_json_report(report: ComplexityReport) -> str:
 
 def _finding_to_canonical_dict(finding: ComplexityFinding) -> dict[str, object]:
     return findings_to_json_payload((finding,))["findings"][0]
+
+
+def _console_message_line(rule_id: str, message: str) -> str:
+    """Avoid ``RULE: RULE: ...`` when ``message`` already includes the rule prefix."""
+    prefix = f"{rule_id}: "
+    if message.startswith(prefix):
+        return message
+    return f"{prefix}{message}"
 
 
 def analyze_paths_findings(
@@ -336,10 +363,9 @@ def _metric_finding(
     if actual <= max_allowed:
         return None
 
-    label_lower = limit_spec.label[0].lower() + limit_spec.label[1:]
     message = metric_threshold_violation_message(
         rule_id=limit_spec.rule_id,
-        description_label=label_lower,
+        description_label=limit_spec.message_label,
         actual=actual,
         config_key=limit_spec.config_key,
         limit=max_allowed,
@@ -553,5 +579,5 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
                 else ""
             )
             extra = f" [{summ}]" if summ else ""
-            lines.append(f"  {finding.rule_id}: {finding.message}{extra}")
+            lines.append(f"  {_console_message_line(finding.rule_id, finding.message)}{extra}")
     return lines
