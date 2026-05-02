@@ -15,6 +15,10 @@
 COVERAGE_FAIL_UNDER ?= 0
 PYTEST_MARKER ?= not dialect_extra and not dbt_templater
 PYTEST_PATH ?= src/sqlfluff_complexity/tests
+XENON_MAX_ABSOLUTE ?= B
+XENON_MAX_MODULES ?= A
+XENON_MAX_AVERAGE ?= A
+XENON_PATH ?= src/sqlfluff_complexity
 
 # Set up an environment
 .PHONY: setup
@@ -45,6 +49,11 @@ format:
 .PHONY: dead-code vulture
 dead-code vulture:
 	uv run vulture
+
+# Run cyclomatic complexity checks with Xenon.
+.PHONY: complexity xenon
+complexity xenon:
+	uv run xenon --max-absolute $(XENON_MAX_ABSOLUTE) --max-modules $(XENON_MAX_MODULES) --max-average $(XENON_MAX_AVERAGE) $(XENON_PATH)
 
 # Run the unit tests.
 .PHONY: test
