@@ -22,6 +22,8 @@ make lint-python   # Same as `make lint` (trunk check)
 make format        # Auto-format code via Trunk
 make dead-code     # Find unused code with Vulture (see pyproject [tool.vulture])
 make vulture       # Same as make dead-code
+make complexity    # Check cyclomatic complexity with Xenon
+make xenon         # Same as make complexity
 make test          # Run pytest test suite
 make coverage      # Run default Python tests with coverage and print missing lines
 make coverage-html # Generate an HTML coverage report under htmlcov/
@@ -55,7 +57,7 @@ make clean         # Clean build artifacts and coverage outputs
 
 ## AI guardrails & code quality
 
-- **Cyclomatic complexity**: max **10** per function (Ruff `C901`)
+- **Cyclomatic complexity**: max **10** per function (Ruff `C901`); run `make complexity` for Xenon enforcement
 - **Maintainability**: CodeQL `security-and-quality` tracks long-term health
 - If an edit pushes complexity over **10**, refactor into smaller functions before finishing
 
@@ -107,6 +109,7 @@ Slash-invoked skills live under [`.claude/skills/<name>/SKILL.md`](.claude/skill
 | ---------------------- | --------------------------------------------------------------------------- |
 | `build-and-fix`        | Build or packaging failures                                                 |
 | `codeql-fix`           | Local CodeQL (`make codeql`); requires CodeQL CLI                           |
+| `complexity-check`     | Cyclomatic complexity analysis or Xenon threshold failures                  |
 | `lint-and-fix`         | Trunk / linter failures                                                     |
 | `test-and-fix`         | Failing tests                                                               |
 | `test-coverage`        | Python test coverage checks, threshold enforcement, or missing-line review  |
