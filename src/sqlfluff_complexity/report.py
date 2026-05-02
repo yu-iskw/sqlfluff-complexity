@@ -181,10 +181,11 @@ def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntr
     parse_errors = [violation.desc() for violation in parsed.violations]
     if parse_errors or parsed.tree is None:
         err_msg = parse_errors[0] if parse_errors else "SQLFluff did not return a parse tree."
+        messages = parse_errors or [err_msg]
         return ReportEntry(
             path=path,
-            errors=parse_errors or [err_msg],
-            findings=[_parse_error_finding(str(path), err_msg)],
+            errors=messages,
+            findings=[_parse_error_finding(str(path), msg) for msg in messages],
         )
 
     analysis = analyze_segment_tree(parsed.tree)
@@ -245,6 +246,20 @@ def _parse_error_finding(path_str: str, message: str) -> ComplexityFinding:
     )
 
 
+def _report_contributor_settings(config: FluffConfig, rule_id: str) -> tuple[bool, int]:
+    """Match SQLFluff lint: read ``show_contributors`` / ``max_contributors`` per rule section."""
+    show_raw = config.get("show_contributors", section=("rules", rule_id), default=True)
+    show_contributors = str(show_raw).strip().lower() in {"1", "true", "yes", "on"}
+    max_c = int(
+        config.get(
+            "max_contributors",
+            section=("rules", rule_id),
+            default=DEFAULT_MAX_CONTRIBUTORS,
+        ),
+    )
+    return show_contributors, max_c
+
+
 def _findings_for_file(
     *,
     path: Path,
@@ -261,17 +276,9 @@ def _findings_for_file(
     path_s = str(path)
 
     findings: list[ComplexityFinding] = []
-    show_raw = config.get("show_contributors", section=("rules", "CPX_C102"), default=True)
-    show_contributors = str(show_raw).strip().lower() in {"1", "true", "yes", "on"}
-    max_c = int(
-        config.get(
-            "max_contributors",
-            section=("rules", "CPX_C102"),
-            default=DEFAULT_MAX_CONTRIBUTORS,
-        ),
-    )
 
     for limit in REPORT_LIMITS:
+        show_contributors, max_c = _report_contributor_settings(config, limit.rule_id)
         f = _metric_finding(
             path_s=path_s,
             line=line_i,
@@ -459,9 +466,7 @@ def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
 
 
 def _json_entry(entry: ReportEntry) -> dict[str, object]:
-    detail = [
-        _finding_to_canonical_dict(f) for f in entry.findings if f.rule_id != "CPX_PARSE_ERROR"
-    ]
+    detail = [_finding_to_canonical_dict(f) for f in entry.findings]
     legacy = [
         {"level": f.level, "message": f.message, "rule_id": f.rule_id} for f in entry.findings
     ]
