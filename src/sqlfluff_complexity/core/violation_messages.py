@@ -24,10 +24,7 @@ def metric_threshold_violation_message(
 ) -> str:
     """Human-readable message for C101-C106 threshold violations."""
     remediation = remediation_for_rule(rule_id)
-    body = (
-        f"{rule_id}: {description_label} {actual} exceeds "
-        f"{config_key}={limit}. {remediation}"
-    )
+    body = f"{rule_id}: {description_label} {actual} exceeds {config_key}={limit}. {remediation}"
     if not show_contributors or max_contributors < 1:
         return body
 

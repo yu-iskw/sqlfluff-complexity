@@ -76,6 +76,7 @@ def test_c201_reports_aggregate_score_violation() -> None:
     assert "Examples:" in desc
     assert "Reduce the largest" in desc or "inspect the metric breakdown" in desc
 
+
 def test_c101_reports_cte_count_violation() -> None:
     """CPX_C101 should fail when a statement exceeds max_ctes."""
     linted = lint_sql(

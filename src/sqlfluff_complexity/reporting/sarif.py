@@ -12,6 +12,8 @@ from sqlfluff_complexity.core.findings import ComplexityFinding
 from sqlfluff_complexity.core.remediation import REMEDIATIONS
 
 SARIF_SCHEMA_URL = "https://json.schemastore.org/sarif-2.1.0.json"
+
+
 def _sarif_rule_metadata(rule_id: str) -> dict[str, Any]:
     remediation = REMEDIATIONS[rule_id]
     return {

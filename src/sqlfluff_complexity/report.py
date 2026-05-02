@@ -371,7 +371,11 @@ def _c201_finding(
     rem = remediation_for_rule("CPX_C201")
     top_n = max(
         1,
-        int(config.get("max_contributors", section=("rules", "CPX_C201"), default=DEFAULT_MAX_CONTRIBUTORS)),
+        int(
+            config.get(
+                "max_contributors", section=("rules", "CPX_C201"), default=DEFAULT_MAX_CONTRIBUTORS
+            )
+        ),
     )
     explain = explain_score_contributors(metrics, weights, max_items=top_n)
     top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
@@ -458,7 +462,9 @@ def _json_entry(entry: ReportEntry) -> dict[str, object]:
     detail = [
         _finding_to_canonical_dict(f) for f in entry.findings if f.rule_id != "CPX_PARSE_ERROR"
     ]
-    legacy = [{"level": f.level, "message": f.message, "rule_id": f.rule_id} for f in entry.findings]
+    legacy = [
+        {"level": f.level, "message": f.message, "rule_id": f.rule_id} for f in entry.findings
+    ]
     base: dict[str, object] = {
         "errors": list(entry.errors),
         "findings": legacy,
