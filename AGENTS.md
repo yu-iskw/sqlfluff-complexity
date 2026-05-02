@@ -16,16 +16,18 @@ Tooling:
 ## Quick commands
 
 ```bash
-make setup        # Install dependencies and set up environment
-make lint         # Run all linters via Trunk
-make lint-python  # Same as `make lint` (trunk check)
-make format       # Auto-format code via Trunk
-make dead-code    # Find unused code with Vulture (see pyproject [tool.vulture])
-make vulture      # Same as make dead-code
-make test         # Run pytest test suite
-make codeql       # Run local CodeQL analysis
-make build        # Build the package
-make clean        # Clean build artifacts
+make setup         # Install dependencies and set up environment
+make lint          # Run all linters via Trunk
+make lint-python   # Same as `make lint` (trunk check)
+make format        # Auto-format code via Trunk
+make dead-code     # Find unused code with Vulture (see pyproject [tool.vulture])
+make vulture       # Same as make dead-code
+make test          # Run pytest test suite
+make coverage      # Run default Python tests with coverage and print missing lines
+make coverage-html # Generate an HTML coverage report under htmlcov/
+make codeql        # Run local CodeQL analysis
+make build         # Build the package
+make clean         # Clean build artifacts and coverage outputs
 ```
 
 ## Code style
@@ -41,6 +43,7 @@ make clean        # Clean build artifacts
 - Tests live under `src/sqlfluff_complexity/tests/` (colocated with the package)
 - Test files must match `test_*.py`
 - Run `make test` before commits
+- Run `make coverage` to measure Python test coverage; set `COVERAGE_FAIL_UNDER=<percent>` when enforcing a threshold locally or in CI
 - Aim for meaningful coverage on critical paths
 
 ## Security
@@ -106,6 +109,7 @@ Slash-invoked skills live under [`.claude/skills/<name>/SKILL.md`](.claude/skill
 | `codeql-fix`           | Local CodeQL (`make codeql`); requires CodeQL CLI                           |
 | `lint-and-fix`         | Trunk / linter failures                                                     |
 | `test-and-fix`         | Failing tests                                                               |
+| `test-coverage`        | Python test coverage checks, threshold enforcement, or missing-line review  |
 | `setup-dev-env`        | First-time or broken environment                                            |
 | `python-upgrade`       | Dependency upgrades with uv                                                 |
 | `security-scan`        | Trivy / OSV / Grype (`make scan-vulnerabilities`)                           |
