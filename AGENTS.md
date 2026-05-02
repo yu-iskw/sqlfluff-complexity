@@ -109,10 +109,8 @@ Slash-invoked skills live under [`.claude/skills/<name>/SKILL.md`](.claude/skill
 | ---------------------- | --------------------------------------------------------------------------- |
 | `build-and-fix`        | Build or packaging failures                                                 |
 | `codeql-fix`           | Local CodeQL (`make codeql`); requires CodeQL CLI                           |
-| `complexity-check`     | Cyclomatic complexity analysis or Xenon threshold failures                  |
-| `lint-and-fix`         | Trunk / linter failures                                                     |
-| `test-and-fix`         | Failing tests                                                               |
-| `test-coverage`        | Python test coverage checks, threshold enforcement, or missing-line review  |
+| `lint-and-fix`         | Trunk / linter failures, formatting issues, or Xenon complexity failures    |
+| `test-and-fix`         | Failing tests, coverage checks, or missing-line review                      |
 | `setup-dev-env`        | First-time or broken environment                                            |
 | `python-upgrade`       | Dependency upgrades with uv                                                 |
 | `security-scan`        | Trivy / OSV / Grype (`make scan-vulnerabilities`)                           |
