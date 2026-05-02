@@ -18,6 +18,7 @@ An autonomous loop for the agent to identify, fix, and verify linting and format
    - For linting violations, apply the minimum necessary change to the source code to resolve the error.
    - Resolve findings by changing code, types, imports, or structure—not with suppressions (see **Constraints**).
 4. **Verify**: Re-run `make lint` (Ruff, **Pyright**, Pylint, and security tools via Trunk).
+   - Run **`make dead-code`** (Vulture; reads `[tool.vulture]` in `pyproject.toml`) so unused code is caught alongside lint—fix findings by removing dead code or tightening tests/mocks, not by weakening Vulture.
    - For type-only triage, `uv run pyright` also reads `pyproject.toml` `[tool.pyright]`; prefer Trunk for CI parity.
    - If passed: Move to the next issue or finish if all are resolved.
    - If failed: Analyze the new failure and repeat the loop.

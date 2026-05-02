@@ -93,8 +93,8 @@ def test_paths_from_changed_from_subprocess(tmp_path: Path, monkeypatch: MonkeyP
     f.write_text("select 1", encoding="utf-8")
 
     def fake_run(
-        *args: object,  # noqa: ANN002
-        **kwargs: object,  # noqa: ANN003
+        *_args: object,
+        **_kwargs: object,
     ) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(
             args=["git", "diff", "--name-only", "ref...HEAD"],
@@ -112,8 +112,8 @@ def test_paths_from_changed_from_git_error(monkeypatch: MonkeyPatch, tmp_path: P
     monkeypatch.chdir(tmp_path)
 
     def fake_run(
-        *args: object,  # noqa: ANN002
-        **kwargs: object,  # noqa: ANN003
+        *_args: object,
+        **_kwargs: object,
     ) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(
             args=["git", "diff", "--name-only", "ref...HEAD"],
