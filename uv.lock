@@ -1712,6 +1712,7 @@ name = "sqlfluff-complexity"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "pathspec" },
     { name = "sqlfluff" },
 ]
 
@@ -1733,7 +1734,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "sqlfluff", specifier = ">=3.0.0,<4.0.0" }]
+requires-dist = [
+    { name = "pathspec", specifier = ">=0.12.1,<0.13" },
+    { name = "sqlfluff", specifier = ">=3.0.0,<4.0.0" },
+]
 
 [package.metadata.requires-dev]
 dbt = [

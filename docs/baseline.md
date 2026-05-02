@@ -33,6 +33,8 @@ sqlfluff-complexity baseline create models/ \
   --output .sqlfluff-complexity-baseline.json
 ```
 
+`paths` is optional when you pass `--files-from` (or stdin with `--files-from -`).
+
 Optional discovery flags match `report`: `--include`, `--exclude`, `--files-from`, `--jobs`.
 
 Default output path: `.sqlfluff-complexity-baseline.json`.

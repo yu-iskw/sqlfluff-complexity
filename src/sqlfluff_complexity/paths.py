@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import fnmatch
 import os
 import sys
 from collections.abc import Iterable, Sequence
 from io import StringIO
 from pathlib import Path
 from typing import TextIO
+
+from pathspec import PathSpec
+from pathspec.patterns.gitwildmatch import GitWildMatchPattern
 
 
 def normalize_report_path(path: Path, *, root: Path | None = None) -> str:
@@ -25,21 +27,28 @@ def normalize_report_path(path: Path, *, root: Path | None = None) -> str:
         return resolved.as_posix()
 
 
-def _path_matches_globs(rel_posix: str, patterns: Sequence[str]) -> bool:
+def _gitwildmatch_spec(patterns: Sequence[str]) -> PathSpec | None:
+    """Return a PathSpec for git-style globs, or None when ``patterns`` is empty."""
     if not patterns:
+        return None
+    return PathSpec.from_lines(GitWildMatchPattern, patterns)
+
+
+def _path_matches_globs(rel_posix: str, patterns: Sequence[str]) -> bool:
+    spec = _gitwildmatch_spec(patterns)
+    if spec is None:
         return False
-    return any(fnmatch.fnmatch(rel_posix, pat) for pat in patterns)
+    return spec.match_file(rel_posix)
 
 
 def path_matches_include(rel_posix: str, patterns: Sequence[str]) -> bool:
-    """Match ``**/*.sql`` to SQL files at any depth, including repo-root ``*.sql``."""
+    """Match relative POSIX paths using gitwildmatch semantics (including ``**``)."""
     if not patterns:
         return False
-    return any(
-        fnmatch.fnmatch(rel_posix, pat)
-        or (pat == "**/*.sql" and fnmatch.fnmatch(rel_posix, "*.sql"))
-        for pat in patterns
-    )
+    spec = _gitwildmatch_spec(patterns)
+    if spec is None:
+        return False
+    return spec.match_file(rel_posix)
 
 
 def _collect_sql_under_directory(
@@ -47,8 +56,8 @@ def _collect_sql_under_directory(
     *,
     base: Path,
     seen: set[Path],
-    include_globs: Sequence[str],
-    exclude_globs: Sequence[str],
+    include_spec: PathSpec,
+    exclude_spec: PathSpec | None,
     result: list[Path],
 ) -> None:
     for dirpath, _, filenames in os.walk(resolved_dir):
@@ -57,9 +66,9 @@ def _collect_sql_under_directory(
                 continue
             file_path = Path(dirpath) / name
             rel = normalize_report_path(file_path, root=base)
-            if not path_matches_include(rel, include_globs):
+            if not include_spec.match_file(rel):
                 continue
-            if _path_matches_globs(rel, exclude_globs):
+            if exclude_spec is not None and exclude_spec.match_file(rel):
                 continue
             fp = file_path.resolve()
             if fp not in seen:
@@ -82,6 +91,11 @@ def discover_sql_paths(
       relative to ``cwd``, POSIX-style).
     """
     base = (cwd or Path.cwd()).resolve()
+    include_spec = _gitwildmatch_spec(include_globs)
+    exclude_spec = _gitwildmatch_spec(exclude_globs)
+    if include_spec is None:
+        return []
+
     seen: set[Path] = set()
     result: list[Path] = []
 
@@ -98,8 +112,8 @@ def discover_sql_paths(
                 resolved,
                 base=base,
                 seen=seen,
-                include_globs=include_globs,
-                exclude_globs=exclude_globs,
+                include_spec=include_spec,
+                exclude_spec=exclude_spec,
                 result=result,
             )
             continue

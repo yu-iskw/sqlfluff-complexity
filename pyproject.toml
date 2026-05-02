@@ -68,7 +68,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 description = "SQLFluff plugin for SQL and dbt model complexity rules"
-dependencies = ["sqlfluff>=3.0.0,<4.0.0"]
+dependencies = ["sqlfluff>=3.0.0,<4.0.0", "pathspec>=0.12.1,<0.13"]
 
 [project.scripts]
 sqlfluff-complexity = "sqlfluff_complexity.cli:main"

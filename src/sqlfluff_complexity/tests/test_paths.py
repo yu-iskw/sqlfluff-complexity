@@ -71,6 +71,29 @@ def test_direct_file_bypasses_include(tmp_path: Path) -> None:
     assert out == [f.resolve()]
 
 
+def test_models_globstar_matches_root_and_nested_under_models(tmp_path: Path) -> None:
+    """``models/**/*.sql`` must match both models/a.sql and deeper trees (gitwildmatch)."""
+    m = tmp_path / "models"
+    m.mkdir()
+    (m / "a.sql").write_text("select 1", encoding="utf-8")
+    (m / "staging").mkdir()
+    (m / "staging" / "b.sql").write_text("select 1", encoding="utf-8")
+    (m / "x" / "y").mkdir(parents=True)
+    (m / "x" / "y" / "z.sql").write_text("select 1", encoding="utf-8")
+    out = discover_sql_paths(
+        [m],
+        cwd=tmp_path,
+        include_globs=("models/**/*.sql",),
+        exclude_globs=(),
+    )
+    rels = [normalize_report_path(p, root=tmp_path) for p in out]
+    assert set(rels) == {
+        "models/a.sql",
+        "models/staging/b.sql",
+        "models/x/y/z.sql",
+    }
+
+
 def test_read_paths_from_files_stream(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
     txt = tmp_path / "list.txt"
     txt.write_text("a.sql\n\n./b.sql\n", encoding="utf-8")

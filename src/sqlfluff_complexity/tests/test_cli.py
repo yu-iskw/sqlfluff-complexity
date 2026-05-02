@@ -294,6 +294,56 @@ def test_baseline_create_writes_output(tmp_path: Path) -> None:
     assert any(str(k).endswith("m/a.sql") for k in data["entries"])
 
 
+def test_baseline_create_files_from_only(tmp_path: Path) -> None:
+    """baseline create may use --files-from without positional paths."""
+    lst = tmp_path / "paths.txt"
+    sql = tmp_path / "only.sql"
+    sql.write_text("select 1", encoding="utf-8")
+    lst.write_text(f"{sql}\n", encoding="utf-8")
+    out = tmp_path / "base.json"
+    assert (
+        main(
+            [
+                "baseline",
+                "create",
+                "--dialect",
+                "ansi",
+                "--files-from",
+                str(lst),
+                "--output",
+                str(out),
+            ],
+        )
+        == 0
+    )
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert any(str(k).endswith("only.sql") for k in data["entries"])
+
+
+def test_check_invalid_baseline_entries_not_object_exits_2(tmp_path: Path) -> None:
+    """Malformed baseline JSON should exit 2, not crash."""
+    sql = tmp_path / "x.sql"
+    sql.write_text("select 1", encoding="utf-8")
+    bad = tmp_path / "bad.json"
+    bad.write_text(
+        '{"entries": [], "schema_version": "1.0", "tool": "sqlfluff-complexity"}\n',
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "check",
+            str(sql),
+            "--dialect",
+            "ansi",
+            "--baseline",
+            str(bad),
+            "--fail-on",
+            "none",
+        ],
+    )
+    assert code == 2
+
+
 def test_check_regression_returns_nonzero(tmp_path: Path) -> None:
     """check --fail-on regression should exit 1 when score increases."""
     sql = tmp_path / "x.sql"

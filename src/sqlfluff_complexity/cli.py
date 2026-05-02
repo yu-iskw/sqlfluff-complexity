@@ -166,9 +166,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     baseline_create.add_argument(
         "paths",
-        nargs="+",
+        nargs="*",
         type=Path,
-        help="SQL files or directories to include.",
+        help="SQL files or directories to include (optional if --files-from is set).",
     )
     _add_path_discovery_args(baseline_create)
     baseline_create.add_argument(
@@ -265,7 +265,7 @@ def _run_baseline_create(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     include, exclude = _effective_include_exclude(args)
     merged = gather_sql_paths(
-        args.paths,
+        getattr(args, "paths", None) or [],
         cwd=cwd,
         files_from=getattr(args, "files_from", None),
         include_globs=include,
@@ -301,7 +301,7 @@ def _run_check(args: argparse.Namespace) -> int:
     except OSError as exc:
         print(f"could not read baseline: {exc}", flush=True)
         return 2
-    except ValueError as exc:
+    except (ValueError, TypeError) as exc:
         print(f"invalid baseline: {exc}", flush=True)
         return 2
 

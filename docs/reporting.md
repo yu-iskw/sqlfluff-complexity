@@ -34,7 +34,7 @@ sqlfluff-complexity report \
 ### Path discovery
 
 - **Positional paths**: files are always analyzed; directories recurse and collect `*.sql` files filtered by `--include` / `--exclude` (see below).
-- **`--include GLOB`**: repeatable; defaults to `**/*.sql` for files discovered under directories.
+- **`--include GLOB`**: repeatable; defaults to `**/*.sql` for files discovered under directories. Matching uses **gitwildmatch** semantics (same family as `.gitignore`; `**` crosses directories).
 - **`--exclude GLOB`**: repeatable; excludes matching paths (relative POSIX paths).
 - **`--files-from PATH_OR_DASH`**: newline-separated paths; use `-` for stdin; blank lines ignored; paths are filtered by include/exclude when combined with discovery.
 - **Changed files vs a git ref**: run git (or your VCS) in the shell and pipe paths into the tool—Python does not invoke subprocesses for discovery (see example below).
