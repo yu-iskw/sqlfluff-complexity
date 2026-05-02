@@ -328,10 +328,14 @@ def _metric_finding(
         show_contributors=show_contributors,
     )
     rem = remediation_for_rule(limit_spec.rule_id)
-    picked = top_contributors(
-        contributors,
-        metric=limit_spec.metric_name,
-        limit=max_contributors,
+    picked = (
+        top_contributors(
+            contributors,
+            metric=limit_spec.metric_name,
+            limit=max_contributors,
+        )
+        if show_contributors
+        else ()
     )
 
     return ComplexityFinding(
@@ -362,8 +366,28 @@ def _c201_finding(
     config: FluffConfig,
 ) -> ComplexityFinding:
     rem = remediation_for_rule("CPX_C201")
-    _, max_c201 = contributor_display_settings(config, "CPX_C201")
+    show_c201, max_c201 = contributor_display_settings(config, "CPX_C201")
     top_n = max(1, max_c201)
+
+    if not show_c201:
+        message = (
+            f"CPX_C201: aggregate complexity score {score} exceeds max_complexity_score={threshold}. "
+            f"{rem} Metrics: {metrics.format_breakdown()}."
+        )
+        return ComplexityFinding(
+            rule_id="CPX_C201",
+            metric="complexity_score",
+            message=message,
+            remediation=rem,
+            location=SourceLocation(path=path_s, line=line, column=col),
+            metrics=metrics,
+            score=score,
+            threshold=threshold,
+            contributors=(),
+            level="warning",
+            aggregate_score=score,
+        )
+
     explain = explain_score_contributors(metrics, weights, max_items=top_n)
     top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
     hint = refactoring_hint_for_contributors(top_keys)
@@ -488,7 +512,11 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
         if finding.rule_id == "CPX_PARSE_ERROR":
             lines.append(f"  {finding.rule_id}: {finding.message}")
         else:
-            summ = format_contributor_summary(finding.contributors, limit=3)
+            summ = (
+                format_contributor_summary(finding.contributors, limit=3)
+                if finding.contributors
+                else ""
+            )
             extra = f" [{summ}]" if summ else ""
             lines.append(f"  {finding.rule_id}: {finding.message}{extra}")
     return lines

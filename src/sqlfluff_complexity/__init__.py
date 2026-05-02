@@ -22,7 +22,10 @@ from typing import TYPE_CHECKING, Any
 from sqlfluff.core.config import load_config_resource
 from sqlfluff.core.plugin import hookimpl
 
-__version__ = importlib.metadata.version("sqlfluff-complexity")
+try:
+    __version__ = importlib.metadata.version("sqlfluff-complexity")
+except importlib.metadata.PackageNotFoundError:
+    __version__ = "0.0.0"
 
 if TYPE_CHECKING:
     from sqlfluff.core.rules import BaseRule

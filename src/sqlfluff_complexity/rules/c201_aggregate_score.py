@@ -8,6 +8,7 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 from sqlfluff_complexity.core.analysis import format_contributor_examples
+from sqlfluff_complexity.core.cpx_config import contributor_display_settings
 from sqlfluff_complexity.core.explainability import (
     explain_score_contributors,
     ranked_weighted_contributions,
@@ -41,6 +42,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         "mode",
         "path_overrides",
         "max_contributors",
+        "show_contributors",
     ]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
@@ -49,6 +51,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
     mode: str
     path_overrides: str
     max_contributors: int
+    show_contributors: str
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
@@ -67,24 +70,33 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         if policy.mode == "report" or score <= limit:
             return None
 
-        top_n = max(1, int(self.max_contributors))
-        contributors = explain_score_contributors(metrics, weights, max_items=top_n)
-        top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
-        hint = refactoring_hint_for_contributors(top_keys)
-        examples = format_contributor_examples(
-            analysis.contributors,
-            weights,
-            max_items=top_n,
-        )
-        examples_clause = f" {examples}" if examples else ""
-
+        show_c201, cap = contributor_display_settings(context.config, "CPX_C201")
+        top_n = max(1, cap)
         remediation = remediation_for_rule("CPX_C201")
+
+        if not show_c201:
+            description = (
+                f"CPX_C201: aggregate complexity score {score} exceeds "
+                f"max_complexity_score={limit}. {remediation} Metrics: {metrics.format_breakdown()}."
+            )
+        else:
+            contributors_line = explain_score_contributors(metrics, weights, max_items=top_n)
+            top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
+            hint = refactoring_hint_for_contributors(top_keys)
+            examples = format_contributor_examples(
+                analysis.contributors,
+                weights,
+                max_items=top_n,
+            )
+            examples_clause = f" {examples}" if examples else ""
+            tail = f"Top contributors: {contributors_line}.{examples_clause} {hint}".strip()
+            description = (
+                f"CPX_C201: aggregate complexity score {score} exceeds "
+                f"max_complexity_score={limit}. {remediation} Metrics: {metrics.format_breakdown()}. "
+                f"{tail}"
+            )
 
         return LintResult(
             anchor=context.segment,
-            description=(
-                f"CPX_C201: aggregate complexity score {score} exceeds "
-                f"max_complexity_score={limit}. {remediation} Metrics: {metrics.format_breakdown()}. "
-                f"Top contributors: {contributors}.{examples_clause} {hint}"
-            ),
+            description=description,
         )
