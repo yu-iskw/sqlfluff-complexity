@@ -135,4 +135,3 @@ def test_c107_nested_select_outer_only() -> None:
         """,
     )
     assert len(rule_violations(linted, "CPX_C107")) <= 1
-
