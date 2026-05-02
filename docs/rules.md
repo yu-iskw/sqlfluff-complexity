@@ -4,16 +4,16 @@
 
 ## Metric Summary
 
-| Rule       | Metric                              | Default | Config key                   |
-| ---------- | ----------------------------------- | ------: | ---------------------------- |
-| `CPX_C101` | Common table expressions            | 8       | `max_ctes`                   |
-| `CPX_C102` | Join clauses                        | 8       | `max_joins`                  |
-| `CPX_C103` | Nested subquery depth               | 3       | `max_subquery_depth`         |
-| `CPX_C104` | `CASE` expressions                  | 10      | `max_case_expressions`       |
-| `CPX_C105` | Boolean `AND` / `OR` operators      | 20      | `max_boolean_operators`      |
-| `CPX_C106` | Window functions                    | 10      | `max_window_functions`       |
-| `CPX_C107` | Longest CTE dependency chain        | 5       | `max_cte_dependency_depth`   |
-| `CPX_C201` | Aggregate weighted complexity score | 60      | `max_complexity_score`       |
+| Rule       | Metric                              | Default | Config key                 |
+| ---------- | ----------------------------------- | ------: | -------------------------- |
+| `CPX_C101` | Common table expressions            |       8 | `max_ctes`                 |
+| `CPX_C102` | Join clauses                        |       8 | `max_joins`                |
+| `CPX_C103` | Nested subquery depth               |       3 | `max_subquery_depth`       |
+| `CPX_C104` | `CASE` expressions                  |      10 | `max_case_expressions`     |
+| `CPX_C105` | Boolean `AND` / `OR` operators      |      20 | `max_boolean_operators`    |
+| `CPX_C106` | Window functions                    |      10 | `max_window_functions`     |
+| `CPX_C107` | Longest CTE dependency chain        |       5 | `max_cte_dependency_depth` |
+| `CPX_C201` | Aggregate weighted complexity score |      60 | `max_complexity_score`     |
 
 ## CPX_C101: Too Many CTEs
 
