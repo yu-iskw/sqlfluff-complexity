@@ -115,7 +115,10 @@ def _cte_query_body(cte: BaseSegment) -> BaseSegment | None:
     children = tuple(getattr(cte, "segments", ()) or ())
     seen_as = False
     for child in children:
-        if getattr(child, "type", "") == "keyword" and getattr(child, "raw_upper", "").strip() == "AS":
+        if (
+            getattr(child, "type", "") == "keyword"
+            and getattr(child, "raw_upper", "").strip() == "AS"
+        ):
             seen_as = True
             continue
         if seen_as and getattr(child, "type", "") == "bracketed":
