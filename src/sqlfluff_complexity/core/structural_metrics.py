@@ -42,7 +42,7 @@ def max_case_expression_nesting_depth(root: BaseSegment) -> int:
 
 def _cte_dependency_depth_for_with(with_root: BaseSegment) -> int:
     """Compute longest CTE dependency chain for one WITH compound statement."""
-    cte_segments = _direct_child_ctes(with_root)
+    cte_segments = list(direct_child_common_table_expressions(with_root))
     if not cte_segments:
         return 0
 
@@ -54,13 +54,13 @@ def _cte_dependency_depth_for_with(with_root: BaseSegment) -> int:
     return _longest_dependency_chain_depth(names_in_scope, edges)
 
 
-def _direct_child_ctes(with_root: BaseSegment) -> list[BaseSegment]:
-    """Only top-level CTEs under the WITH (not nested inside brackets)."""
-    return [
+def direct_child_common_table_expressions(with_root: BaseSegment) -> tuple[BaseSegment, ...]:
+    """Top-level CTE segments directly under a ``with_compound_statement``."""
+    return tuple(
         seg
-        for seg in _direct_children(with_root)
+        for seg in getattr(with_root, "segments", ()) or ()
         if getattr(seg, "type", "") == "common_table_expression"
-    ]
+    )
 
 
 def _cte_reference_edges(
@@ -92,8 +92,8 @@ def _longest_dependency_chain_depth(nodes: set[str], edges: dict[str, set[str]])
         if start in visited_stack:
             return 1
         visited_stack.add(start)
-        preds = edges.get(start, set())
-        depth = 1 if not preds else 1 + max(longest_from(p) for p in preds)
+        upstream_refs = edges.get(start, set())
+        depth = 1 if not upstream_refs else 1 + max(longest_from(p) for p in upstream_refs)
         visited_stack.remove(start)
         memo[start] = depth
         return depth
@@ -142,11 +142,6 @@ def _simple_table_reference_name(table_ref: BaseSegment) -> str:
         return parts[-1]
     raw = (getattr(table_ref, "raw", "") or "").strip()
     return raw.lower() if raw else ""
-
-
-def _direct_children(segment: BaseSegment) -> tuple[BaseSegment, ...]:
-    """Children segments tuple."""
-    return tuple(getattr(segment, "segments", ()) or ())
 
 
 def _iter_segments(root: BaseSegment, segment_type: str) -> Iterator[BaseSegment]:

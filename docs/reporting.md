@@ -16,7 +16,7 @@ The console output includes one row per file:
 
 ```text
 sqlfluff-complexity report
-path score ctes joins subquery_depth case_expressions boolean_operators window_functions cte_dependency_depth set_operations expression_depth
+path score ctes joins subquery_depth case_expressions boolean_operators window_functions cte_dependency_depth set_operation_count expression_depth
 models/orders.sql 14 1 2 0 1 3 1 2 0 1
 ```
 

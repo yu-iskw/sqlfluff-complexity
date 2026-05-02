@@ -154,7 +154,7 @@ def format_console_report(report: ComplexityReport) -> str:
     lines = [
         "sqlfluff-complexity report",
         "path score ctes joins subquery_depth case_expressions boolean_operators window_functions "
-        "cte_dependency_depth set_operations expression_depth",
+        "cte_dependency_depth set_operation_count expression_depth",
     ]
     for entry in report.entries:
         lines.extend(_format_console_entry(entry))
@@ -528,21 +528,6 @@ def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
     )
 
 
-def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
-    return {
-        "boolean_operators": metrics.boolean_operators,
-        "case_expressions": metrics.case_expressions,
-        "cte_dependency_depth": metrics.cte_dependency_depth,
-        "ctes": metrics.ctes,
-        "expression_depth": metrics.expression_depth,
-        "joins": metrics.joins,
-        "set_operation_count": metrics.set_operation_count,
-        "subqueries": metrics.subqueries,
-        "subquery_depth": metrics.subquery_depth,
-        "window_functions": metrics.window_functions,
-    }
-
-
 def _json_entry(entry: ReportEntry) -> dict[str, object]:
     legacy: list[dict[str, object]] = []
     detail: list[dict[str, object]] = []
@@ -561,7 +546,7 @@ def _json_entry(entry: ReportEntry) -> dict[str, object]:
         base["metrics"] = None
         base["score"] = None
         return base
-    base["metrics"] = _metrics_dict(entry.metrics)
+    base["metrics"] = entry.metrics.to_report_counters()
     base["score"] = entry.score
     return base
 

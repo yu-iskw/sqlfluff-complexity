@@ -9,22 +9,6 @@ from typing import Any, TextIO
 from sqlfluff_complexity import __version__
 from sqlfluff_complexity.core.analysis import MetricContributor
 from sqlfluff_complexity.core.findings import ComplexityFinding
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
-
-
-def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
-    return {
-        "boolean_operators": metrics.boolean_operators,
-        "case_expressions": metrics.case_expressions,
-        "cte_dependency_depth": metrics.cte_dependency_depth,
-        "ctes": metrics.ctes,
-        "expression_depth": metrics.expression_depth,
-        "joins": metrics.joins,
-        "set_operation_count": metrics.set_operation_count,
-        "subqueries": metrics.subqueries,
-        "subquery_depth": metrics.subquery_depth,
-        "window_functions": metrics.window_functions,
-    }
 
 
 def _contributor_dict(contributor: MetricContributor) -> dict[str, Any]:
@@ -47,7 +31,7 @@ def _finding_dict(finding: ComplexityFinding) -> dict[str, Any]:
         "line": finding.location.line,
         "message": finding.message,
         "metric": finding.metric,
-        "metrics": _metrics_dict(finding.metrics),
+        "metrics": finding.metrics.to_report_counters(),
         "path": finding.location.path,
         "remediation": finding.remediation,
         "rule_id": finding.rule_id,

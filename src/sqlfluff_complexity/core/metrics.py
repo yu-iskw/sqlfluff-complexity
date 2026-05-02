@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -23,7 +23,6 @@ class ComplexityMetrics:
     cte_dependency_depth: int = 0
     set_operation_count: int = 0
     expression_depth: int = 0
-    anchors: dict[str, list[Any]] = field(default_factory=dict)
 
     def score(self, weights: Mapping[str, int]) -> int:
         """Compute a weighted aggregate complexity score."""
@@ -39,6 +38,21 @@ class ComplexityMetrics:
             + self.expression_depth * weights.get("expression_depth", 0)
         )
 
+    def to_report_counters(self) -> dict[str, int]:
+        """Counters for report JSON/SARIF and ``sqlfluff-complexity report`` rows."""
+        return {
+            "boolean_operators": self.boolean_operators,
+            "case_expressions": self.case_expressions,
+            "cte_dependency_depth": self.cte_dependency_depth,
+            "ctes": self.ctes,
+            "expression_depth": self.expression_depth,
+            "joins": self.joins,
+            "set_operation_count": self.set_operation_count,
+            "subqueries": self.subqueries,
+            "subquery_depth": self.subquery_depth,
+            "window_functions": self.window_functions,
+        }
+
     def format_breakdown(self) -> str:
         """Return a compact metric breakdown for lint messages."""
         return (
@@ -47,5 +61,5 @@ class ComplexityMetrics:
             f"boolean_operators={self.boolean_operators}, "
             f"window_functions={self.window_functions}, "
             f"cte_dependency_depth={self.cte_dependency_depth}, "
-            f"set_operations={self.set_operation_count}, expression_depth={self.expression_depth}"
+            f"set_operation_count={self.set_operation_count}, expression_depth={self.expression_depth}"
         )
