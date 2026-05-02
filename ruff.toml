@@ -78,7 +78,7 @@ ignore = [
   "PLC0415",
 ]
 "src/sqlfluff_complexity/rules/base.py" = ["TC001"]
-"src/sqlfluff_complexity/paths.py" = ["TC003", "PLR0912", "PLR0913", "S603"]
+"src/sqlfluff_complexity/paths.py" = ["TC003", "PLR0912", "PLR0913"]
 "src/sqlfluff_complexity/baseline.py" = ["TC003", "PLR0912"]
 "src/sqlfluff_complexity/cli.py" = ["PLR0911", "PLR0912"]
 "src/sqlfluff_complexity/check.py" = ["TC001", "PLR0911", "PLR0912"]

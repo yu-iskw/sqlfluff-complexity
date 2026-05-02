@@ -35,7 +35,7 @@ The **Trunk Check** workflow (`.github/workflows/trunk_check.yml`) runs the same
 ## Constraints
 
 - Do not silence Trunk/Ruff/Pyright/Pylint/Semgrep findings with blanket inline suppressions (`# noqa`, `# type: ignore`, `# pylint: disable`, file-wide `ruff: noqa`, Trunk inline disables).
-- **Bandit** (`B404` / `B603`): Prefer refactoring so `subprocess` is unnecessary. When the design requires spawning a **trusted** helper resolved from `PATH` (for example `git` via `shutil.which`), narrow **`# nosec B404`** on the import and **`# nosec B603`** on the specific call—document why execution is bounded—rather than disabling Bandit project-wide.
+- **Bandit** (`B404` / `B603`): Prefer avoiding `subprocess` in this package. If a maintainer tool must still use it in dev-only code, use narrow, documented nosec on the specific call—do not disable Bandit project-wide.
 - Do not broaden project configuration to hide violations (for example new `[tool.ruff.lint]` ignores, Pyright `report*` toggles, or Pylint disables) unless the user explicitly asked for that policy change.
 - Prefer **`make format`** before **`make lint`** so formatting noise does not mask real issues.
 - If fixes fail after genuine attempts, stop and surface the finding for a human to decide—do not add suppressions to make CI green.

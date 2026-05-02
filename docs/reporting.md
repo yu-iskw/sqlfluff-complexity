@@ -37,8 +37,14 @@ sqlfluff-complexity report \
 - **`--include GLOB`**: repeatable; defaults to `**/*.sql` for files discovered under directories.
 - **`--exclude GLOB`**: repeatable; excludes matching paths (relative POSIX paths).
 - **`--files-from PATH_OR_DASH`**: newline-separated paths; use `-` for stdin; blank lines ignored; paths are filtered by include/exclude when combined with discovery.
-- **`--changed-from REF`**: same files as `git diff --name-only REF...HEAD`, keeping existing `.sql` files that match include/exclude.
+- **Changed files vs a git ref**: run git (or your VCS) in the shell and pipe paths into the tool—Python does not invoke subprocesses for discovery (see example below).
 - **`--jobs N`**: optional parallel analysis (default `1`).
+
+Example—analyze SQL files changed vs `origin/main` without subprocess inside python:
+
+```bash
+git diff --name-only origin/main...HEAD | rg '\.sql$' | sqlfluff-complexity report --files-from - --dialect snowflake
+```
 
 Paths in output use POSIX separators and are relative to the working directory when possible.
 

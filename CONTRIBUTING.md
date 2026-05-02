@@ -16,6 +16,7 @@ This project uses:
 - Hatchling for packaging
 - pytest orchestrated by Nox for tests
 - Trunk for linting and formatting
+- The library does not use `subprocess` for path discovery; list changed files in the shell/CI and pass them with `--files-from` (see [docs/reporting.md](docs/reporting.md#path-discovery))
 
 ## Common Commands
 

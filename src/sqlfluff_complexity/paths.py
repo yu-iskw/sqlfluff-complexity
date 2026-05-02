@@ -3,19 +3,12 @@
 from __future__ import annotations
 
 import fnmatch
-import functools
 import os
-import shutil
-import subprocess  # nosec B404
 import sys
 from collections.abc import Iterable, Sequence
 from io import StringIO
 from pathlib import Path
 from typing import TextIO
-
-
-class GitPathError(RuntimeError):
-    """Raised when git cannot list changed files."""
 
 
 def normalize_report_path(path: Path, *, root: Path | None = None) -> str:
@@ -58,7 +51,7 @@ def _collect_sql_under_directory(
     exclude_globs: Sequence[str],
     result: list[Path],
 ) -> None:
-    for dirpath, unused_dirnames, filenames in os.walk(resolved_dir):
+    for dirpath, _, filenames in os.walk(resolved_dir):
         for name in filenames:
             if not name.endswith(".sql"):
                 continue
@@ -149,79 +142,15 @@ def paths_from_files_from(
     return read_paths_from_files_stream(StringIO(text), cwd=base)
 
 
-@functools.lru_cache(maxsize=1)
-def _git_executable() -> str:
-    git = shutil.which("git")
-    if git is None:
-        message = "git executable not found on PATH."
-        raise GitPathError(message)
-    return git
-
-
-def paths_from_changed_from(
-    git_ref: str,
-    *,
-    cwd: Path | None = None,
-    include_globs: Sequence[str] = ("**/*.sql",),
-    exclude_globs: Sequence[str] = (),
-) -> list[Path]:
-    """List changed files vs ``git_ref`` using ``git diff --name-only REF...HEAD``.
-
-    Keeps only paths that exist on disk, are files, match include globs, and do not
-    match exclude globs. Raises ``GitPathError`` if git is unavailable or the command fails.
-    """
-    base = (cwd or Path.cwd()).resolve()
-    git_bin = _git_executable()
-    try:
-        proc = subprocess.run(  # nosec B603
-            [git_bin, "diff", "--name-only", f"{git_ref}...HEAD"],
-            cwd=base,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-    except OSError as exc:
-        message = f"git is not available or failed to start: {exc}"
-        raise GitPathError(message) from exc
-
-    if proc.returncode != 0:
-        stderr = (proc.stderr or "").strip()
-        stdout = (proc.stdout or "").strip()
-        detail = stderr or stdout or f"exit code {proc.returncode}"
-        message = f"git diff failed: {detail}"
-        raise GitPathError(message)
-
-    names = [line.strip() for line in (proc.stdout or "").splitlines() if line.strip()]
-    seen: set[Path] = set()
-    result: list[Path] = []
-    for name in names:
-        candidate = Path(name)
-        if not candidate.is_absolute():
-            candidate = base / candidate
-        resolved = candidate.resolve()
-        if not resolved.is_file():
-            continue
-        rel = normalize_report_path(resolved, root=base)
-        if not path_matches_include(rel, include_globs):
-            continue
-        if _path_matches_globs(rel, exclude_globs):
-            continue
-        if resolved not in seen:
-            seen.add(resolved)
-            result.append(resolved)
-    return sorted(result, key=lambda p: normalize_report_path(p, root=base))
-
-
 def gather_sql_paths(
     positional: Sequence[Path],
     *,
     cwd: Path | None = None,
     files_from: str | Path | None = None,
-    changed_from: str | None = None,
     include_globs: Sequence[str] = ("**/*.sql",),
     exclude_globs: Sequence[str] = (),
 ) -> list[Path]:
-    """Combine positional discovery, ``--files-from``, and ``--changed-from`` sources."""
+    """Combine positional discovery and ``--files-from`` sources."""
     base = (cwd or Path.cwd()).resolve()
     chunks: list[Path] = []
     if positional:
@@ -245,15 +174,6 @@ def gather_sql_paths(
             ):
                 continue
             chunks.append(p)
-    if changed_from is not None:
-        chunks.extend(
-            paths_from_changed_from(
-                changed_from,
-                cwd=base,
-                include_globs=include_globs,
-                exclude_globs=exclude_globs,
-            ),
-        )
     return merge_paths_unique(chunks, cwd=base)
 
 

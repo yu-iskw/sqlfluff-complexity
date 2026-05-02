@@ -32,11 +32,7 @@ from sqlfluff_complexity.check import (
     format_check_console,
     format_check_json,
 )
-from sqlfluff_complexity.paths import (
-    GitPathError,
-    gather_sql_paths,
-    normalize_report_path,
-)
+from sqlfluff_complexity.paths import gather_sql_paths, normalize_report_path
 from sqlfluff_complexity.report import (
     ComplexityReport,
     analyze_paths,
@@ -91,11 +87,6 @@ def _add_path_discovery_args(target: argparse.ArgumentParser) -> None:
         help="Read newline-delimited paths from a file, or stdin when set to '-'.",
     )
     target.add_argument(
-        "--changed-from",
-        metavar="REF",
-        help="Restrict to files changed vs REF (git diff --name-only REF...HEAD).",
-    )
-    target.add_argument(
         "--jobs",
         type=int,
         default=1,
@@ -114,22 +105,16 @@ def _resolve_analysis_paths(args: argparse.Namespace, *, require_paths: bool) ->
     cwd = Path.cwd()
     include, exclude = _effective_include_exclude(args)
     explicit = getattr(args, "paths", None) or []
-    try:
-        merged = gather_sql_paths(
-            explicit,
-            cwd=cwd,
-            files_from=getattr(args, "files_from", None),
-            changed_from=getattr(args, "changed_from", None),
-            include_globs=include,
-            exclude_globs=exclude,
-        )
-    except GitPathError as exc:
-        print(f"path resolution failed: {exc}", flush=True)
-        sys.exit(2)
+    merged = gather_sql_paths(
+        explicit,
+        cwd=cwd,
+        files_from=getattr(args, "files_from", None),
+        include_globs=include,
+        exclude_globs=exclude,
+    )
     if require_paths and not merged:
         print(
-            "No input paths after discovery. Provide positional paths, "
-            "--files-from, and/or --changed-from.",
+            "No input paths after discovery. Provide positional paths or --files-from.",
             flush=True,
         )
         sys.exit(2)
@@ -279,22 +264,16 @@ def _run_report(args: argparse.Namespace) -> int:
 def _run_baseline_create(args: argparse.Namespace) -> int:
     cwd = Path.cwd()
     include, exclude = _effective_include_exclude(args)
-    try:
-        merged = gather_sql_paths(
-            args.paths,
-            cwd=cwd,
-            files_from=getattr(args, "files_from", None),
-            changed_from=getattr(args, "changed_from", None),
-            include_globs=include,
-            exclude_globs=exclude,
-        )
-    except GitPathError as exc:
-        print(f"path resolution failed: {exc}", flush=True)
-        return 2
+    merged = gather_sql_paths(
+        args.paths,
+        cwd=cwd,
+        files_from=getattr(args, "files_from", None),
+        include_globs=include,
+        exclude_globs=exclude,
+    )
     if not merged:
         print(
-            "No input paths after discovery. Provide positional paths, "
-            "--files-from, and/or --changed-from.",
+            "No input paths after discovery. Provide positional paths or --files-from.",
             flush=True,
         )
         return 2

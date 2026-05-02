@@ -33,7 +33,7 @@ sqlfluff-complexity baseline create models/ \
   --output .sqlfluff-complexity-baseline.json
 ```
 
-Optional discovery flags match `report`: `--include`, `--exclude`, `--files-from`, `--changed-from`, `--jobs`.
+Optional discovery flags match `report`: `--include`, `--exclude`, `--files-from`, `--jobs`.
 
 Default output path: `.sqlfluff-complexity-baseline.json`.
 
@@ -74,6 +74,6 @@ Each result includes `path`, `status`, and optional `baseline_score`, `current_s
 | ---- | -------------------------------------------------------------------------- |
 | 0    | Success                                                                    |
 | 1    | Check failed (per `--fail-on`) or `--fail-on-error` with parse/read errors |
-| 2    | Invalid CLI usage, baseline file, or path resolution (e.g. git failure)    |
+| 2    | Invalid CLI usage, baseline file, or no input paths after discovery |
 
-See [reporting](reporting.md) for directory discovery, `--include` / `--exclude`, and parallel `--jobs`.
+See [reporting](reporting.md) for directory discovery, `--include` / `--exclude`, parallel `--jobs`, and piping paths from git via `--files-from -`.

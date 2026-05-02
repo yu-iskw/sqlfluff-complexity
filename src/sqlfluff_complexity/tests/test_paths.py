@@ -12,24 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Unit tests for path discovery and git integration."""
+"""Unit tests for path discovery."""
 
 from __future__ import annotations
 
-import subprocess
 from io import StringIO
 from typing import TYPE_CHECKING
-from unittest.mock import patch
-
-import pytest
 
 from sqlfluff_complexity.paths import (
-    GitPathError,
     discover_sql_paths,
     merge_paths_unique,
     normalize_report_path,
     path_matches_include_exclude,
-    paths_from_changed_from,
     read_paths_from_files_stream,
 )
 
@@ -86,48 +80,6 @@ def test_read_paths_from_files_stream(tmp_path: Path, monkeypatch: MonkeyPatch) 
     monkeypatch.chdir(tmp_path)
     paths = read_paths_from_files_stream(StringIO(txt.read_text()), cwd=tmp_path)
     assert [p.name for p in paths] == ["a.sql", "b.sql"]
-
-
-def test_paths_from_changed_from_subprocess(tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.chdir(tmp_path)
-    f = tmp_path / "m.sql"
-    f.write_text("select 1", encoding="utf-8")
-
-    def fake_run(
-        *_args: object,
-        **_kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        return subprocess.CompletedProcess(
-            args=["git", "diff", "--name-only", "ref...HEAD"],
-            returncode=0,
-            stdout="m.sql\n",
-            stderr="",
-        )
-
-    with patch("subprocess.run", side_effect=fake_run):
-        out = paths_from_changed_from("origin/main", cwd=tmp_path)
-    assert out == [f.resolve()]
-
-
-def test_paths_from_changed_from_git_error(monkeypatch: MonkeyPatch, tmp_path: Path) -> None:
-    monkeypatch.chdir(tmp_path)
-
-    def fake_run(
-        *_args: object,
-        **_kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        return subprocess.CompletedProcess(
-            args=["git", "diff", "--name-only", "ref...HEAD"],
-            returncode=1,
-            stdout="",
-            stderr="not a git repo",
-        )
-
-    with (
-        patch("subprocess.run", side_effect=fake_run),
-        pytest.raises(GitPathError),
-    ):
-        paths_from_changed_from("origin/main", cwd=tmp_path)
 
 
 def test_path_matches_include_exclude(tmp_path: Path) -> None:
