@@ -116,6 +116,12 @@ CTE body is linted as its own `with_compound_statement` when the rule runs on it
 `WITH` is not failed using the inner chain's depth. The **report** output field `cte_dependency_depth`
 is still the **maximum** depth across all `WITH` blocks in the file (a broader signal).
 
+**Limitations (parse-tree heuristics):**
+
+- Only dependencies expressed as **bare** `table_reference` names (single identifier segment) to another **CTE in the same `WITH`** are counted. Multi-part names (`schema.table`) are **ignored** for matching to avoid false edges—so a dependency that only appears as qualified may be **undercounted**.
+- Alias parsing uses the **first** `identifier` child of each `common_table_expression`; unusual structures could theoretically mismatch (rare with SQLFluff’s grammar).
+- Cyclic CTE reference graphs are handled safely but depth in a cycle is **approximate** (not expected in typical SQL).
+
 CTE definitions may include an explicit column list (`WITH x (c1, c2) AS (...)`); the dependency
 walk uses the query body after `AS`, not the column list bracket.
 

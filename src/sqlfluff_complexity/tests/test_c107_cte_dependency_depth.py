@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from textwrap import dedent
 from typing import TYPE_CHECKING
 
 from sqlfluff.core import Linter
@@ -152,36 +153,82 @@ def test_c107_outer_with_not_penalized_for_nested_with_depth() -> None:
 
 def test_c107_lint_outer_passes_inner_flags_nested_chain() -> None:
     """Outer WITH should not violate from inner depth; inner WITH still enforces its own chain."""
-    sql = """
-    WITH outer_wrap AS (
-      WITH
-        a AS (SELECT 1 AS id),
-        b AS (SELECT * FROM a),
-        c AS (SELECT * FROM b),
-        d AS (SELECT * FROM c)
-      SELECT * FROM d
-    )
-    SELECT * FROM outer_wrap
-    """
+    sql = dedent("""
+        WITH outer_wrap AS (
+          WITH
+            a AS (SELECT 1 AS id),
+            b AS (SELECT * FROM a),
+            c AS (SELECT * FROM b),
+            d AS (SELECT * FROM c)
+          SELECT * FROM d
+        )
+        SELECT * FROM outer_wrap
+        """).strip()
     linted = lint_sql(
         sql,
-        """
-        [sqlfluff]
-        dialect = ansi
-        rules = CPX_C107
+        dedent("""
+            [sqlfluff]
+            dialect = ansi
+            rules = CPX_C107
 
-        [sqlfluff:rules:CPX_C107]
-        max_cte_dependency_depth = 3
-        """,
+            [sqlfluff:rules:CPX_C107]
+            max_cte_dependency_depth = 3
+            """).strip(),
     )
-    violations = rule_violations(linted, "CPX_C107")
-    descs = [v.desc() for v in violations]
+    violations = sorted(
+        rule_violations(linted, "CPX_C107"),
+        key=lambda v: (v.line_no, getattr(v, "line_pos", 0) or 0),
+    )
     assert len(violations) == 1
-    assert any("CTE dependency depth is 4" in d for d in descs)
-    assert all("depth is 2" not in d and "depth is 1" not in d for d in descs)
+    inner_last_cte_line = 6
+    assert violations[0].line_no == inner_last_cte_line
+    assert "CTE dependency depth is 4" in violations[0].desc()
 
 
-def test_c107_fails_when_chain_exceeds_threshold() -> None:
+def test_c107_nested_with_inner_and_outer_can_both_violate_with_max_zero() -> None:
+    """Each WITH is evaluated separately; shallow outer + deep inner can yield two violations."""
+    sql = dedent("""
+        WITH outer_wrap AS (
+          WITH
+            a AS (SELECT 1 AS id),
+            b AS (SELECT * FROM a),
+            c AS (SELECT * FROM b),
+            d AS (SELECT * FROM c)
+          SELECT * FROM d
+        )
+        SELECT * FROM outer_wrap
+        """).strip()
+    linted = lint_sql(
+        sql,
+        dedent("""
+            [sqlfluff]
+            dialect = ansi
+            rules = CPX_C107
+
+            [sqlfluff:rules:CPX_C107]
+            max_cte_dependency_depth = 0
+            """).strip(),
+    )
+    violations = sorted(
+        rule_violations(linted, "CPX_C107"),
+        key=lambda v: (v.line_no, getattr(v, "line_pos", 0) or 0),
+    )
+    assert len(violations) == 2
+    assert violations[0].line_no == 1
+    assert "CTE dependency depth is 1" in violations[0].desc()
+    assert violations[1].line_no == 6
+    assert "CTE dependency depth is 4" in violations[1].desc()
+
+
+def test_metrics_postgres_public_schema_table_not_false_edge_to_cte() -> None:
+    """Postgres `schema.table` must not create a spurious edge to a same-named CTE."""
+    sql = dedent("""
+        WITH orders AS (SELECT 1 AS id)
+        SELECT id FROM public.orders
+        """).strip()
+    m = collect_metrics(Linter(dialect="postgres").parse_string(sql).tree)
+    assert m.ctes == 1
+    assert m.cte_dependency_depth == 1
     """Long CTE chains should fail when max_cte_dependency_depth is tight."""
     sql = """
     WITH

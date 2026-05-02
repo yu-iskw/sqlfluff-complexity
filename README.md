@@ -60,6 +60,7 @@ Practical adoption patterns:
 - Use the dbt templater when you need compiled SQL fidelity; keep `sqlfluff-complexity` focused on structural signals from parsed SQL.
 - Tune thresholds per rule and use [`path_overrides`](docs/configuration.md) on `CPX_C201` where staging vs marts need different budgets.
 - Prefer `sqlfluff lint` on changed models in CI and [`sqlfluff-complexity report`](docs/reporting.md) for broader visibility without failing builds.
+- For **CTE dependency depth**, see [docs/rules.md](docs/rules.md) (CPX_C107) and [docs/reporting.md](docs/reporting.md) (report vs per-`WITH` lint).
 
 See also [dbt usage](docs/dbt.md) and [configuration](docs/configuration.md).
 

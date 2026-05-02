@@ -36,6 +36,14 @@ Optional per-rule settings (in `.sqlfluff`) tune verbosity without changing thre
 - `show_contributors` (default `true`): include compact contributor locations in lint messages and reports.
 - `max_contributors` (default `3`): cap how many contributor lines are shown per violation.
 
+### Interpreting `cte_dependency_depth` in reports
+
+The **`cte_dependency_depth`** column (and JSON `metrics.cte_dependency_depth`) is the **maximum**
+dependency-chain depth **across every `WITH` block** in that file’s parse tree. **`CPX_C107`** compares
+thresholds per **`WITH` clause** when linting—so one large report number does not imply every outer
+`WITH` failed lint if only a nested `WITH` carried the chain. Use findings or `sqlfluff lint` output
+when reconciling report rows with rule failures.
+
 ## JSON Report
 
 For automation and lightweight CI artifacts, use `--format json`. The top-level payload includes `schema_version` `1.1`, `version` (package version), `tool`, per-file `entries`, and a flat `findings` array built from the same **ComplexityFinding** model as lint and SARIF.

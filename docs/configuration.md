@@ -58,7 +58,9 @@ mode = enforce
 
 The aggregate score uses maximum nested subquery depth, not raw subquery count.
 
-## Path Overrides
+The **`cte_dependency_depth`** component in `complexity_weights` applies to the **file-level**
+metric (maximum chain depth across all `WITH` blocks in the parsed tree), not to each `WITH` in
+isolation—see [Reporting: interpreting `cte_dependency_depth`](reporting.md#interpreting-cte_dependency_depth-in-reports) and [CPX_C107](rules.md#cpx_c107-cte-dependency-depth-too-high).
 
 Use `path_overrides` when different model areas need different budgets. Patterns use normalized path strings and glob-style matching.
 
