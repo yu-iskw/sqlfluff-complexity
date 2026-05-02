@@ -36,16 +36,7 @@ class Baseline:
 def _metrics_from_report_entry(entry: ReportEntry) -> dict[str, int] | None:
     if entry.metrics is None:
         return None
-    m = entry.metrics
-    return {
-        "boolean_operators": m.boolean_operators,
-        "case_expressions": m.case_expressions,
-        "ctes": m.ctes,
-        "joins": m.joins,
-        "subqueries": m.subqueries,
-        "subquery_depth": m.subquery_depth,
-        "window_functions": m.window_functions,
-    }
+    return entry.metrics.as_counter_dict()
 
 
 def baseline_from_report(
@@ -62,7 +53,7 @@ def baseline_from_report(
             metrics=_metrics_from_report_entry(entry),
             errors=tuple(entry.errors),
         )
-    return Baseline(entries=dict(sorted(entries.items())))
+    return Baseline(entries=entries)
 
 
 def format_baseline_json(baseline: Baseline) -> str:

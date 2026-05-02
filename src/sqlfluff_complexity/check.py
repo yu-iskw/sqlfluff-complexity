@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 from sqlfluff_complexity.core.findings import ComplexityFinding
+from sqlfluff_complexity.core.metrics import COMPLEXITY_COUNTER_KEYS
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -17,16 +18,6 @@ if TYPE_CHECKING:
     from sqlfluff_complexity.report import ComplexityReport, ReportEntry
 
 FailOnMode = Literal["regression", "threshold", "none"]
-
-METRIC_KEYS = (
-    "boolean_operators",
-    "case_expressions",
-    "ctes",
-    "joins",
-    "subqueries",
-    "subquery_depth",
-    "window_functions",
-)
 
 
 @dataclass(frozen=True)
@@ -69,7 +60,7 @@ def _metric_regression(
     current_metrics: Mapping[str, int],
 ) -> dict[str, dict[str, int]]:
     changed: dict[str, dict[str, int]] = {}
-    for key in METRIC_KEYS:
+    for key in COMPLEXITY_COUNTER_KEYS:
         b = baseline_metrics.get(key)
         c = current_metrics.get(key)
         if b is None or c is None:
@@ -80,15 +71,7 @@ def _metric_regression(
 
 
 def _metrics_mapping(metrics: ComplexityMetrics) -> dict[str, int]:
-    return {
-        "boolean_operators": metrics.boolean_operators,
-        "case_expressions": metrics.case_expressions,
-        "ctes": metrics.ctes,
-        "joins": metrics.joins,
-        "subqueries": metrics.subqueries,
-        "subquery_depth": metrics.subquery_depth,
-        "window_functions": metrics.window_functions,
-    }
+    return metrics.as_counter_dict()
 
 
 def _regression_row_for_entry(
@@ -96,11 +79,10 @@ def _regression_row_for_entry(
     key: str,
     entry: ReportEntry,
     base_ent: BaselineEntry | None,
+    has_policy_finding: bool,
 ) -> CheckRow | None:
-    policy_f = _policy_findings(entry.findings)
-
     if base_ent is None:
-        if policy_f:
+        if has_policy_finding:
             return CheckRow(
                 path=key,
                 status="new_threshold_violation",
@@ -178,7 +160,12 @@ def compare_report_to_baseline(
         if parse_failed:
             continue
 
-        row = _regression_row_for_entry(key=key, entry=entry, base_ent=base_ent)
+        row = _regression_row_for_entry(
+            key=key,
+            entry=entry,
+            base_ent=base_ent,
+            has_policy_finding=bool(policy_f),
+        )
         if row is not None:
             regressions += 1
             rows.append(row)

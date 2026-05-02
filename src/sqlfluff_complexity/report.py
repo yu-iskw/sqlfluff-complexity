@@ -545,15 +545,7 @@ def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
 
 
 def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
-    return {
-        "boolean_operators": metrics.boolean_operators,
-        "case_expressions": metrics.case_expressions,
-        "ctes": metrics.ctes,
-        "joins": metrics.joins,
-        "subqueries": metrics.subqueries,
-        "subquery_depth": metrics.subquery_depth,
-        "window_functions": metrics.window_functions,
-    }
+    return metrics.as_counter_dict()
 
 
 def _json_entry(entry: ReportEntry) -> dict[str, object]:

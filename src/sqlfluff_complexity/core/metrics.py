@@ -8,6 +8,17 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+# Stable key order for JSON / baseline / regression (matches report and check).
+COMPLEXITY_COUNTER_KEYS: tuple[str, ...] = (
+    "boolean_operators",
+    "case_expressions",
+    "ctes",
+    "joins",
+    "subqueries",
+    "subquery_depth",
+    "window_functions",
+)
+
 
 @dataclass(frozen=True)
 class ComplexityMetrics:
@@ -40,3 +51,7 @@ class ComplexityMetrics:
             f"boolean_operators={self.boolean_operators}, "
             f"window_functions={self.window_functions}"
         )
+
+    def as_counter_dict(self) -> dict[str, int]:
+        """Return metric counters for JSON and baseline output (stable key order)."""
+        return {name: int(getattr(self, name)) for name in COMPLEXITY_COUNTER_KEYS}

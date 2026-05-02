@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fnmatch
+import functools
 import os
 import shutil
 import subprocess
@@ -148,6 +149,7 @@ def paths_from_files_from(
     return read_paths_from_files_stream(StringIO(text), cwd=base)
 
 
+@functools.lru_cache(maxsize=1)
 def _git_executable() -> str:
     git = shutil.which("git")
     if git is None:
