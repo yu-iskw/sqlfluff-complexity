@@ -19,12 +19,12 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
+import pytest
+
 from sqlfluff_complexity.cli import main
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    import pytest
 
 
 def test_main_exits_successfully() -> None:
@@ -266,6 +266,15 @@ def test_report_directory_recursive(tmp_path: Path, capsys: pytest.CaptureFixtur
     assert main(["report", "--dialect", "ansi", str(tmp_path / "models")]) == 0
     out = capsys.readouterr().out
     assert "models/a.sql" in out or "a.sql" in out
+
+
+def test_report_jobs_non_positive_exits_during_parse(tmp_path: Path) -> None:
+    """``--jobs`` must be >= 1 (no traceback from analyze_paths)."""
+    sql = tmp_path / "x.sql"
+    sql.write_text("select 1", encoding="utf-8")
+    with pytest.raises(SystemExit) as exc:
+        main(["report", "--dialect", "ansi", "--jobs", "0", str(sql)])
+    assert exc.value.code == 2
 
 
 def test_baseline_create_writes_output(tmp_path: Path) -> None:

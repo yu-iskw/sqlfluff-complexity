@@ -185,16 +185,27 @@ def gather_sql_paths(
         )
     if files_from is not None:
         for p in paths_from_files_from(files_from, cwd=base):
-            if not p.is_file():
-                continue
-            if not path_matches_include_exclude(
-                p,
-                cwd=base,
-                include_globs=include_globs,
-                exclude_globs=exclude_globs,
-            ):
-                continue
-            chunks.append(p)
+            if p.is_file():
+                if not path_matches_include_exclude(
+                    p,
+                    cwd=base,
+                    include_globs=include_globs,
+                    exclude_globs=exclude_globs,
+                ):
+                    continue
+                chunks.append(p)
+            elif p.is_dir():
+                chunks.extend(
+                    discover_sql_paths(
+                        [p],
+                        cwd=base,
+                        include_globs=include_globs,
+                        exclude_globs=exclude_globs,
+                    ),
+                )
+            else:
+                # Missing paths and other non-regular inputs: keep for read errors in analysis.
+                chunks.append(p)
     return merge_paths_unique(chunks, cwd=base)
 
 

@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 
 from sqlfluff_complexity.paths import (
     discover_sql_paths,
+    gather_sql_paths,
     merge_paths_unique,
     normalize_report_path,
     path_matches_include_exclude,
@@ -139,3 +140,23 @@ def test_merge_paths_unique_deterministic(tmp_path: Path) -> None:
     b.write_text("2", encoding="utf-8")
     merged = merge_paths_unique([b, a, a], cwd=tmp_path)
     assert [normalize_report_path(p, root=tmp_path) for p in merged] == ["a.sql", "z.sql"]
+
+
+def test_gather_sql_paths_keeps_missing_files_from_paths(tmp_path: Path) -> None:
+    """Paths-only-from-file-list must surface missing entries like positional paths."""
+    lst = tmp_path / "paths.txt"
+    lst.write_text("missing.sql\n", encoding="utf-8")
+    missing = (tmp_path / "missing.sql").resolve()
+    out = gather_sql_paths([], cwd=tmp_path, files_from=lst)
+    assert out == [missing]
+
+
+def test_gather_sql_paths_expands_directory_from_files_from(tmp_path: Path) -> None:
+    """A directory listed in --files-from should be walked like a positional dir."""
+    models = tmp_path / "models"
+    models.mkdir()
+    (models / "x.sql").write_text("select 1", encoding="utf-8")
+    lst = tmp_path / "paths.txt"
+    lst.write_text("models\n", encoding="utf-8")
+    out = gather_sql_paths([], cwd=tmp_path, files_from=lst)
+    assert [normalize_report_path(p, root=tmp_path) for p in out] == ["models/x.sql"]

@@ -50,6 +50,19 @@ DEFAULT_BASELINE_PATH = Path(".sqlfluff-complexity-baseline.json")
 DEFAULT_INCLUDE = ("**/*.sql",)
 
 
+def _positive_jobs(value: str) -> int:
+    """Argparse type for ``--jobs``: integer >= 1."""
+    try:
+        n = int(value, base=10)
+    except ValueError as exc:
+        msg = "jobs must be a positive integer"
+        raise argparse.ArgumentTypeError(msg) from exc
+    if n < 1:
+        msg = "jobs must be >= 1"
+        raise argparse.ArgumentTypeError(msg)
+    return n
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the sqlfluff-complexity command line interface."""
     if argv is not None and len(argv) == 0:
@@ -88,10 +101,10 @@ def _add_path_discovery_args(target: argparse.ArgumentParser) -> None:
     )
     target.add_argument(
         "--jobs",
-        type=int,
+        type=_positive_jobs,
         default=1,
         metavar="N",
-        help="Parallel analysis workers (default: 1).",
+        help="Parallel analysis workers (default: 1; must be >= 1).",
     )
 
 

@@ -36,9 +36,9 @@ sqlfluff-complexity report \
 - **Positional paths**: files are always analyzed; directories recurse and collect `*.sql` files filtered by `--include` / `--exclude` (see below).
 - **`--include GLOB`**: repeatable; defaults to `**/*.sql` for files discovered under directories. Matching uses **gitwildmatch** semantics (same family as `.gitignore`; `**` crosses directories).
 - **`--exclude GLOB`**: repeatable; excludes matching paths (relative POSIX paths).
-- **`--files-from PATH_OR_DASH`**: newline-separated paths; use `-` for stdin; blank lines ignored; paths are filtered by include/exclude when combined with discovery.
+- **`--files-from PATH_OR_DASH`**: newline-separated paths; use `-` for stdin; blank lines ignored. Each entry may be a **file** or **directory** (directories recurse like positional dirs). Existing regular files are filtered by `--include` / `--exclude`. Paths that do not exist are still passed through so missing inputs produce read errors (and can fail with `--fail-on-error`).
 - **Changed files vs a git ref**: run git (or your VCS) in the shell and pipe paths into the tool—Python does not invoke subprocesses for discovery (see example below).
-- **`--jobs N`**: optional parallel analysis (default `1`).
+- **`--jobs N`**: optional parallel analysis (default `1`; must be `>= 1`).
 
 Example—analyze SQL files changed vs `origin/main` without subprocess inside python:
 
