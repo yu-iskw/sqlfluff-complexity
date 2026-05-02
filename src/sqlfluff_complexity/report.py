@@ -396,18 +396,18 @@ def _c201_finding(
     rem = remediation_for_rule("CPX_C201")
     show_c201, max_c201 = contributor_display_settings(config, "CPX_C201")
     top_n = max(1, max_c201)
+    loc = _anchored_location(
+        path_s=path_s,
+        root_line=line,
+        root_col=col,
+        metric_key=None,
+        contributors=contributors,
+    )
 
     if not show_c201:
         message = (
             f"CPX_C201: aggregate complexity score {score} exceeds max_complexity_score={threshold}. "
             f"{rem} Metrics: {metrics.format_breakdown()}."
-        )
-        loc = _anchored_location(
-            path_s=path_s,
-            root_line=line,
-            root_col=col,
-            metric_key=None,
-            contributors=contributors,
         )
         return ComplexityFinding(
             rule_id="CPX_C201",
@@ -441,13 +441,6 @@ def _c201_finding(
         contributors,
         weights,
         max_items=top_n,
-    )
-    loc = _anchored_location(
-        path_s=path_s,
-        root_line=line,
-        root_col=col,
-        metric_key=None,
-        contributors=contributors,
     )
 
     return ComplexityFinding(
