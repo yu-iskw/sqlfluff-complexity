@@ -24,14 +24,14 @@ The plugin default config sets these limits:
 
 | Rule       | Config key                   | Default |
 | ---------- | ---------------------------- | ------: |
-| `CPX_C101` | `max_ctes`                   |       8 |
-| `CPX_C102` | `max_joins`                  |       8 |
-| `CPX_C103` | `max_subquery_depth`         |       3 |
-| `CPX_C104` | `max_case_expressions`       |      10 |
-| `CPX_C105` | `max_boolean_operators`      |      20 |
-| `CPX_C106` | `max_window_functions`       |      10 |
-| `CPX_C107` | `max_cte_dependency_depth`   |       5 |
-| `CPX_C201` | `max_complexity_score`       |      60 |
+| `CPX_C101` | `max_ctes`                   | 8       |
+| `CPX_C102` | `max_joins`                  | 8       |
+| `CPX_C103` | `max_subquery_depth`         | 3       |
+| `CPX_C104` | `max_case_expressions`       | 10      |
+| `CPX_C105` | `max_boolean_operators`      | 20      |
+| `CPX_C106` | `max_window_functions`       | 10      |
+| `CPX_C107` | `max_cte_dependency_depth`   | 5       |
+| `CPX_C201` | `max_complexity_score`       | 60      |
 
 Example override:
 
