@@ -34,24 +34,5 @@ jobs:
         run: |
           bash dev/setup.sh --deps "development"
 
-      # Transient GitHub archive/CDN errors (e.g. HTTP 502 on plugins zip) can fail a single run.
       - name: Trunk Check
-        id: trunk_check
-        continue-on-error: true
         uses: trunk-io/trunk-action@v1
-
-      - name: Trunk Check (retry)
-        id: trunk_check_retry
-        if: steps.trunk_check.outcome == 'failure'
-        uses: trunk-io/trunk-action@v1
-
-      - name: Enforce Trunk Check outcome
-        if: always()
-        run: |
-          if [[ "${{ steps.trunk_check.outcome }}" == "success" ]]; then
-            exit 0
-          fi
-          if [[ "${{ steps.trunk_check_retry.outcome }}" == "success" ]]; then
-            exit 0
-          fi
-          exit 1
