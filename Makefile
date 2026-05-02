@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+COVERAGE_FAIL_UNDER ?= 0
+PYTEST_MARKER ?= not dialect_extra and not dbt_templater
+PYTEST_PATH ?= src/sqlfluff_complexity/tests
+
 # Set up an environment
 .PHONY: setup
 setup: setup-python
@@ -47,6 +51,17 @@ dead-code vulture:
 test:
 	bash ./dev/test_python.sh
 
+# Run Python tests with coverage and print missing lines.
+.PHONY: coverage test-coverage
+coverage test-coverage:
+	PYTEST_XDIST_WORKERS=0 uv run --group dev --with coverage coverage run --source=src/sqlfluff_complexity -m pytest -v -s -m "$(PYTEST_MARKER)" "$(PYTEST_PATH)"
+	uv run --group dev --with coverage coverage report --show-missing --fail-under=$(COVERAGE_FAIL_UNDER)
+
+# Generate an HTML Python coverage report under htmlcov/.
+.PHONY: coverage-html
+coverage-html: coverage
+	uv run --group dev --with coverage coverage html
+
 .PHONY: test-dialect-extra
 test-dialect-extra:
 	NOX_SESSION=dialect_extra bash ./dev/test_python.sh
@@ -69,6 +84,7 @@ build:
 .PHONY: clean
 clean:
 	bash ./dev/clean.sh
+	rm -rf .coverage htmlcov
 
 all: clean lint test build
 
