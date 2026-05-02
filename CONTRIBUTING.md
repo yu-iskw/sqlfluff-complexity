@@ -20,9 +20,15 @@ This project uses:
 ## Common Commands
 
 ```bash
+make format               # Trunk formatting (run before `make lint` when you change code or docs)
 make lint                 # Trunk lint suite
-make format               # Trunk formatting
 make test                 # Default Nox test sessions
+make dead-code            # Vulture unused-code scan (see pyproject [tool.vulture])
+```
+
+CI runs the same Trunk tools as `make format` / `make lint` (see `.github/workflows/trunk_check.yml`). Install the [Trunk CLI](https://docs.trunk.io/) for parity. Without Trunk, use `uv run ruff format` for Python and `npx prettier@3.8.3 --write` for Markdown (Prettier version is pinned in `.trunk/trunk.yaml`).
+
+```bash
 make test-dialect-extra   # Optional dialect fixture suite
 make test-dbt-templater   # Optional dbt templater suite
 make build                # Package build

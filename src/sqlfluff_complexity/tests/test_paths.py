@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import subprocess
 from io import StringIO
-from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -35,6 +34,8 @@ from sqlfluff_complexity.paths import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from _pytest.monkeypatch import MonkeyPatch
 
 

@@ -6,19 +6,19 @@ Large repositories can snapshot complexity metrics in a **baseline** file and ru
 
 Stable fields:
 
-| Field | Meaning |
-| ----- | ------- |
-| `schema_version` | Must be `1.0`. |
-| `tool` | Must be `sqlfluff-complexity`. |
-| `entries` | Map of normalized relative paths (POSIX) to per-file data. |
+| Field            | Meaning                                                    |
+| ---------------- | ---------------------------------------------------------- |
+| `schema_version` | Must be `1.0`.                                             |
+| `tool`           | Must be `sqlfluff-complexity`.                             |
+| `entries`        | Map of normalized relative paths (POSIX) to per-file data. |
 
 Each entry includes:
 
-| Field | Meaning |
-| ----- | ------- |
-| `score` | Aggregate weighted complexity score (integer), or omitted when analysis failed. |
+| Field     | Meaning                                                                                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `score`   | Aggregate weighted complexity score (integer), or omitted when analysis failed.                                                                           |
 | `metrics` | Counter map (`ctes`, `joins`, `subqueries`, `subquery_depth`, `case_expressions`, `boolean_operators`, `window_functions`), or omitted when not computed. |
-| `errors` | List of read/parse error strings (may be empty). |
+| `errors`  | List of read/parse error strings (may be empty).                                                                                                          |
 
 Paths are normalized relative to the working directory when possible; absolute paths appear only when the file lies outside the current working directory.
 
@@ -56,11 +56,11 @@ Optional: `--format console|json`, `--output PATH`, `--fail-on-error`, path disc
 
 #### `--fail-on` modes
 
-| Mode | Behavior |
-| ---- | -------- |
+| Mode         | Behavior                                                                                                                                                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `regression` | Fail when score or any metric **increases** vs baseline for an existing file; fail when a **new** file has policy findings (warnings). Ignores baseline entries for deleted files. Parse/read errors do not fail unless `--fail-on-error`. |
-| `threshold` | Fail when current analysis has **any** policy findings (same notion as lint thresholds). Does not compare to baseline scores. |
-| `none` | Never fail for complexity findings; use `--fail-on-error` to fail on parse/read errors only. |
+| `threshold`  | Fail when current analysis has **any** policy findings (same notion as lint thresholds). Does not compare to baseline scores.                                                                                                              |
+| `none`       | Never fail for complexity findings; use `--fail-on-error` to fail on parse/read errors only.                                                                                                                                               |
 
 ### Check JSON (`schema_version` `1.0`)
 
@@ -70,10 +70,10 @@ Each result includes `path`, `status`, and optional `baseline_score`, `current_s
 
 ## Exit codes
 
-| Code | Meaning |
-| ---- | ------- |
-| 0 | Success |
-| 1 | Check failed (per `--fail-on`) or `--fail-on-error` with parse/read errors |
-| 2 | Invalid CLI usage, baseline file, or path resolution (e.g. git failure) |
+| Code | Meaning                                                                    |
+| ---- | -------------------------------------------------------------------------- |
+| 0    | Success                                                                    |
+| 1    | Check failed (per `--fail-on`) or `--fail-on-error` with parse/read errors |
+| 2    | Invalid CLI usage, baseline file, or path resolution (e.g. git failure)    |
 
 See [reporting](reporting.md) for directory discovery, `--include` / `--exclude`, and parallel `--jobs`.

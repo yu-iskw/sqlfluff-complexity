@@ -135,7 +135,9 @@ def load_baseline_from_string(text: str) -> Baseline:
     root = _validate_baseline_root(data)
     schema = root.get("schema_version")
     if schema != BASELINE_SCHEMA_VERSION:
-        message = f"Unsupported baseline schema_version: {schema!r} (expected {BASELINE_SCHEMA_VERSION})."
+        message = (
+            f"Unsupported baseline schema_version: {schema!r} (expected {BASELINE_SCHEMA_VERSION})."
+        )
         raise ValueError(message)
     if root.get("tool") != "sqlfluff-complexity":
         message = "Baseline tool field must be 'sqlfluff-complexity'."

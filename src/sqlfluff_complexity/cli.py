@@ -186,7 +186,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="SQL files or directories to include.",
     )
     _add_path_discovery_args(baseline_create)
-    baseline_create.add_argument("--dialect", default="ansi", help="SQLFluff dialect to parse with.")
+    baseline_create.add_argument(
+        "--dialect", default="ansi", help="SQLFluff dialect to parse with."
+    )
     baseline_create.add_argument("--config", type=Path, help="SQLFluff config file to apply.")
     baseline_create.add_argument(
         "--output",
@@ -356,9 +358,8 @@ def _run_check(args: argparse.Namespace) -> int:
     else:
         args.output.write_text(output if output.endswith("\n") else f"{output}\n", encoding="utf-8")
 
-    complexity_failed = (
-        (fail_on == "regression" and check_result.summary.regressions > 0)
-        or (fail_on == "threshold" and check_result.summary.threshold_violations > 0)
+    complexity_failed = (fail_on == "regression" and check_result.summary.regressions > 0) or (
+        fail_on == "threshold" and check_result.summary.threshold_violations > 0
     )
 
     error_failed = args.fail_on_error and check_result.summary.errors > 0

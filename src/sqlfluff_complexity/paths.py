@@ -6,7 +6,7 @@ import fnmatch
 import functools
 import os
 import shutil
-import subprocess
+import subprocess  # nosec B404
 import sys
 from collections.abc import Iterable, Sequence
 from io import StringIO
@@ -58,7 +58,7 @@ def _collect_sql_under_directory(
     exclude_globs: Sequence[str],
     result: list[Path],
 ) -> None:
-    for dirpath, _dirnames, filenames in os.walk(resolved_dir):
+    for dirpath, unused_dirnames, filenames in os.walk(resolved_dir):
         for name in filenames:
             if not name.endswith(".sql"):
                 continue
@@ -173,7 +173,7 @@ def paths_from_changed_from(
     base = (cwd or Path.cwd()).resolve()
     git_bin = _git_executable()
     try:
-        proc = subprocess.run(
+        proc = subprocess.run(  # nosec B603
             [git_bin, "diff", "--name-only", f"{git_ref}...HEAD"],
             cwd=base,
             check=False,

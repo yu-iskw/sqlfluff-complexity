@@ -219,7 +219,9 @@ def _format_check_result_lines(row: CheckRow) -> list[str]:
         lines.append(f"REGRESSION {row.path} score {base_s} -> {cur_s}")
         if row.changed_metrics:
             for mk, vals in sorted(row.changed_metrics.items()):
-                lines.append(f"  {mk}: {vals['baseline']} -> {vals['current']}")
+                baseline_v = vals["baseline"]
+                current_v = vals["current"]
+                lines.append(f"  {mk}: {baseline_v} -> {current_v}")
         lines.append("")
         return lines
     if row.status == "new_threshold_violation":

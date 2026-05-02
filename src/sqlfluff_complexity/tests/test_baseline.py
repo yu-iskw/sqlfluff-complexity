@@ -22,8 +22,6 @@ from pathlib import Path
 import pytest
 
 from sqlfluff_complexity.baseline import (
-    Baseline,
-    BaselineEntry,
     baseline_from_report,
     format_baseline_json,
     load_baseline_from_string,
@@ -102,4 +100,6 @@ def test_baseline_preserves_errors() -> None:
 
 def test_baseline_rejects_wrong_schema() -> None:
     with pytest.raises(ValueError, match="schema_version"):
-        load_baseline_from_string('{"schema_version": "0.1", "tool": "sqlfluff-complexity", "entries": {}}')
+        load_baseline_from_string(
+            '{"schema_version": "0.1", "tool": "sqlfluff-complexity", "entries": {}}'
+        )
