@@ -19,6 +19,7 @@ from sqlfluff_complexity.core.analysis import (
     top_contributors,
     weighted_contributor_samples,
 )
+from sqlfluff_complexity.core.cpx_config import contributor_display_settings
 from sqlfluff_complexity.core.explainability import (
     explain_score_contributors,
     ranked_weighted_contributions,
@@ -42,7 +43,6 @@ if TYPE_CHECKING:
 
 DEFAULT_MAX_JOINS = 8
 DEFAULT_MAX_COMPLEXITY_SCORE = 60
-DEFAULT_MAX_CONTRIBUTORS = 3
 
 
 @dataclass(frozen=True)
@@ -180,8 +180,8 @@ def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntr
     parsed = linter.parse_string(sql, fname=str(path))
     parse_errors = [violation.desc() for violation in parsed.violations]
     if parse_errors or parsed.tree is None:
-        err_msg = parse_errors[0] if parse_errors else "SQLFluff did not return a parse tree."
-        messages = parse_errors or [err_msg]
+        fallback = "SQLFluff did not return a parse tree."
+        messages = parse_errors or [fallback]
         return ReportEntry(
             path=path,
             errors=messages,
@@ -246,20 +246,6 @@ def _parse_error_finding(path_str: str, message: str) -> ComplexityFinding:
     )
 
 
-def _report_contributor_settings(config: FluffConfig, rule_id: str) -> tuple[bool, int]:
-    """Match SQLFluff lint: read ``show_contributors`` / ``max_contributors`` per rule section."""
-    show_raw = config.get("show_contributors", section=("rules", rule_id), default=True)
-    show_contributors = str(show_raw).strip().lower() in {"1", "true", "yes", "on"}
-    max_c = int(
-        config.get(
-            "max_contributors",
-            section=("rules", rule_id),
-            default=DEFAULT_MAX_CONTRIBUTORS,
-        ),
-    )
-    return show_contributors, max_c
-
-
 def _findings_for_file(
     *,
     path: Path,
@@ -278,7 +264,7 @@ def _findings_for_file(
     findings: list[ComplexityFinding] = []
 
     for limit in REPORT_LIMITS:
-        show_contributors, max_c = _report_contributor_settings(config, limit.rule_id)
+        show_contributors, max_c = contributor_display_settings(config, limit.rule_id)
         f = _metric_finding(
             path_s=path_s,
             line=line_i,
@@ -376,14 +362,8 @@ def _c201_finding(
     config: FluffConfig,
 ) -> ComplexityFinding:
     rem = remediation_for_rule("CPX_C201")
-    top_n = max(
-        1,
-        int(
-            config.get(
-                "max_contributors", section=("rules", "CPX_C201"), default=DEFAULT_MAX_CONTRIBUTORS
-            )
-        ),
-    )
+    _, max_c201 = contributor_display_settings(config, "CPX_C201")
+    top_n = max(1, max_c201)
     explain = explain_score_contributors(metrics, weights, max_items=top_n)
     top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
     hint = refactoring_hint_for_contributors(top_keys)
@@ -466,10 +446,13 @@ def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
 
 
 def _json_entry(entry: ReportEntry) -> dict[str, object]:
-    detail = [_finding_to_canonical_dict(f) for f in entry.findings]
-    legacy = [
-        {"level": f.level, "message": f.message, "rule_id": f.rule_id} for f in entry.findings
-    ]
+    legacy: list[dict[str, object]] = []
+    detail: list[dict[str, object]] = []
+    for finding in entry.findings:
+        legacy.append(
+            {"level": finding.level, "message": finding.message, "rule_id": finding.rule_id},
+        )
+        detail.append(_finding_to_canonical_dict(finding))
     base: dict[str, object] = {
         "errors": list(entry.errors),
         "findings": legacy,

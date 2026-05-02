@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from sqlfluff.core.rules import LintResult
 
+from sqlfluff_complexity.core.cpx_config import contributor_display_settings
 from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
 from sqlfluff_complexity.core.segment_tree import analyze_segment_tree, is_nested_select_statement
 from sqlfluff_complexity.core.violation_messages import metric_threshold_violation_message
@@ -68,19 +69,10 @@ def metric_lint_result(
         return None
 
     analysis = analyze_segment_tree(context.segment)
-    max_contributors = int(
-        context.config.get(
-            "max_contributors",
-            section=("rules", spec.rule_id),
-            default=3,
-        ),
+    show_contributors, max_contributors = contributor_display_settings(
+        context.config,
+        spec.rule_id,
     )
-    show_raw = context.config.get(
-        "show_contributors",
-        section=("rules", spec.rule_id),
-        default=True,
-    )
-    show_contributors = str(show_raw).strip().lower() in {"1", "true", "yes", "on"}
 
     description = metric_threshold_violation_message(
         rule_id=spec.rule_id,
