@@ -246,6 +246,27 @@ def _parse_error_finding(path_str: str, message: str) -> ComplexityFinding:
     )
 
 
+def _anchored_location(
+    *,
+    path_s: str,
+    root_line: int,
+    root_col: int,
+    metric_key: str | None,
+    contributors: tuple[MetricContributor, ...],
+) -> SourceLocation:
+    """Prefer contributor line/column for ``metric_key``, else any positioned contributor."""
+    if metric_key is not None:
+        for contributor in contributors:
+            if contributor.metric == metric_key and contributor.line is not None:
+                col = contributor.column if contributor.column is not None else 1
+                return SourceLocation(path=path_s, line=contributor.line, column=col)
+    for contributor in contributors:
+        if contributor.line is not None:
+            col = contributor.column if contributor.column is not None else 1
+            return SourceLocation(path=path_s, line=contributor.line, column=col)
+    return SourceLocation(path=path_s, line=root_line, column=root_col)
+
+
 def _findings_for_file(
     *,
     path: Path,
@@ -337,13 +358,20 @@ def _metric_finding(
         if show_contributors
         else ()
     )
+    loc = _anchored_location(
+        path_s=path_s,
+        root_line=line,
+        root_col=col,
+        metric_key=limit_spec.metric_name,
+        contributors=contributors,
+    )
 
     return ComplexityFinding(
         rule_id=limit_spec.rule_id,
         metric=limit_spec.metric_name,
         message=message,
         remediation=rem,
-        location=SourceLocation(path=path_s, line=line, column=col),
+        location=loc,
         metrics=metrics,
         score=actual,
         threshold=max_allowed,
@@ -374,12 +402,19 @@ def _c201_finding(
             f"CPX_C201: aggregate complexity score {score} exceeds max_complexity_score={threshold}. "
             f"{rem} Metrics: {metrics.format_breakdown()}."
         )
+        loc = _anchored_location(
+            path_s=path_s,
+            root_line=line,
+            root_col=col,
+            metric_key=None,
+            contributors=contributors,
+        )
         return ComplexityFinding(
             rule_id="CPX_C201",
             metric="complexity_score",
             message=message,
             remediation=rem,
-            location=SourceLocation(path=path_s, line=line, column=col),
+            location=loc,
             metrics=metrics,
             score=score,
             threshold=threshold,
@@ -407,13 +442,20 @@ def _c201_finding(
         weights,
         max_items=top_n,
     )
+    loc = _anchored_location(
+        path_s=path_s,
+        root_line=line,
+        root_col=col,
+        metric_key=None,
+        contributors=contributors,
+    )
 
     return ComplexityFinding(
         rule_id="CPX_C201",
         metric="complexity_score",
         message=message,
         remediation=rem,
-        location=SourceLocation(path=path_s, line=line, column=col),
+        location=loc,
         metrics=metrics,
         score=score,
         threshold=threshold,

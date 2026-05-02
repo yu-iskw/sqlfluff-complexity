@@ -54,6 +54,19 @@ def compact_segment_raw(segment: BaseSegment | None) -> str:
     return raw
 
 
+def _int_attr(marker: object, *names: str) -> int | None:
+    """First usable integer attribute on ``marker``."""
+    for name in names:
+        raw = getattr(marker, name, None)
+        if raw is None:
+            continue
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
 def segment_position(segment: BaseSegment | None) -> tuple[int | None, int | None]:
     """Best-effort line/column from SQLFluff position markers."""
     if segment is None:
@@ -61,16 +74,8 @@ def segment_position(segment: BaseSegment | None) -> tuple[int | None, int | Non
     marker = getattr(segment, "pos_marker", None)
     if marker is None:
         return None, None
-    line_no = getattr(marker, "lineno", None)
-    col = getattr(marker, "pos", None)
-    try:
-        line_int = int(line_no) if line_no is not None else None
-    except (TypeError, ValueError):
-        line_int = None
-    try:
-        col_int = int(col) if col is not None else None
-    except (TypeError, ValueError):
-        col_int = None
+    line_int = _int_attr(marker, "line_no", "working_line_no", "lineno")
+    col_int = _int_attr(marker, "line_pos", "working_line_pos", "pos")
     return line_int, col_int
 
 
