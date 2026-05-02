@@ -18,25 +18,50 @@ class StructuralScanResult(NamedTuple):
     expression_depth: int
 
 
+def merge_structural_scan(
+    acc: StructuralScanResult,
+    segment: BaseSegment,
+    case_depth: int,
+) -> StructuralScanResult:
+    """Fold one segment into structural counters (mirrors :func:`compute_structural_metrics`)."""
+    st = getattr(segment, "type", "")
+    set_ops = acc.set_operation_count + (1 if st == "set_operator" else 0)
+    expr_dep = acc.expression_depth
+    if st == "case_expression":
+        expr_dep = max(expr_dep, case_depth + 1)
+    cte_dep = acc.cte_dependency_depth
+    if st == "with_compound_statement":
+        cte_dep = max(cte_dep, _cte_dependency_depth_for_with(segment))
+    return StructuralScanResult(cte_dep, set_ops, expr_dep)
+
+
 def compute_structural_metrics(root: BaseSegment) -> StructuralScanResult:
     """Global max CTE chain depth, set-operator count, and max ``case_expression`` nesting in one walk."""
-    set_ops = 0
-    max_case = 0
-    max_cte_dep = 0
+    acc = StructuralScanResult(0, 0, 0)
     stack: list[tuple[BaseSegment, int]] = [(root, 0)]
     while stack:
         seg, case_depth = stack.pop()
+        acc = merge_structural_scan(acc, seg, case_depth)
         st = getattr(seg, "type", "")
-        if st == "set_operator":
-            set_ops += 1
-        elif st == "case_expression":
-            max_case = max(max_case, case_depth + 1)
-        elif st == "with_compound_statement":
-            max_cte_dep = max(max_cte_dep, _cte_dependency_depth_for_with(seg))
         child_case_depth = case_depth + 1 if st == "case_expression" else case_depth
         children = getattr(seg, "segments", ()) or ()
         stack.extend((ch, child_case_depth) for ch in reversed(children))
-    return StructuralScanResult(max_cte_dep, set_ops, max_case)
+    return acc
+
+
+def max_cte_dependency_depth(root: BaseSegment) -> int:
+    """Longest CTE reference chain within each ``with_compound_statement``; return the global max."""
+    return compute_structural_metrics(root).cte_dependency_depth
+
+
+def count_set_operations(root: BaseSegment) -> int:
+    """Count ``set_operator`` segments (UNION / INTERSECT / EXCEPT arms)."""
+    return compute_structural_metrics(root).set_operation_count
+
+
+def max_case_expression_nesting_depth(root: BaseSegment) -> int:
+    """Maximum nesting depth of ``case_expression`` segments inside other case expressions."""
+    return compute_structural_metrics(root).expression_depth
 
 
 def _cte_dependency_depth_for_with(with_root: BaseSegment) -> int:

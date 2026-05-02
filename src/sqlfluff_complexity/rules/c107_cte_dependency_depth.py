@@ -9,7 +9,6 @@ from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 from sqlfluff_complexity.core.policy import ComplexityPolicy
 from sqlfluff_complexity.core.remediation import remediation_for_rule
-from sqlfluff_complexity.core.segment_tree import is_nested_select_statement
 from sqlfluff_complexity.core.structural_metrics import (
     cte_dependency_depth_for_with_clause,
     direct_child_common_table_expressions,
@@ -40,7 +39,7 @@ class Rule_CPX_C107(BaseRule):  # noqa: N801
             context,
             ComplexityPolicy(max_cte_dependency_depth=int(self.max_cte_dependency_depth)),
         )
-        if is_nested_select_statement(context.segment) or policy.mode == "report":
+        if policy.mode == "report":
             return None
 
         actual = cte_dependency_depth_for_with_clause(context.segment)

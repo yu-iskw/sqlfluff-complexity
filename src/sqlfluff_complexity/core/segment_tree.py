@@ -11,7 +11,7 @@ from sqlfluff_complexity.core.analysis import (
     segment_position,
 )
 from sqlfluff_complexity.core.metrics import ComplexityMetrics
-from sqlfluff_complexity.core.structural_metrics import compute_structural_metrics
+from sqlfluff_complexity.core.structural_metrics import StructuralScanResult, merge_structural_scan
 
 if TYPE_CHECKING:
     from sqlfluff.core.parser.segments.base import BaseSegment
@@ -21,8 +21,8 @@ BOOLEAN_OPERATOR_RAW = {"AND", "OR"}
 
 def analyze_segment_tree(root: BaseSegment) -> ComplexityAnalysis:
     """Collect metrics and per-segment contributors from a SQLFluff segment tree."""
-    counter = _MetricCounter(root)
-    counter.walk(root, active_selects=0, nested_depth=0)
+    counter = _MetricCounter()
+    counter.walk(root, active_selects=0, nested_depth=0, case_depth=0)
     return ComplexityAnalysis(
         metrics=counter.to_metrics(),
         contributors=tuple(counter.contributors),
@@ -66,7 +66,7 @@ def _parent_segment(segment: BaseSegment | None) -> BaseSegment | None:
 class _MetricCounter:
     """Stateful collector for one SQLFluff segment tree walk."""
 
-    def __init__(self, root: BaseSegment) -> None:
+    def __init__(self) -> None:
         self.ctes = 0
         self.joins = 0
         self.subqueries = 0
@@ -74,11 +74,20 @@ class _MetricCounter:
         self.case_expressions = 0
         self.boolean_operators = 0
         self.window_functions = 0
-        structural = compute_structural_metrics(root)
-        self.cte_dependency_depth = structural.cte_dependency_depth
-        self.set_operation_count = structural.set_operation_count
-        self.expression_depth = structural.expression_depth
+        self._structural = StructuralScanResult(0, 0, 0)
         self.contributors: list[MetricContributor] = []
+
+    @property
+    def cte_dependency_depth(self) -> int:
+        return self._structural.cte_dependency_depth
+
+    @property
+    def set_operation_count(self) -> int:
+        return self._structural.set_operation_count
+
+    @property
+    def expression_depth(self) -> int:
+        return self._structural.expression_depth
 
     def _add_contributor(
         self,
@@ -99,14 +108,21 @@ class _MetricCounter:
             ),
         )
 
-    def walk(self, segment: BaseSegment, active_selects: int, nested_depth: int) -> None:
+    def walk(
+        self,
+        segment: BaseSegment,
+        active_selects: int,
+        nested_depth: int,
+        case_depth: int,
+    ) -> None:
         """Walk a segment and its children."""
+        self._structural = merge_structural_scan(self._structural, segment, case_depth)
         segment_type = getattr(segment, "type", "")
 
         if segment_type == "common_table_expression":
             self.ctes += 1
             self._add_contributor("ctes", segment, reason="common table expression")
-            self._walk_children(segment, active_selects=0, nested_depth=0)
+            self._walk_children(segment, active_selects=0, nested_depth=0, case_depth=case_depth)
             return
 
         next_active_selects, next_nested_depth = self._select_depths(
@@ -117,15 +133,28 @@ class _MetricCounter:
         )
         self._count_segment(segment, segment_type)
 
+        child_case_depth = case_depth + 1 if segment_type == "case_expression" else case_depth
         self._walk_children(
             segment,
             active_selects=next_active_selects,
             nested_depth=next_nested_depth,
+            case_depth=child_case_depth,
         )
 
-    def _walk_children(self, segment: BaseSegment, active_selects: int, nested_depth: int) -> None:
+    def _walk_children(
+        self,
+        segment: BaseSegment,
+        active_selects: int,
+        nested_depth: int,
+        case_depth: int,
+    ) -> None:
         for child in getattr(segment, "segments", ()) or ():
-            self.walk(child, active_selects=active_selects, nested_depth=nested_depth)
+            self.walk(
+                child,
+                active_selects=active_selects,
+                nested_depth=nested_depth,
+                case_depth=case_depth,
+            )
 
     def _select_depths(
         self,

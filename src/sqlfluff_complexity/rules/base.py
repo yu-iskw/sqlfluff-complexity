@@ -15,6 +15,7 @@ from sqlfluff_complexity.core.violation_messages import metric_threshold_violati
 if TYPE_CHECKING:
     from sqlfluff.core.rules import RuleContext
 
+    from sqlfluff_complexity.core.analysis import ComplexityAnalysis
     from sqlfluff_complexity.core.metrics import ComplexityMetrics
 
 
@@ -34,11 +35,19 @@ def metric_lint_result_outer_select_only(
     metrics: ComplexityMetrics,
     policy: ComplexityPolicy,
     spec: MetricRuleSpec,
+    *,
+    precomputed_analysis: ComplexityAnalysis | None = None,
 ) -> LintResult | None:
     """Like ``metric_lint_result`` but skip nested ``select_statement`` crawl hits."""
     if is_nested_select_statement(context.segment):
         return None
-    return metric_lint_result(context, metrics, policy, spec)
+    return metric_lint_result(
+        context,
+        metrics,
+        policy,
+        spec,
+        precomputed_analysis=precomputed_analysis,
+    )
 
 
 def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:
@@ -58,8 +67,15 @@ def metric_lint_result(
     metrics: ComplexityMetrics,
     policy: ComplexityPolicy,
     spec: MetricRuleSpec,
+    *,
+    precomputed_analysis: ComplexityAnalysis | None = None,
 ) -> LintResult | None:
-    """Build a lint result for one metric threshold, if violated."""
+    """Build a lint result for one metric threshold, if violated.
+
+    When ``precomputed_analysis`` is provided, use it for contributor lines instead
+    of re-running :func:`sqlfluff_complexity.core.segment_tree.analyze_segment_tree`
+    on the same segment (avoids a second full tree walk on violations).
+    """
     if policy.mode == "report":
         return None
 
@@ -68,7 +84,7 @@ def metric_lint_result(
     if actual <= limit:
         return None
 
-    analysis = analyze_segment_tree(context.segment)
+    analysis = precomputed_analysis or analyze_segment_tree(context.segment)
     show_contributors, max_contributors = contributor_display_settings(
         context.config,
         spec.rule_id,

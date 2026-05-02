@@ -8,7 +8,7 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 from sqlfluff_complexity.core.policy import ComplexityPolicy
-from sqlfluff_complexity.core.segment_tree import collect_metrics
+from sqlfluff_complexity.core.segment_tree import analyze_segment_tree
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     metric_lint_result_outer_select_only,
@@ -43,9 +43,11 @@ class Rule_CPX_C106(BaseRule):  # noqa: N801
             context,
             ComplexityPolicy(max_window_functions=int(self.max_window_functions)),
         )
+        analysis = analyze_segment_tree(context.segment)
         return metric_lint_result_outer_select_only(
             context,
-            collect_metrics(context.segment),
+            analysis.metrics,
             policy,
             self._spec,
+            precomputed_analysis=analysis,
         )
