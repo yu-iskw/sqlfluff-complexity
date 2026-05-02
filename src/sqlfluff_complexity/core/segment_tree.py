@@ -74,10 +74,10 @@ class _MetricCounter:
         self.case_expressions = 0
         self.boolean_operators = 0
         self.window_functions = 0
-        cte_dep, set_ops, expr_dep = compute_structural_metrics(root)
-        self.cte_dependency_depth = cte_dep
-        self.set_operation_count = set_ops
-        self.expression_depth = expr_dep
+        structural = compute_structural_metrics(root)
+        self.cte_dependency_depth = structural.cte_dependency_depth
+        self.set_operation_count = structural.set_operation_count
+        self.expression_depth = structural.expression_depth
         self.contributors: list[MetricContributor] = []
 
     def _add_contributor(
