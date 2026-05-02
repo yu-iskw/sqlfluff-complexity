@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import weakref
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
@@ -16,6 +17,22 @@ class StructuralScanResult(NamedTuple):
     cte_dependency_depth: int
     set_operation_count: int
     expression_depth: int
+
+
+# Weak keys: entries drop when parse-tree segments are GC'd. Per-root memo avoids repeated
+# full scans when public helpers call compute_structural_metrics on the same tree; per-WITH
+# memo avoids duplicating CTE graph work between metric collection and CPX_C107.
+_STRUCTURAL_BY_ROOT: weakref.WeakKeyDictionary[BaseSegment, StructuralScanResult] = (
+    weakref.WeakKeyDictionary()
+)
+_CTE_DEPTH_BY_WITH: weakref.WeakKeyDictionary[BaseSegment, int] = weakref.WeakKeyDictionary()
+
+
+def clear_structural_caches() -> None:
+    """Clear memoization for testing isolation (weak-key caches only)."""
+
+    _STRUCTURAL_BY_ROOT.clear()
+    _CTE_DEPTH_BY_WITH.clear()
 
 
 def merge_structural_scan(
@@ -37,6 +54,9 @@ def merge_structural_scan(
 
 def compute_structural_metrics(root: BaseSegment) -> StructuralScanResult:
     """Global max CTE chain depth, set-operator count, and max ``case_expression`` nesting in one walk."""
+    cached = _STRUCTURAL_BY_ROOT.get(root)
+    if cached is not None:
+        return cached
     acc = StructuralScanResult(0, 0, 0)
     stack: list[tuple[BaseSegment, int]] = [(root, 0)]
     while stack:
@@ -46,6 +66,7 @@ def compute_structural_metrics(root: BaseSegment) -> StructuralScanResult:
         child_case_depth = case_depth + 1 if st == "case_expression" else case_depth
         children = getattr(seg, "segments", ()) or ()
         stack.extend((ch, child_case_depth) for ch in reversed(children))
+    _STRUCTURAL_BY_ROOT[root] = acc
     return acc
 
 
@@ -66,8 +87,12 @@ def max_case_expression_nesting_depth(root: BaseSegment) -> int:
 
 def _cte_dependency_depth_for_with(with_root: BaseSegment) -> int:
     """Compute longest CTE dependency chain for one WITH compound statement."""
+    cached = _CTE_DEPTH_BY_WITH.get(with_root)
+    if cached is not None:
+        return cached
     cte_segments = list(direct_child_common_table_expressions(with_root))
     if not cte_segments:
+        _CTE_DEPTH_BY_WITH[with_root] = 0
         return 0
 
     names_in_scope = {_cte_alias(cte) for cte in cte_segments}
@@ -75,7 +100,9 @@ def _cte_dependency_depth_for_with(with_root: BaseSegment) -> int:
 
     edges = _cte_reference_edges(cte_segments, names_in_scope)
 
-    return _longest_dependency_chain_depth(names_in_scope, edges)
+    depth = _longest_dependency_chain_depth(names_in_scope, edges)
+    _CTE_DEPTH_BY_WITH[with_root] = depth
+    return depth
 
 
 def cte_dependency_depth_for_with_clause(with_root: BaseSegment) -> int:

@@ -7,17 +7,22 @@ from typing import TYPE_CHECKING
 
 from sqlfluff.core import Linter
 
+import sqlfluff_complexity.core.structural_metrics as structural_metrics_mod
 from sqlfluff_complexity.core.segment_tree import collect_metrics
 from sqlfluff_complexity.core.structural_metrics import (
     StructuralScanResult,
+    clear_structural_caches,
     compute_structural_metrics,
     count_set_operations,
+    cte_dependency_depth_for_with_clause,
     max_case_expression_nesting_depth,
     max_cte_dependency_depth,
     merge_structural_scan,
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from sqlfluff.core.parser.segments.base import BaseSegment
 
 _CASE_NESTED_SQL = dedent(
@@ -82,6 +87,46 @@ def test_collect_metrics_structural_fields_match_compute() -> None:
     assert m.cte_dependency_depth == scan.cte_dependency_depth
     assert m.set_operation_count == scan.set_operation_count
     assert m.expression_depth == scan.expression_depth
+
+
+def test_compute_structural_metrics_caches_by_root() -> None:
+    """Second call on the same root should return the cached result (one tree walk)."""
+    root = _parse_tree("SELECT 1")
+    first = compute_structural_metrics(root)
+    second = compute_structural_metrics(root)
+    assert first is second
+
+
+def test_cte_depth_for_with_reuses_cache_after_merge_walk() -> None:
+    """Per-WITH CTE graph depth is memoized for CPX_C107 after ``collect_metrics``."""
+    clear_structural_caches()
+    sql = dedent(
+        """
+        WITH
+          a AS (SELECT 1 AS id),
+          b AS (SELECT * FROM a)
+        SELECT * FROM b
+        """
+    ).strip()
+    root = _parse_tree(sql)
+    _ = collect_metrics(root)
+    with_nodes = [
+        s for s in _iter_with_nodes(root) if getattr(s, "type", "") == "with_compound_statement"
+    ]
+    assert len(with_nodes) == 1
+    w = with_nodes[0]
+    assert w in structural_metrics_mod._CTE_DEPTH_BY_WITH
+    d1 = structural_metrics_mod._CTE_DEPTH_BY_WITH[w]
+    d2 = cte_dependency_depth_for_with_clause(w)
+    assert d1 == d2 == 2
+
+
+def _iter_with_nodes(root: BaseSegment) -> Iterator[BaseSegment]:
+    stack = [root]
+    while stack:
+        seg = stack.pop()
+        yield seg
+        stack.extend(reversed(getattr(seg, "segments", ()) or ()))
 
 
 def test_nested_case_expression_depth() -> None:
