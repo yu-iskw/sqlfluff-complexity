@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -133,12 +134,33 @@ class ComplexityReport:
 
 
 def analyze_paths(
-    paths: Sequence[Path], *, dialect: str, config_path: Path | None = None
+    paths: Sequence[Path],
+    *,
+    dialect: str,
+    config_path: Path | None = None,
+    jobs: int = 1,
 ) -> ComplexityReport:
     """Analyze SQL file paths with SQLFluff and collect complexity metrics."""
+    if jobs < 1:
+        message = "jobs must be >= 1."
+        raise ValueError(message)
     config = _build_config(dialect=dialect, config_path=config_path)
-    linter = Linter(config=config)
-    return ComplexityReport(entries=[_analyze_path(path, linter, config) for path in paths])
+    if jobs == 1:
+        linter = Linter(config=config)
+        return ComplexityReport(entries=[_analyze_path(path, linter, config) for path in paths])
+
+    entries_by_index: dict[int, ReportEntry] = {}
+    paths_list = list(paths)
+    with ThreadPoolExecutor(max_workers=jobs) as executor:
+        futures = {
+            executor.submit(_analyze_path, paths_list[i], Linter(config=config), config): i
+            for i in range(len(paths_list))
+        }
+        for future in as_completed(futures):
+            idx = futures[future]
+            entries_by_index[idx] = future.result()
+    ordered = [entries_by_index[i] for i in range(len(paths_list))]
+    return ComplexityReport(entries=ordered)
 
 
 def format_console_report(report: ComplexityReport) -> str:
@@ -185,10 +207,14 @@ def _console_message_line(rule_id: str, message: str) -> str:
 
 
 def analyze_paths_findings(
-    paths: Sequence[Path], *, dialect: str, config_path: Path | None = None
+    paths: Sequence[Path],
+    *,
+    dialect: str,
+    config_path: Path | None = None,
+    jobs: int = 1,
 ) -> list[ComplexityFinding]:
     """Return flat ComplexityFinding list for all paths (canonical API)."""
-    report = analyze_paths(paths, dialect=dialect, config_path=config_path)
+    report = analyze_paths(paths, dialect=dialect, config_path=config_path, jobs=jobs)
     return [f for e in report.entries for f in e.findings]
 
 

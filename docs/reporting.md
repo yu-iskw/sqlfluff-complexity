@@ -6,7 +6,7 @@ Report mode uses the same SQLFluff parser, metric collector, scoring weights, th
 
 ## Console Report
 
-Analyze one or more SQL files:
+Analyze one or more SQL files or directories (directories are scanned recursively for `*.sql`):
 
 ```bash
 sqlfluff-complexity report --dialect postgres models/orders.sql
@@ -30,6 +30,19 @@ sqlfluff-complexity report \
   --config .sqlfluff \
   models/staging/orders.sql
 ```
+
+### Path discovery
+
+- **Positional paths**: files are always analyzed; directories recurse and collect `*.sql` files filtered by `--include` / `--exclude` (see below).
+- **`--include GLOB`**: repeatable; defaults to `**/*.sql` for files discovered under directories.
+- **`--exclude GLOB`**: repeatable; excludes matching paths (relative POSIX paths).
+- **`--files-from PATH_OR_DASH`**: newline-separated paths; use `-` for stdin; blank lines ignored; paths are filtered by include/exclude when combined with discovery.
+- **`--changed-from REF`**: same files as `git diff --name-only REF...HEAD`, keeping existing `.sql` files that match include/exclude.
+- **`--jobs N`**: optional parallel analysis (default `1`).
+
+Paths in output use POSIX separators and are relative to the working directory when possible.
+
+See [baseline](baseline.md) for saving snapshots and regression checks.
 
 Optional per-rule settings (in `.sqlfluff`) tune verbosity without changing thresholds:
 

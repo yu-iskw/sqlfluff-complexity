@@ -256,3 +256,83 @@ def _join_heavy_sql(join_count: int) -> str:
         f"join table_{index} on base.id = table_{index}.id" for index in range(1, join_count + 1)
     )
     return "\n".join([select_clause, joins])
+
+
+def test_report_directory_recursive(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """The report command should accept a directory and find SQL files."""
+    (tmp_path / "models").mkdir()
+    f = tmp_path / "models" / "a.sql"
+    f.write_text("select 1", encoding="utf-8")
+    assert main(["report", "--dialect", "ansi", str(tmp_path / "models")]) == 0
+    out = capsys.readouterr().out
+    assert "models/a.sql" in out or "a.sql" in out
+
+
+def test_baseline_create_writes_output(tmp_path: Path) -> None:
+    """baseline create should write a JSON file."""
+    d = tmp_path / "m"
+    d.mkdir()
+    f = d / "a.sql"
+    f.write_text("select 1", encoding="utf-8")
+    out = tmp_path / "base.json"
+    assert (
+        main(
+            [
+                "baseline",
+                "create",
+                str(d),
+                "--dialect",
+                "ansi",
+                "--output",
+                str(out),
+            ],
+        )
+        == 0
+    )
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["schema_version"] == "1.0"
+    assert any(str(k).endswith("m/a.sql") for k in data["entries"])
+
+
+def test_check_regression_returns_nonzero(tmp_path: Path) -> None:
+    """check --fail-on regression should exit 1 when score increases."""
+    sql = tmp_path / "x.sql"
+    sql.write_text(_join_heavy_sql(join_count=9), encoding="utf-8")
+    baseline_path = tmp_path / "b.json"
+    baseline_path.write_text(
+        json.dumps(
+            {
+                "entries": {
+                    "x.sql": {
+                        "errors": [],
+                        "metrics": {
+                            "boolean_operators": 0,
+                            "case_expressions": 0,
+                            "ctes": 0,
+                            "joins": 0,
+                            "subqueries": 0,
+                            "subquery_depth": 0,
+                            "window_functions": 0,
+                        },
+                        "score": 0,
+                    },
+                },
+                "schema_version": "1.0",
+                "tool": "sqlfluff-complexity",
+            },
+        ),
+        encoding="utf-8",
+    )
+    code = main(
+        [
+            "check",
+            str(sql),
+            "--dialect",
+            "ansi",
+            "--baseline",
+            str(baseline_path),
+            "--fail-on",
+            "regression",
+        ],
+    )
+    assert code == 1
