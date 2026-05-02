@@ -60,7 +60,7 @@ classifiers = [
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3:: Only",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -86,6 +86,7 @@ markers = [
 [dependency-groups]
 dbt = ["dbt-duckdb>=1.10.1", "sqlfluff-templater-dbt>=3.5.0"]
 dev = [
+  "coverage>=7.6.0",
   "xenon>=0.9.3",
   "nox>=2026.4.10",
   "pytest>=8.3.5",
