@@ -15,9 +15,10 @@ def test_sarif_join_violation_region_not_always_line_one(tmp_path: Path) -> None
     """CPX_C102 SARIF region should prefer join_clause position over file root."""
     sql_file = tmp_path / "joins.sql"
     sql_file.write_text(
-        "select * from base\n"
-        "join t1 on base.id = t1.id\n"
-        "join t2 on base.id = t2.id\n",
+        """select * from base
+join t1 on base.id = t1.id
+join t2 on base.id = t2.id
+""",
         encoding="utf-8",
     )
     cfg = tmp_path / ".sqlfluff"

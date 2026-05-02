@@ -107,4 +107,3 @@ def test_segment_position_reads_join_clause_sqlfluff_marker() -> None:
     line, col = segment_position(seg)
     assert line == 2
     assert col == 1
-
