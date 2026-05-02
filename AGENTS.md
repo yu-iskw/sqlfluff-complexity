@@ -104,7 +104,7 @@ Slash-invoked skills live under [`.claude/skills/<name>/SKILL.md`](.claude/skill
 | ---------------------- | --------------------------------------------------------------------------- |
 | `build-and-fix`        | Build or packaging failures                                                 |
 | `codeql-fix`           | Local CodeQL (`make codeql`); requires CodeQL CLI                           |
-| `lint-and-fix`         | Trunk / linter failures                                                     |
+| `lint-and-fix`         | Trunk / linter failures; fallback linters if Trunk unavailable (see `.claude/skills/lint-and-fix/SKILL.md`) |
 | `test-and-fix`         | Failing tests                                                               |
 | `setup-dev-env`        | First-time or broken environment                                            |
 | `python-upgrade`       | Dependency upgrades with uv                                                 |
