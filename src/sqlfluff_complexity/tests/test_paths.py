@@ -72,7 +72,7 @@ def test_direct_file_bypasses_include(tmp_path: Path) -> None:
 
 
 def test_explicit_missing_path_is_kept(tmp_path: Path) -> None:
-    """Typoed explicit paths must not be dropped so analysis can report a read error."""
+    """Explicit paths that are not existing files or dirs must stay in the list for read errors."""
     existing = tmp_path / "ok.sql"
     existing.write_text("select 1", encoding="utf-8")
     missing = tmp_path / "nope.sql"

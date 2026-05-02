@@ -76,6 +76,13 @@ def _collect_sql_under_directory(
                 result.append(fp)
 
 
+def _add_unique_resolved(path: Path, *, seen: set[Path], result: list[Path]) -> None:
+    if path in seen:
+        return
+    seen.add(path)
+    result.append(path)
+
+
 def discover_sql_paths(
     paths: Sequence[Path],
     *,
@@ -103,9 +110,7 @@ def discover_sql_paths(
         candidate = raw if raw.is_absolute() else base / raw
         resolved = candidate.resolve()
         if resolved.is_file():
-            if resolved not in seen:
-                seen.add(resolved)
-                result.append(resolved)
+            _add_unique_resolved(resolved, seen=seen, result=result)
             continue
         if resolved.is_dir():
             _collect_sql_under_directory(
@@ -117,11 +122,8 @@ def discover_sql_paths(
                 result=result,
             )
             continue
-        # Keep explicit paths that are missing or not regular files/dirs so callers can
-        # surface read errors (see ``report._analyze_path``) instead of dropping them.
-        if resolved not in seen:
-            seen.add(resolved)
-            result.append(resolved)
+        # Missing or non-regular explicit paths: keep so ``report._analyze_path`` can record read errors.
+        _add_unique_resolved(resolved, seen=seen, result=result)
     return sorted(result, key=lambda p: normalize_report_path(p, root=base))
 
 
