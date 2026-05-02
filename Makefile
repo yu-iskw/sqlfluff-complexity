@@ -63,13 +63,13 @@ test:
 # Run Python tests with coverage and print missing lines.
 .PHONY: coverage test-coverage
 coverage test-coverage:
-	PYTEST_XDIST_WORKERS=0 uv run --group dev --with coverage coverage run --source=src/sqlfluff_complexity -m pytest -v -s -m "$(PYTEST_MARKER)" "$(PYTEST_PATH)"
-	uv run --group dev --with coverage coverage report --show-missing --fail-under=$(COVERAGE_FAIL_UNDER)
+	uv run --group dev coverage run --source=src/sqlfluff_complexity -m pytest -v -s -m "$(PYTEST_MARKER)" "$(PYTEST_PATH)"
+	uv run --group dev coverage report --show-missing --fail-under=$(COVERAGE_FAIL_UNDER)
 
 # Generate an HTML Python coverage report under htmlcov/.
 .PHONY: coverage-html
 coverage-html: coverage
-	uv run --group dev --with coverage coverage html
+	uv run --group dev coverage html
 
 .PHONY: test-dialect-extra
 test-dialect-extra:
@@ -93,7 +93,7 @@ build:
 .PHONY: clean
 clean:
 	bash ./dev/clean.sh
-	rm -rf .coverage htmlcov
+	rm -rf .coverage .coverage.* coverage.xml htmlcov
 
 all: clean lint test build
 
