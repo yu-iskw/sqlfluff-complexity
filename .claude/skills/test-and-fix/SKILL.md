@@ -104,7 +104,7 @@ Scopes coverage to a test file or directory while still measuring `src/sqlfluff_
 
 ## Troubleshooting
 
-- If xdist or subprocess coverage appears incomplete, the Makefile coverage target disables xdist with `PYTEST_XDIST_WORKERS=0` for deterministic local coverage.
+- `make coverage` runs `pytest` directly without Nox's xdist `-n` flags so local coverage collection is deterministic.
 - If optional marker suites are needed, override `PYTEST_MARKER`, for example:
 
   ```bash
@@ -114,7 +114,7 @@ Scopes coverage to a test file or directory while still measuring `src/sqlfluff_
 - If coverage output is stale or confusing, run:
 
   ```bash
-  rm -rf .coverage htmlcov
+  rm -rf .coverage .coverage.* coverage.xml htmlcov
   make coverage
   ```
 
@@ -138,7 +138,7 @@ Scopes coverage to a test file or directory while still measuring `src/sqlfluff_
 
 - Keep coverage changes behavior-driven; line coverage alone is not a sufficient reason for brittle tests.
 - Do not lower or bypass `COVERAGE_FAIL_UNDER` when a threshold was explicitly requested.
-- Do not include generated `htmlcov/` or `.coverage` files in commits.
+- Do not include generated `htmlcov/`, `.coverage`, `.coverage.*`, or `coverage.xml` files in commits.
 - Apply the minimum fix necessary for failing tests.
 
 ## Resources
