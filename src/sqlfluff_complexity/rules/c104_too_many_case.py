@@ -20,7 +20,11 @@ class Rule_CPX_C104(BaseRule):  # noqa: N801
     """Query contains too many CASE expressions."""
 
     groups: tuple[str, ...] = ("all", "complexity")
-    config_keywords: ClassVar[list[str]] = ["max_case_expressions"]
+    config_keywords: ClassVar[list[str]] = [
+        "max_case_expressions",
+        "show_contributors",
+        "max_contributors",
+    ]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
     max_case_expressions: int
@@ -31,7 +35,6 @@ class Rule_CPX_C104(BaseRule):  # noqa: N801
         config_key="max_case_expressions",
         policy_key="max_case_expressions",
         description_label="CASE expression count",
-        guidance="Consider extracting business rules into upstream models or mapping tables.",
     )
 
     def _eval(self, context: RuleContext) -> LintResult | None:

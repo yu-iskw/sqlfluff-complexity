@@ -20,7 +20,11 @@ class Rule_CPX_C105(BaseRule):  # noqa: N801
     """Query contains too many boolean operators."""
 
     groups: tuple[str, ...] = ("all", "complexity")
-    config_keywords: ClassVar[list[str]] = ["max_boolean_operators"]
+    config_keywords: ClassVar[list[str]] = [
+        "max_boolean_operators",
+        "show_contributors",
+        "max_contributors",
+    ]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
     max_boolean_operators: int
@@ -31,7 +35,6 @@ class Rule_CPX_C105(BaseRule):  # noqa: N801
         config_key="max_boolean_operators",
         policy_key="max_boolean_operators",
         description_label="boolean operator count",
-        guidance="Consider simplifying predicates or extracting filters into named CTEs.",
     )
 
     def _eval(self, context: RuleContext) -> LintResult | None:

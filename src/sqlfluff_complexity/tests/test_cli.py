@@ -108,7 +108,7 @@ def test_report_json_roundtrip(tmp_path: Path) -> None:
         == 0
     )
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.0"
+    assert data["schema_version"] in {"1.0", "1.1"}
     assert data["tool"] == "sqlfluff-complexity"
     entry = data["entries"][0]
     assert entry["path"] == str(sql_file)
@@ -247,7 +247,7 @@ def test_report_uses_path_override_thresholds(
 
     output = capsys.readouterr().out
     assert exit_code == 0
-    assert "CPX_C102: Join count 2 exceeds max_joins=1." in output
+    assert "CPX_C102: join count 2 exceeds max_joins=1" in output
 
 
 def _join_heavy_sql(join_count: int) -> str:

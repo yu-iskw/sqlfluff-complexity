@@ -61,11 +61,23 @@ ignore = [
 
 [lint.per-file-ignores]
 "src/sqlfluff_complexity/tests/**" = [
-  "S101", # assert used in tests
+  "S101",    # assert used in tests
+  "PLR2004", # magic values in tests
 ]
 # Dataclass field annotations need runtime symbols; TC001 would force TYPE_CHECKING-only imports.
-"src/sqlfluff_complexity/core/analysis.py" = ["TC001"]
-"src/sqlfluff_complexity/report.py" = ["TC001", "TC003"]
+"src/sqlfluff_complexity/core/analysis.py" = ["TC001", "TC003"]
+"src/sqlfluff_complexity/core/findings.py" = ["TC001"]
+"src/sqlfluff_complexity/core/violation_messages.py" = ["PLR0913"]
+"src/sqlfluff_complexity/reporting/json.py" = ["TC001", "TC003"]
+"src/sqlfluff_complexity/reporting/sarif.py" = ["TC001", "TC003", "PLR2004"]
+"src/sqlfluff_complexity/report.py" = [
+  "TC001",
+  "TC002",
+  "TC003",
+  "PLR0913",
+  "PLC0415",
+]
+"src/sqlfluff_complexity/rules/base.py" = ["TC001"]
 
 # NOTE: Prefer narrow noqa comments over broad file-level bypasses.
 

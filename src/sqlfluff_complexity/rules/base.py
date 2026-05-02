@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING
 
 from sqlfluff.core.rules import LintResult
 
+from sqlfluff_complexity.core.cpx_config import contributor_display_settings
 from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
-from sqlfluff_complexity.core.segment_tree import is_nested_select_statement
+from sqlfluff_complexity.core.segment_tree import analyze_segment_tree, is_nested_select_statement
+from sqlfluff_complexity.core.violation_messages import metric_threshold_violation_message
 
 if TYPE_CHECKING:
     from sqlfluff.core.rules import RuleContext
@@ -25,7 +27,6 @@ class MetricRuleSpec:
     config_key: str
     policy_key: str
     description_label: str
-    guidance: str
 
 
 def metric_lint_result_outer_select_only(
@@ -67,10 +68,25 @@ def metric_lint_result(
     if actual <= limit:
         return None
 
+    analysis = analyze_segment_tree(context.segment)
+    show_contributors, max_contributors = contributor_display_settings(
+        context.config,
+        spec.rule_id,
+    )
+
+    description = metric_threshold_violation_message(
+        rule_id=spec.rule_id,
+        description_label=spec.description_label,
+        actual=actual,
+        config_key=spec.config_key,
+        limit=limit,
+        metric_name=spec.metric_name,
+        contributors=analysis.contributors,
+        max_contributors=max_contributors,
+        show_contributors=show_contributors,
+    )
+
     return LintResult(
         anchor=context.segment,
-        description=(
-            f"{spec.rule_id}: {spec.description_label} {actual} exceeds "
-            f"{spec.config_key}={limit}. {spec.guidance}"
-        ),
+        description=description,
     )

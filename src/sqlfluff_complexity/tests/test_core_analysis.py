@@ -95,3 +95,15 @@ def test_segment_position_best_effort() -> None:
     line, col = segment_position(seg)
     assert isinstance(line, (int, type(None)))
     assert isinstance(col, (int, type(None)))
+
+
+def test_segment_position_reads_join_clause_sqlfluff_marker() -> None:
+    """join_clause segments expose line_no/line_pos on PositionMarker."""
+    root = _parse_tree(
+        "select * from base\njoin u on base.id = u.id",
+        dialect="ansi",
+    )
+    seg = next(root.recursive_crawl("join_clause"))
+    line, col = segment_position(seg)
+    assert line == 2
+    assert col == 1

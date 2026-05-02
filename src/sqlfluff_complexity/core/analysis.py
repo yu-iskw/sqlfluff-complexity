@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from sqlfluff_complexity.core.metrics import ComplexityMetrics
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
-
     from sqlfluff.core.parser.segments.base import BaseSegment
 
 
@@ -55,6 +54,19 @@ def compact_segment_raw(segment: BaseSegment | None) -> str:
     return raw
 
 
+def _int_attr(marker: object, *names: str) -> int | None:
+    """First usable integer attribute on ``marker``."""
+    for name in names:
+        raw = getattr(marker, name, None)
+        if raw is None:
+            continue
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
 def segment_position(segment: BaseSegment | None) -> tuple[int | None, int | None]:
     """Best-effort line/column from SQLFluff position markers."""
     if segment is None:
@@ -62,16 +74,8 @@ def segment_position(segment: BaseSegment | None) -> tuple[int | None, int | Non
     marker = getattr(segment, "pos_marker", None)
     if marker is None:
         return None, None
-    line_no = getattr(marker, "lineno", None)
-    col = getattr(marker, "pos", None)
-    try:
-        line_int = int(line_no) if line_no is not None else None
-    except (TypeError, ValueError):
-        line_int = None
-    try:
-        col_int = int(col) if col is not None else None
-    except (TypeError, ValueError):
-        col_int = None
+    line_int = _int_attr(marker, "line_no", "working_line_no", "lineno")
+    col_int = _int_attr(marker, "line_pos", "working_line_pos", "pos")
     return line_int, col_int
 
 
@@ -131,6 +135,59 @@ def _backfill_contributors(
     return chosen[:max_items]
 
 
+def top_contributors(
+    contributors: Iterable[MetricContributor],
+    *,
+    metric: str | None,
+    limit: int,
+) -> tuple[MetricContributor, ...]:
+    """Select up to ``limit`` contributors deterministically.
+
+    When ``metric`` is set, prefer contributors for that metric (source order).
+    When ``metric`` is None, return contributors across all metrics in source order.
+    """
+    if limit < 1:
+        return ()
+
+    items = tuple(contributors)
+    if metric is None:
+        return items[:limit] if items else ()
+
+    filtered = tuple(c for c in items if c.metric == metric)
+    return filtered[:limit]
+
+
+def format_contributor_summary(
+    contributors: Sequence[MetricContributor],
+    *,
+    limit: int,
+) -> str:
+    """Compact one-line summary: ``line N col M segment_type; ...``."""
+    if limit < 1 or not contributors:
+        return ""
+
+    parts: list[str] = []
+    for contributor in contributors[:limit]:
+        line = contributor.line if contributor.line is not None else "?"
+        col = contributor.column if contributor.column is not None else "?"
+        parts.append(f"line {line} col {col} {contributor.segment_type}")
+
+    return "; ".join(parts)
+
+
+def weighted_contributor_samples(
+    contributors: Sequence[MetricContributor],
+    weights: Mapping[str, int],
+    *,
+    max_items: int,
+) -> tuple[MetricContributor, ...]:
+    """Pick up to ``max_items`` contributors for score-weighted explainability."""
+    if max_items < 1 or not contributors:
+        return ()
+    chosen = _pick_contributor_examples(contributors, weights, max_items)
+    return tuple(chosen)
+
+
 def format_contributor_examples(
     contributors: Sequence[MetricContributor],
     weights: Mapping[str, int],
@@ -141,7 +198,7 @@ def format_contributor_examples(
     if max_items < 1 or not contributors:
         return ""
 
-    chosen = _pick_contributor_examples(contributors, weights, max_items)
+    chosen = list(weighted_contributor_samples(contributors, weights, max_items=max_items))
     parts: list[str] = []
     for contributor in chosen:
         line = contributor.line

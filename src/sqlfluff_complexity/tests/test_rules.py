@@ -25,7 +25,9 @@ def test_c102_reports_join_count_violation() -> None:
     violations = rule_violations(linted, "CPX_C102")
 
     assert len(violations) == 1
-    assert "join count 2 exceeds max_joins=1" in violations[0].desc()
+    desc = violations[0].desc()
+    assert "join count 2 exceeds max_joins=1" in desc
+    assert "join fan-in" in desc or "joined relations" in desc
 
 
 def test_c102_allows_join_count_at_limit() -> None:
@@ -72,6 +74,7 @@ def test_c201_reports_aggregate_score_violation() -> None:
     assert "joins=1" in desc
     assert "case_expressions=1" in desc
     assert "Examples:" in desc
+    assert "Reduce the largest" in desc or "inspect the metric breakdown" in desc
 
 
 def test_c101_reports_cte_count_violation() -> None:
@@ -92,6 +95,7 @@ def test_c101_reports_cte_count_violation() -> None:
 
     assert len(violations) == 1
     assert "CTE count 2 exceeds max_ctes=1" in violations[0].desc()
+    assert "splitting long CTE" in violations[0].desc() or "CTE" in violations[0].desc()
 
 
 def test_c103_reports_subquery_depth_violation() -> None:

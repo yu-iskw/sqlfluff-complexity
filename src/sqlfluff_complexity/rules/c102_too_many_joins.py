@@ -43,7 +43,7 @@ class Rule_CPX_C102(BaseRule):  # noqa: N801
     """
 
     groups: tuple[str, ...] = ("all", "complexity")
-    config_keywords: ClassVar[list[str]] = ["max_joins"]
+    config_keywords: ClassVar[list[str]] = ["max_joins", "show_contributors", "max_contributors"]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
     max_joins: int
@@ -53,7 +53,6 @@ class Rule_CPX_C102(BaseRule):  # noqa: N801
         config_key="max_joins",
         policy_key="max_joins",
         description_label="join count",
-        guidance="Consider decomposing the model or moving joins upstream.",
     )
 
     def _eval(self, context: RuleContext) -> LintResult | None:
