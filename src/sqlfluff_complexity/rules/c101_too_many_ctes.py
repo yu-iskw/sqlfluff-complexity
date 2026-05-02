@@ -20,7 +20,7 @@ class Rule_CPX_C101(BaseRule):  # noqa: N801
     """Query contains too many common table expressions."""
 
     groups: tuple[str, ...] = ("all", "complexity")
-    config_keywords: ClassVar[list[str]] = ["max_ctes"]
+    config_keywords: ClassVar[list[str]] = ["max_ctes", "show_contributors", "max_contributors"]
     crawl_behaviour = SegmentSeekerCrawler({"with_compound_statement"})
     is_fix_compatible = False
     max_ctes: int
@@ -31,7 +31,6 @@ class Rule_CPX_C101(BaseRule):  # noqa: N801
         config_key="max_ctes",
         policy_key="max_ctes",
         description_label="CTE count",
-        guidance="Consider splitting transformation layers into separate models.",
     )
 
     def _eval(self, context: RuleContext) -> LintResult | None:

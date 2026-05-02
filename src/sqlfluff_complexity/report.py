@@ -8,11 +8,31 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from sqlfluff.core import FluffConfig, Linter
+from sqlfluff.core.parser.segments.base import BaseSegment
 
+from sqlfluff_complexity import __version__
+from sqlfluff_complexity.core.analysis import (
+    MetricContributor,
+    format_contributor_examples,
+    format_contributor_summary,
+    segment_position,
+    top_contributors,
+    weighted_contributor_samples,
+)
+from sqlfluff_complexity.core.explainability import (
+    explain_score_contributors,
+    ranked_weighted_contributions,
+    refactoring_hint_for_contributors,
+)
+from sqlfluff_complexity.core.findings import ComplexityFinding, SourceLocation
 from sqlfluff_complexity.core.metrics import ComplexityMetrics
 from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
+from sqlfluff_complexity.core.remediation import remediation_for_rule
 from sqlfluff_complexity.core.scoring import parse_weights
-from sqlfluff_complexity.core.segment_tree import collect_metrics
+from sqlfluff_complexity.core.segment_tree import analyze_segment_tree
+from sqlfluff_complexity.core.violation_messages import metric_threshold_violation_message
+from sqlfluff_complexity.reporting.json import findings_to_json_payload
+from sqlfluff_complexity.reporting.sarif import findings_to_sarif_payload
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -22,7 +42,7 @@ if TYPE_CHECKING:
 
 DEFAULT_MAX_JOINS = 8
 DEFAULT_MAX_COMPLEXITY_SCORE = 60
-SARIF_SCHEMA_URL = "https://json.schemastore.org/sarif-2.1.0.json"
+DEFAULT_MAX_CONTRIBUTORS = 3
 
 
 @dataclass(frozen=True)
@@ -71,22 +91,13 @@ REPORT_LIMITS = (
 
 
 @dataclass(frozen=True)
-class ReportFinding:
-    """One report finding for a parsed SQL file."""
-
-    rule_id: str
-    level: str
-    message: str
-
-
-@dataclass(frozen=True)
 class ReportEntry:
     """Complexity report data for one SQL file path."""
 
     path: Path
     metrics: ComplexityMetrics | None = None
     score: int | None = None
-    findings: list[ReportFinding] = field(default_factory=list)
+    findings: list[ComplexityFinding] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
 
 
@@ -124,48 +135,72 @@ def format_console_report(report: ComplexityReport) -> str:
 
 def format_sarif_report(report: ComplexityReport) -> str:
     """Format a complexity report as SARIF 2.1.0 JSON."""
-    sarif = {
-        "version": "2.1.0",
-        "$schema": SARIF_SCHEMA_URL,
-        "runs": [
-            {
-                "tool": {"driver": {"name": "sqlfluff-complexity", "rules": _sarif_rules()}},
-                "results": _sarif_results(report),
-            },
-        ],
-    }
+    all_findings = [f for e in report.entries for f in e.findings]
+    sarif = findings_to_sarif_payload(all_findings)
     return json.dumps(sarif, indent=2, sort_keys=True)
 
 
 def format_json_report(report: ComplexityReport) -> str:
     """Format a complexity report as stable JSON for automation."""
+    all_findings = [f for e in report.entries for f in e.findings]
     payload = {
-        "schema_version": "1.0",
-        "tool": "sqlfluff-complexity",
         "entries": [_json_entry(entry) for entry in report.entries],
+        "findings": [_finding_to_canonical_dict(f) for f in all_findings],
+        "schema_version": "1.1",
+        "tool": "sqlfluff-complexity",
+        "version": __version__,
     }
     return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def _finding_to_canonical_dict(finding: ComplexityFinding) -> dict[str, object]:
+    return findings_to_json_payload((finding,))["findings"][0]
+
+
+def analyze_paths_findings(
+    paths: Sequence[Path], *, dialect: str, config_path: Path | None = None
+) -> list[ComplexityFinding]:
+    """Return flat ComplexityFinding list for all paths (canonical API)."""
+    report = analyze_paths(paths, dialect=dialect, config_path=config_path)
+    return [f for e in report.entries for f in e.findings]
 
 
 def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntry:
     try:
         sql = path.read_text(encoding="utf-8")
     except OSError as exc:
-        return ReportEntry(path=path, errors=[f"Could not read file: {exc}"])
+        return ReportEntry(
+            path=path,
+            errors=[f"Could not read file: {exc}"],
+            findings=[
+                _parse_error_finding(str(path), f"Could not read file: {exc}"),
+            ],
+        )
 
     parsed = linter.parse_string(sql, fname=str(path))
     parse_errors = [violation.desc() for violation in parsed.violations]
     if parse_errors or parsed.tree is None:
+        err_msg = parse_errors[0] if parse_errors else "SQLFluff did not return a parse tree."
         return ReportEntry(
-            path=path, errors=parse_errors or ["SQLFluff did not return a parse tree."]
+            path=path,
+            errors=parse_errors or [err_msg],
+            findings=[_parse_error_finding(str(path), err_msg)],
         )
 
-    metrics = collect_metrics(parsed.tree)
+    analysis = analyze_segment_tree(parsed.tree)
+    metrics = analysis.metrics
     policy = _policy_for_path(config, path)
     score = metrics.score(_weights_from_config(config))
-    return ReportEntry(
-        path=path, metrics=metrics, score=score, findings=_findings(metrics, score, policy)
+    findings = _findings_for_file(
+        path=path,
+        segment=parsed.tree,
+        metrics=metrics,
+        score=score,
+        policy=policy,
+        contributors=analysis.contributors,
+        config=config,
     )
+    return ReportEntry(path=path, metrics=metrics, score=score, findings=findings)
 
 
 def load_fluff_config(*, dialect: str, config_path: Path | None = None) -> FluffConfig:
@@ -195,40 +230,181 @@ def _build_config(dialect: str, config_path: Path | None) -> FluffConfig:
     return FluffConfig.from_root(extra_config_path=str(config_path), overrides=overrides)
 
 
-def _findings(
+def _parse_error_finding(path_str: str, message: str) -> ComplexityFinding:
+    return ComplexityFinding(
+        rule_id="CPX_PARSE_ERROR",
+        metric="parse",
+        message=message,
+        remediation="Fix syntax or dialect settings so SQLFluff can parse the file.",
+        location=SourceLocation(path=path_str, line=1, column=1),
+        metrics=ComplexityMetrics(),
+        score=None,
+        threshold=None,
+        contributors=(),
+        level="error",
+    )
+
+
+def _findings_for_file(
+    *,
+    path: Path,
+    segment: BaseSegment,
     metrics: ComplexityMetrics,
     score: int,
     policy: ComplexityPolicy,
-) -> list[ReportFinding]:
-    findings = [_metric_finding(metrics, policy, limit) for limit in REPORT_LIMITS]
-    findings = [finding for finding in findings if finding is not None]
+    contributors: tuple[MetricContributor, ...],
+    config: FluffConfig,
+) -> list[ComplexityFinding]:
+    line, col = segment_position(segment)
+    line_i = line if line is not None else 1
+    col_i = col if col is not None else 1
+    path_s = str(path)
+
+    findings: list[ComplexityFinding] = []
+    show_raw = config.get("show_contributors", section=("rules", "CPX_C102"), default=True)
+    show_contributors = str(show_raw).strip().lower() in {"1", "true", "yes", "on"}
+    max_c = int(
+        config.get(
+            "max_contributors",
+            section=("rules", "CPX_C102"),
+            default=DEFAULT_MAX_CONTRIBUTORS,
+        ),
+    )
+
+    for limit in REPORT_LIMITS:
+        f = _metric_finding(
+            path_s=path_s,
+            line=line_i,
+            col=col_i,
+            metrics=metrics,
+            policy=policy,
+            limit_spec=limit,
+            contributors=contributors,
+            show_contributors=show_contributors,
+            max_contributors=max_c,
+            aggregate_score=score,
+        )
+        if f is not None:
+            findings.append(f)
+
     if score > policy.max_complexity_score:
         findings.append(
-            ReportFinding(
-                rule_id="CPX_C201",
-                level="warning",
-                message=(
-                    f"Aggregate complexity score {score} exceeds "
-                    f"max_complexity_score={policy.max_complexity_score}."
-                ),
+            _c201_finding(
+                path_s=path_s,
+                line=line_i,
+                col=col_i,
+                metrics=metrics,
+                score=score,
+                threshold=policy.max_complexity_score,
+                contributors=contributors,
+                weights=_weights_from_config(config),
+                config=config,
             ),
         )
     return findings
 
 
 def _metric_finding(
+    *,
+    path_s: str,
+    line: int,
+    col: int,
     metrics: ComplexityMetrics,
     policy: ComplexityPolicy,
-    limit: ReportLimit,
-) -> ReportFinding | None:
-    actual = int(getattr(metrics, limit.metric_name))
-    max_allowed = int(getattr(policy, limit.policy_key))
+    limit_spec: ReportLimit,
+    contributors: tuple[MetricContributor, ...],
+    show_contributors: bool,
+    max_contributors: int,
+    aggregate_score: int,
+) -> ComplexityFinding | None:
+    actual = int(getattr(metrics, limit_spec.metric_name))
+    max_allowed = int(getattr(policy, limit_spec.policy_key))
     if actual <= max_allowed:
         return None
-    return ReportFinding(
-        rule_id=limit.rule_id,
+
+    label_lower = limit_spec.label[0].lower() + limit_spec.label[1:]
+    message = metric_threshold_violation_message(
+        rule_id=limit_spec.rule_id,
+        description_label=label_lower,
+        actual=actual,
+        config_key=limit_spec.config_key,
+        limit=max_allowed,
+        metric_name=limit_spec.metric_name,
+        contributors=contributors,
+        max_contributors=max_contributors,
+        show_contributors=show_contributors,
+    )
+    rem = remediation_for_rule(limit_spec.rule_id)
+    picked = top_contributors(
+        contributors,
+        metric=limit_spec.metric_name,
+        limit=max_contributors,
+    )
+
+    return ComplexityFinding(
+        rule_id=limit_spec.rule_id,
+        metric=limit_spec.metric_name,
+        message=message,
+        remediation=rem,
+        location=SourceLocation(path=path_s, line=line, column=col),
+        metrics=metrics,
+        score=actual,
+        threshold=max_allowed,
+        contributors=picked,
         level="warning",
-        message=f"{limit.label} {actual} exceeds {limit.config_key}={max_allowed}.",
+        aggregate_score=aggregate_score,
+    )
+
+
+def _c201_finding(
+    *,
+    path_s: str,
+    line: int,
+    col: int,
+    metrics: ComplexityMetrics,
+    score: int,
+    threshold: int,
+    contributors: tuple[MetricContributor, ...],
+    weights: dict[str, int],
+    config: FluffConfig,
+) -> ComplexityFinding:
+    rem = remediation_for_rule("CPX_C201")
+    top_n = max(
+        1,
+        int(config.get("max_contributors", section=("rules", "CPX_C201"), default=DEFAULT_MAX_CONTRIBUTORS)),
+    )
+    explain = explain_score_contributors(metrics, weights, max_items=top_n)
+    top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
+    hint = refactoring_hint_for_contributors(top_keys)
+    examples = format_contributor_examples(
+        contributors,
+        weights,
+        max_items=top_n,
+    )
+    examples_clause = f" {examples}" if examples else ""
+    message = (
+        f"CPX_C201: aggregate complexity score {score} exceeds max_complexity_score={threshold}. "
+        f"{rem} Metrics: {metrics.format_breakdown()}. "
+        f"Top contributors: {explain}.{examples_clause} {hint}"
+    )
+    picked = weighted_contributor_samples(
+        contributors,
+        weights,
+        max_items=top_n,
+    )
+
+    return ComplexityFinding(
+        rule_id="CPX_C201",
+        metric="complexity_score",
+        message=message,
+        remediation=rem,
+        location=SourceLocation(path=path_s, line=line, column=col),
+        metrics=metrics,
+        score=score,
+        threshold=threshold,
+        contributors=picked,
+        level="warning",
+        aggregate_score=score,
     )
 
 
@@ -279,13 +455,14 @@ def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
 
 
 def _json_entry(entry: ReportEntry) -> dict[str, object]:
-    findings = [
-        {"level": finding.level, "message": finding.message, "rule_id": finding.rule_id}
-        for finding in entry.findings
+    detail = [
+        _finding_to_canonical_dict(f) for f in entry.findings if f.rule_id != "CPX_PARSE_ERROR"
     ]
+    legacy = [{"level": f.level, "message": f.message, "rule_id": f.rule_id} for f in entry.findings]
     base: dict[str, object] = {
         "errors": list(entry.errors),
-        "findings": findings,
+        "findings": legacy,
+        "findings_detail": detail,
         "path": str(entry.path),
     }
     if entry.metrics is None or entry.score is None:
@@ -313,73 +490,11 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
             f"{metrics.boolean_operators} {metrics.window_functions}"
         ),
     ]
-    lines.extend(f"  {finding.rule_id}: {finding.message}" for finding in entry.findings)
+    for finding in entry.findings:
+        if finding.rule_id == "CPX_PARSE_ERROR":
+            lines.append(f"  {finding.rule_id}: {finding.message}")
+        else:
+            summ = format_contributor_summary(finding.contributors, limit=3)
+            extra = f" [{summ}]" if summ else ""
+            lines.append(f"  {finding.rule_id}: {finding.message}{extra}")
     return lines
-
-
-def _sarif_rules() -> list[dict[str, object]]:
-    return [
-        {"id": "CPX_C101", "name": "Too many CTEs"},
-        {"id": "CPX_C102", "name": "Too many JOIN clauses"},
-        {"id": "CPX_C103", "name": "Nested subquery depth too high"},
-        {"id": "CPX_C104", "name": "Too many CASE expressions"},
-        {"id": "CPX_C105", "name": "Boolean operator complexity too high"},
-        {"id": "CPX_C106", "name": "Too many window functions"},
-        {"id": "CPX_C201", "name": "Aggregate complexity score too high"},
-        {"id": "CPX_PARSE_ERROR", "name": "SQLFluff parse error"},
-    ]
-
-
-def _sarif_results(report: ComplexityReport) -> list[dict[str, object]]:
-    results = []
-    for entry in report.entries:
-        results.extend(_sarif_error_results(entry))
-        results.extend(_sarif_finding_result(entry, finding) for finding in entry.findings)
-    return results
-
-
-def _sarif_error_results(entry: ReportEntry) -> list[dict[str, object]]:
-    return [
-        _sarif_result(
-            path=entry.path,
-            rule_id="CPX_PARSE_ERROR",
-            level="error",
-            message=message,
-        )
-        for message in entry.errors
-    ]
-
-
-def _sarif_finding_result(entry: ReportEntry, finding: ReportFinding) -> dict[str, object]:
-    result = _sarif_result(
-        path=entry.path,
-        rule_id=finding.rule_id,
-        level=finding.level,
-        message=finding.message,
-    )
-    if entry.score is not None and entry.metrics is not None:
-        result["properties"] = {
-            "score": entry.score,
-            "metrics": _metrics_dict(entry.metrics),
-        }
-    return result
-
-
-def _sarif_result(
-    path: Path,
-    rule_id: str,
-    level: str,
-    message: str,
-) -> dict[str, object]:
-    return {
-        "ruleId": rule_id,
-        "level": level,
-        "message": {"text": message},
-        "locations": [
-            {
-                "physicalLocation": {
-                    "artifactLocation": {"uri": str(path)},
-                },
-            },
-        ],
-    }

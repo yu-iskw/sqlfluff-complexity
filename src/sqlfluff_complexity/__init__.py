@@ -16,10 +16,13 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 from typing import TYPE_CHECKING, Any
 
 from sqlfluff.core.config import load_config_resource
 from sqlfluff.core.plugin import hookimpl
+
+__version__ = importlib.metadata.version("sqlfluff-complexity")
 
 if TYPE_CHECKING:
     from sqlfluff.core.rules import BaseRule
@@ -105,5 +108,11 @@ def get_configs_info() -> dict[str, dict[str, Any]]:
         },
         "path_overrides": {
             "definition": "Path-specific overrides as <glob>:key=value,key=value lines.",
+        },
+        "show_contributors": {
+            "definition": "When true, append compact contributor locations to metric rule messages.",
+        },
+        "max_contributors": {
+            "definition": "Maximum contributor locations to show per violation (lint and report).",
         },
     }

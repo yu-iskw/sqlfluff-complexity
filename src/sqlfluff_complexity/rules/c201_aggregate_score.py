@@ -14,6 +14,7 @@ from sqlfluff_complexity.core.explainability import (
     refactoring_hint_for_contributors,
 )
 from sqlfluff_complexity.core.policy import ComplexityPolicy
+from sqlfluff_complexity.core.remediation import remediation_for_rule
 from sqlfluff_complexity.core.scoring import parse_weights
 from sqlfluff_complexity.core.segment_tree import analyze_segment_tree, is_nested_select_statement
 from sqlfluff_complexity.rules.base import resolve_context_policy
@@ -39,6 +40,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         "complexity_weights",
         "mode",
         "path_overrides",
+        "max_contributors",
     ]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
@@ -46,6 +48,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
     complexity_weights: str
     mode: str
     path_overrides: str
+    max_contributors: int
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
@@ -64,7 +67,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         if policy.mode == "report" or score <= limit:
             return None
 
-        top_n = 3
+        top_n = max(1, int(self.max_contributors))
         contributors = explain_score_contributors(metrics, weights, max_items=top_n)
         top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
         hint = refactoring_hint_for_contributors(top_keys)
@@ -75,11 +78,13 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         )
         examples_clause = f" {examples}" if examples else ""
 
+        remediation = remediation_for_rule("CPX_C201")
+
         return LintResult(
             anchor=context.segment,
             description=(
                 f"CPX_C201: aggregate complexity score {score} exceeds "
-                f"max_complexity_score={limit}. Metrics: {metrics.format_breakdown()}. "
+                f"max_complexity_score={limit}. {remediation} Metrics: {metrics.format_breakdown()}. "
                 f"Top contributors: {contributors}.{examples_clause} {hint}"
             ),
         )

@@ -20,7 +20,11 @@ class Rule_CPX_C103(BaseRule):  # noqa: N801
     """Query contains deeply nested subqueries."""
 
     groups: tuple[str, ...] = ("all", "complexity")
-    config_keywords: ClassVar[list[str]] = ["max_subquery_depth"]
+    config_keywords: ClassVar[list[str]] = [
+        "max_subquery_depth",
+        "show_contributors",
+        "max_contributors",
+    ]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
     max_subquery_depth: int
@@ -31,7 +35,6 @@ class Rule_CPX_C103(BaseRule):  # noqa: N801
         config_key="max_subquery_depth",
         policy_key="max_subquery_depth",
         description_label="nested subquery depth",
-        guidance="Consider extracting nested logic into CTEs or intermediate models.",
     )
 
     def _eval(self, context: RuleContext) -> LintResult | None:

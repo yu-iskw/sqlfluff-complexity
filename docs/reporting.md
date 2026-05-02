@@ -2,7 +2,7 @@
 
 The native CPX rules are for enforcement through `sqlfluff lint`. The companion `sqlfluff-complexity report` command is for non-blocking analysis and CI artifacts.
 
-Report mode uses the same SQLFluff parser, metric collector, scoring weights, thresholds, and path overrides as the native rules.
+Report mode uses the same SQLFluff parser, metric collector, scoring weights, thresholds, and path overrides as the native rules. **No dbt artifacts** (`manifest.json`, `run_results.json`, `catalog.json`, or DAG metadata) are read; analysis is SQLFluff parse-tree only.
 
 ## Console Report
 
@@ -20,6 +20,8 @@ path score ctes joins subquery_depth case_expressions boolean_operators window_f
 models/orders.sql 14 1 2 0 1 3 1
 ```
 
+When findings exist, each rule line may append a short bracketed contributor summary (`line` / `col` / segment type) so reviewers can jump to the SQLFluff segments that drove the metric.
+
 Use `--config` to apply your SQLFluff configuration:
 
 ```bash
@@ -29,9 +31,18 @@ sqlfluff-complexity report \
   models/staging/orders.sql
 ```
 
+Optional per-rule settings (in `.sqlfluff`) tune verbosity without changing thresholds:
+
+- `show_contributors` (default `true`): include compact contributor locations in lint messages and reports.
+- `max_contributors` (default `3`): cap how many contributor lines are shown per violation.
+
 ## JSON Report
 
-For automation and lightweight CI artifacts, use `--format json`. The payload uses `schema_version` `1.0`, lists one object per input path under `entries`, and includes per-file `score`, `metrics`, `findings`, and `errors`. Parse failures use `score: null` and `metrics: null`.
+For automation and lightweight CI artifacts, use `--format json`. The top-level payload includes `schema_version` `1.1`, `version` (package version), `tool`, per-file `entries`, and a flat `findings` array built from the same **ComplexityFinding** model as lint and SARIF.
+
+Each finding includes `rule_id`, `level`, `message`, `remediation`, `path`, `line`, `column`, `metric`, `threshold`, `score` (metric actual for threshold rules; aggregate score for CPX_C201), `aggregate_score` (file-level weighted score when applicable), full `metrics` counters, and `contributors` (metric, line, column, segment_type, reason, truncated `raw`).
+
+Parse failures use `score: null`, `metrics: null` on the entry, and a `CPX_PARSE_ERROR` finding.
 
 ```bash
 sqlfluff-complexity report \
@@ -40,6 +51,51 @@ sqlfluff-complexity report \
   --format json \
   --output complexity.json \
   models/
+```
+
+Example (excerpt):
+
+```json
+{
+  "schema_version": "1.1",
+  "version": "0.1.0",
+  "tool": "sqlfluff-complexity",
+  "findings": [
+    {
+      "rule_id": "CPX_C102",
+      "level": "warning",
+      "message": "CPX_C102: join count 4 exceeds max_joins=2. Consider reducing join fan-in...",
+      "remediation": "Consider reducing join fan-in, moving enrichment upstream...",
+      "path": "models/orders.sql",
+      "line": 3,
+      "column": 1,
+      "metric": "joins",
+      "threshold": 2,
+      "score": 4,
+      "aggregate_score": 42,
+      "metrics": {
+        "ctes": 0,
+        "joins": 4,
+        "subqueries": 0,
+        "subquery_depth": 0,
+        "case_expressions": 0,
+        "boolean_operators": 0,
+        "window_functions": 0
+      },
+      "contributors": [
+        {
+          "metric": "joins",
+          "line": 5,
+          "column": 1,
+          "segment_type": "join_clause",
+          "reason": "join clause",
+          "raw": "JOIN ..."
+        }
+      ]
+    }
+  ],
+  "entries": []
+}
 ```
 
 ## SARIF Report
@@ -55,7 +111,9 @@ sqlfluff-complexity report \
   models/
 ```
 
-The SARIF output includes CPX rule IDs such as `CPX_C102` and `CPX_C201`, but does not embed full SQL text. When metrics are available for a file, each finding may include a `properties` object with `score` and a `metrics` map (file-level values, including for threshold findings).
+SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C106`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, and `properties.remediation`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
+
+The SARIF output does not embed full SQL source text in messages.
 
 ## Parse And Read Errors
 
@@ -75,7 +133,6 @@ Use report mode when:
 - you want baseline metrics before enabling enforcement
 - CI should publish findings without failing immediately
 - you want SARIF artifacts for code-scanning review
-- you are calibrating aggregate score thresholds
 
 Use native SQLFluff rules when:
 
