@@ -25,6 +25,9 @@ REMEDIATIONS: dict[str, str] = {
         "Consider splitting analytic/window logic into clearer phases or deduplicating repeated "
         "window specifications."
     ),
+    "CPX_C107": (
+        "Consider splitting the query into simpler intermediate models or reducing chained CTEs."
+    ),
     "CPX_C201": (
         "Reduce the largest contributing metric first; inspect the metric breakdown and top "
         "contributors."

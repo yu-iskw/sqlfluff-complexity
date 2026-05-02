@@ -13,6 +13,7 @@ POLICY_INTEGER_KEYS = frozenset(
         "max_case_expressions",
         "max_boolean_operators",
         "max_window_functions",
+        "max_cte_dependency_depth",
         "max_complexity_score",
     },
 )
@@ -30,6 +31,7 @@ class ComplexityPolicy:
     max_case_expressions: int = 10
     max_boolean_operators: int = 20
     max_window_functions: int = 10
+    max_cte_dependency_depth: int = 5
     max_complexity_score: int = 60
     mode: str = "enforce"
 

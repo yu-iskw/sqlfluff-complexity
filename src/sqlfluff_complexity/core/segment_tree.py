@@ -11,6 +11,11 @@ from sqlfluff_complexity.core.analysis import (
     segment_position,
 )
 from sqlfluff_complexity.core.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.structural_metrics import (
+    count_set_operations,
+    max_case_expression_nesting_depth,
+    max_cte_dependency_depth,
+)
 
 if TYPE_CHECKING:
     from sqlfluff.core.parser.segments.base import BaseSegment
@@ -20,7 +25,7 @@ BOOLEAN_OPERATOR_RAW = {"AND", "OR"}
 
 def analyze_segment_tree(root: BaseSegment) -> ComplexityAnalysis:
     """Collect metrics and per-segment contributors from a SQLFluff segment tree."""
-    counter = _MetricCounter()
+    counter = _MetricCounter(root)
     counter.walk(root, active_selects=0, nested_depth=0)
     return ComplexityAnalysis(
         metrics=counter.to_metrics(),
@@ -65,7 +70,7 @@ def _parent_segment(segment: BaseSegment | None) -> BaseSegment | None:
 class _MetricCounter:
     """Stateful collector for one SQLFluff segment tree walk."""
 
-    def __init__(self) -> None:
+    def __init__(self, root: BaseSegment) -> None:
         self.ctes = 0
         self.joins = 0
         self.subqueries = 0
@@ -73,6 +78,9 @@ class _MetricCounter:
         self.case_expressions = 0
         self.boolean_operators = 0
         self.window_functions = 0
+        self.cte_dependency_depth = max_cte_dependency_depth(root)
+        self.set_operation_count = count_set_operations(root)
+        self.expression_depth = max_case_expression_nesting_depth(root)
         self.contributors: list[MetricContributor] = []
 
     def _add_contributor(
@@ -179,4 +187,7 @@ class _MetricCounter:
             case_expressions=self.case_expressions,
             boolean_operators=self.boolean_operators,
             window_functions=self.window_functions,
+            cte_dependency_depth=self.cte_dependency_depth,
+            set_operation_count=self.set_operation_count,
+            expression_depth=self.expression_depth,
         )

@@ -23,7 +23,7 @@ Add the CPX rules to your `.sqlfluff` config. Start with a small rule set if you
 ```ini
 [sqlfluff]
 dialect = postgres
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C201
 ```
 
 For dbt projects, keep your existing SQLFluff dbt templater configuration and add the CPX rules to the same config. See [dbt usage](dbt.md) for the v1 boundary.

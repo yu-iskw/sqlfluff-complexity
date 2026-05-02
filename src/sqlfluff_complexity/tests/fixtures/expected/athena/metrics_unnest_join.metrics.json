@@ -5,5 +5,8 @@
   "subquery_depth": 0,
   "case_expressions": 0,
   "boolean_operators": 1,
-  "window_functions": 0
+  "window_functions": 0,
+  "cte_dependency_depth": 0,
+  "set_operation_count": 0,
+  "expression_depth": 0
 }

@@ -54,6 +54,9 @@ def get_rules() -> list[type[BaseRule]]:
     from sqlfluff_complexity.rules.c106_too_many_windows import (  # noqa: PLC0415
         Rule_CPX_C106,
     )
+    from sqlfluff_complexity.rules.c107_cte_dependency_depth import (  # noqa: PLC0415
+        Rule_CPX_C107,
+    )
     from sqlfluff_complexity.rules.c201_aggregate_score import (  # noqa: PLC0415
         Rule_CPX_C201,
     )
@@ -65,6 +68,7 @@ def get_rules() -> list[type[BaseRule]]:
         Rule_CPX_C104,
         Rule_CPX_C105,
         Rule_CPX_C106,
+        Rule_CPX_C107,
         Rule_CPX_C201,
     ]
 
@@ -99,6 +103,12 @@ def get_configs_info() -> dict[str, dict[str, Any]]:
         },
         "max_window_functions": {
             "definition": "Maximum window functions allowed in one statement.",
+        },
+        "max_cte_dependency_depth": {
+            "definition": (
+                "Maximum longest CTE reference chain within one WITH clause "
+                "(parsed-tree dependency depth)."
+            ),
         },
         "max_complexity_score": {
             "definition": "Maximum aggregate complexity score allowed in one statement.",

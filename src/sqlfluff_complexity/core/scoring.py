@@ -9,6 +9,9 @@ DEFAULT_WEIGHTS: dict[str, int] = {
     "case_expressions": 2,
     "boolean_operators": 1,
     "window_functions": 2,
+    "cte_dependency_depth": 0,
+    "set_operation_count": 0,
+    "expression_depth": 0,
 }
 
 VALID_WEIGHT_KEYS = frozenset(DEFAULT_WEIGHTS)

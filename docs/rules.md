@@ -12,6 +12,7 @@
 | `CPX_C104` | `CASE` expressions                  |      10 | `max_case_expressions`  |
 | `CPX_C105` | Boolean `AND` / `OR` operators      |      20 | `max_boolean_operators` |
 | `CPX_C106` | Window functions                    |      10 | `max_window_functions`  |
+| `CPX_C107` | Longest CTE dependency chain        |       5 | `max_cte_dependency_depth` |
 | `CPX_C201` | Aggregate weighted complexity score |      60 | `max_complexity_score`  |
 
 ## CPX_C101: Too Many CTEs
@@ -98,6 +99,23 @@ Many window functions can indicate dense analytic logic. Consider extracting rep
 max_window_functions = 10
 ```
 
+## CPX_C107: CTE Dependency Depth Too High
+
+Flags a `WITH` clause when the longest chain of CTE references (within that statement’s parse tree)
+exceeds `max_cte_dependency_depth`.
+
+Raw CTE count (`CPX_C101`) and dependency depth measure different things: many independent CTEs can be
+easier to follow than a long chain where each CTE builds on the previous one.
+
+Only references visible as simple `table_reference` names to other CTEs in the same `WITH` are
+considered. `ref()`, sources, macros, and dotted relation names are not resolved—unknown references
+are ignored rather than guessed.
+
+```ini
+[sqlfluff:rules:CPX_C107]
+max_cte_dependency_depth = 5
+```
+
 ## CPX_C201: Aggregate Complexity Score Too High
 
 Flags a statement when the weighted aggregate complexity score exceeds `max_complexity_score`.
@@ -109,7 +127,7 @@ Violation messages include the computed score, the configured `max_complexity_sc
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0
 mode = enforce
 ```
 
@@ -122,6 +140,9 @@ ctes * ctes_weight
 + case_expressions * case_expressions_weight
 + boolean_operators * boolean_operators_weight
 + window_functions * window_functions_weight
++ cte_dependency_depth * cte_dependency_depth_weight
++ set_operation_count * set_operation_count_weight
++ expression_depth * expression_depth_weight
 ```
 
 See [configuration](configuration.md) for path overrides and report-mode rollout patterns.

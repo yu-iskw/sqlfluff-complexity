@@ -51,7 +51,7 @@ def test_sqlfluff_accepts_all_cpx_rule_codes() -> None:
         """
         [sqlfluff]
         dialect = ansi
-        rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C201
+        rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C201
         """,
     )
 

@@ -16,8 +16,11 @@ def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
     return {
         "boolean_operators": metrics.boolean_operators,
         "case_expressions": metrics.case_expressions,
+        "cte_dependency_depth": metrics.cte_dependency_depth,
         "ctes": metrics.ctes,
+        "expression_depth": metrics.expression_depth,
         "joins": metrics.joins,
+        "set_operation_count": metrics.set_operation_count,
         "subqueries": metrics.subqueries,
         "subquery_depth": metrics.subquery_depth,
         "window_functions": metrics.window_functions,
