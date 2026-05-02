@@ -11,11 +11,7 @@ from sqlfluff_complexity.core.analysis import (
     segment_position,
 )
 from sqlfluff_complexity.core.metrics import ComplexityMetrics
-from sqlfluff_complexity.core.structural_metrics import (
-    count_set_operations,
-    max_case_expression_nesting_depth,
-    max_cte_dependency_depth,
-)
+from sqlfluff_complexity.core.structural_metrics import compute_structural_metrics
 
 if TYPE_CHECKING:
     from sqlfluff.core.parser.segments.base import BaseSegment
@@ -78,9 +74,10 @@ class _MetricCounter:
         self.case_expressions = 0
         self.boolean_operators = 0
         self.window_functions = 0
-        self.cte_dependency_depth = max_cte_dependency_depth(root)
-        self.set_operation_count = count_set_operations(root)
-        self.expression_depth = max_case_expression_nesting_depth(root)
+        cte_dep, set_ops, expr_dep = compute_structural_metrics(root)
+        self.cte_dependency_depth = cte_dep
+        self.set_operation_count = set_ops
+        self.expression_depth = expr_dep
         self.contributors: list[MetricContributor] = []
 
     def _add_contributor(

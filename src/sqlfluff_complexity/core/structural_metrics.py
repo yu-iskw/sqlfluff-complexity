@@ -10,34 +10,46 @@ if TYPE_CHECKING:
     from sqlfluff.core.parser.segments.base import BaseSegment
 
 
+def compute_structural_metrics(root: BaseSegment) -> tuple[int, int, int]:
+    """Compute CTE dependency depth (global max), set-operation count, and case nesting in one walk.
+
+    One depth-first pass replaces three separate full-tree traversals (review feedback: PR #11).
+    """
+    set_ops = 0
+    max_case = 0
+    max_cte_dep = 0
+    stack: list[tuple[BaseSegment, int]] = [(root, 0)]
+    while stack:
+        seg, case_depth = stack.pop()
+        st = getattr(seg, "type", "")
+        if st == "set_operator":
+            set_ops += 1
+        if st == "case_expression":
+            max_case = max(max_case, case_depth + 1)
+        if st == "with_compound_statement":
+            max_cte_dep = max(max_cte_dep, _cte_dependency_depth_for_with(seg))
+        child_case_depth = case_depth + 1 if st == "case_expression" else case_depth
+        children = getattr(seg, "segments", ()) or ()
+        stack.extend((ch, child_case_depth) for ch in reversed(children))
+    return max_cte_dep, set_ops, max_case
+
+
 def max_cte_dependency_depth(root: BaseSegment) -> int:
     """Longest CTE reference chain within each ``with_compound_statement``; return the global max."""
-    best = 0
-    for with_root in _iter_segments(root, "with_compound_statement"):
-        best = max(best, _cte_dependency_depth_for_with(with_root))
-    return best
+    depth, _, _ = compute_structural_metrics(root)
+    return depth
 
 
 def count_set_operations(root: BaseSegment) -> int:
     """Count ``set_operator`` segments (UNION / INTERSECT / EXCEPT arms)."""
-    return sum(1 for _ in _iter_segments(root, "set_operator"))
+    _, count, _ = compute_structural_metrics(root)
+    return count
 
 
 def max_case_expression_nesting_depth(root: BaseSegment) -> int:
     """Maximum nesting depth of ``case_expression`` segments inside other case expressions."""
-    best = 0
-
-    def walk(seg: BaseSegment, case_depth: int) -> None:
-        nonlocal best
-        st = getattr(seg, "type", "")
-        next_depth = case_depth + 1 if st == "case_expression" else case_depth
-        if st == "case_expression":
-            best = max(best, next_depth)
-        for child in getattr(seg, "segments", ()) or ():
-            walk(child, next_depth)
-
-    walk(root, 0)
-    return best
+    _, _, depth = compute_structural_metrics(root)
+    return depth
 
 
 def _cte_dependency_depth_for_with(with_root: BaseSegment) -> int:
