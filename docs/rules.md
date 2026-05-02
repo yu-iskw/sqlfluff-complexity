@@ -107,9 +107,12 @@ exceeds `max_cte_dependency_depth`.
 Raw CTE count (`CPX_C101`) and dependency depth measure different things: many independent CTEs can be
 easier to follow than a long chain where each CTE builds on the previous one.
 
-Only references visible as simple `table_reference` names to other CTEs in the same `WITH` are
-considered. `ref()`, sources, macros, and dotted relation names are not resolved—unknown references
-are ignored rather than guessed.
+Only bare `table_reference` names (single identifier) to other CTEs in the same `WITH` count as
+edges. Schema-qualified names like `warehouse.orders` are ignored for matching so they cannot be
+mistaken for a CTE alias. `ref()`, sources, macros, and other dotted relations are not resolved—unknown references are ignored rather than guessed.
+
+CTE definitions may include an explicit column list (`WITH x (c1, c2) AS (...)`); the dependency
+walk uses the query body after `AS`, not the column list bracket.
 
 ```ini
 [sqlfluff:rules:CPX_C107]

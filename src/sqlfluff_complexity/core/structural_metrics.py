@@ -111,11 +111,18 @@ def _cte_alias(cte: BaseSegment) -> str:
 
 
 def _cte_query_body(cte: BaseSegment) -> BaseSegment | None:
-    """Return the bracketed SELECT body of a CTE, skipping the alias."""
-    for child in getattr(cte, "segments", ()) or ():
-        if getattr(child, "type", "") == "bracketed":
+    """Return the bracketed SELECT body of a CTE (after ``AS``), not a column list bracket."""
+    children = tuple(getattr(cte, "segments", ()) or ())
+    seen_as = False
+    for child in children:
+        if getattr(child, "type", "") == "keyword" and getattr(child, "raw_upper", "").strip() == "AS":
+            seen_as = True
+            continue
+        if seen_as and getattr(child, "type", "") == "bracketed":
             return child
-    return None
+
+    bracketeds = [c for c in children if getattr(c, "type", "") == "bracketed"]
+    return bracketeds[-1] if bracketeds else None
 
 
 def _table_reference_names(root: BaseSegment) -> set[str]:
@@ -129,7 +136,7 @@ def _table_reference_names(root: BaseSegment) -> set[str]:
 
 
 def _simple_table_reference_name(table_ref: BaseSegment) -> str:
-    """Single-table reference only; dotted names take the last segment; skip if ambiguous."""
+    """Bare table name for dependency matching; skip schema-qualified references."""
     parts: list[str] = []
     for child in getattr(table_ref, "segments", ()) or ():
         if getattr(child, "type", "") == "identifier":
@@ -139,7 +146,7 @@ def _simple_table_reference_name(table_ref: BaseSegment) -> str:
     if len(parts) == 1:
         return parts[0]
     if len(parts) > 1:
-        return parts[-1]
+        return ""
     raw = (getattr(table_ref, "raw", "") or "").strip()
     return raw.lower() if raw else ""
 

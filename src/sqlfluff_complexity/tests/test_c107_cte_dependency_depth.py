@@ -86,6 +86,35 @@ def test_c107_passes_under_default_threshold() -> None:
     assert rule_violations(linted, "CPX_C107") == []
 
 
+def test_metrics_chained_ctes_with_column_list_in_first_cte() -> None:
+    """CTE body must be the query after AS, not the (col1, col2) list bracket."""
+    sql = """
+    WITH
+      x (c1, c2) AS (
+        SELECT 1 AS c1, 2 AS c2
+      ),
+      y AS (
+        SELECT * FROM x
+      )
+    SELECT * FROM y
+    """
+    m = collect_metrics(_parse(sql))
+    assert m.ctes == 2
+    assert m.cte_dependency_depth == 2
+
+
+def test_metrics_schema_qualified_table_not_counted_as_cte_ref() -> None:
+    """Dotted table refs must not match CTEs by last segment (false edges)."""
+    sql = """
+    WITH
+      orders AS (SELECT 1 AS id)
+    SELECT * FROM catalog.orders
+    """
+    m = collect_metrics(_parse(sql))
+    assert m.cte_dependency_depth == 1
+    assert m.ctes == 1
+
+
 def test_c107_fails_when_chain_exceeds_threshold() -> None:
     """Long CTE chains should fail when max_cte_dependency_depth is tight."""
     sql = """
