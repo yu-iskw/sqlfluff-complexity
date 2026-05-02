@@ -72,10 +72,8 @@ Each result includes `path`, `status`, and optional `baseline_score`, `current_s
 
 ## Exit codes
 
-| Code | Meaning                                                                    |
-| ---- | -------------------------------------------------------------------------- |
-| 0    | Success                                                                    |
-| 1    | Check failed (per `--fail-on`) or `--fail-on-error` with parse/read errors |
-| 2    | Invalid CLI usage, baseline file, or no input paths after discovery |
+- **0** — Success.
+- **1** — Check failed (per `--fail-on`) or `--fail-on-error` with parse/read errors.
+- **2** — Invalid CLI usage, baseline file, or no input paths after discovery.
 
 See [reporting](reporting.md) for directory discovery, `--include` / `--exclude`, parallel `--jobs`, and piping paths from git via `--files-from -`.
