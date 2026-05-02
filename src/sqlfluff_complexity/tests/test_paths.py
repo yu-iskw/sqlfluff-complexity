@@ -71,6 +71,15 @@ def test_direct_file_bypasses_include(tmp_path: Path) -> None:
     assert out == [f.resolve()]
 
 
+def test_explicit_missing_path_is_kept(tmp_path: Path) -> None:
+    """Typoed explicit paths must not be dropped so analysis can report a read error."""
+    existing = tmp_path / "ok.sql"
+    existing.write_text("select 1", encoding="utf-8")
+    missing = tmp_path / "nope.sql"
+    out = discover_sql_paths([existing, missing], cwd=tmp_path)
+    assert set(out) == {existing.resolve(), missing.resolve()}
+
+
 def test_models_globstar_matches_root_and_nested_under_models(tmp_path: Path) -> None:
     """``models/**/*.sql`` must match both models/a.sql and deeper trees (gitwildmatch)."""
     m = tmp_path / "models"

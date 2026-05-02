@@ -117,6 +117,11 @@ def discover_sql_paths(
                 result=result,
             )
             continue
+        # Keep explicit paths that are missing or not regular files/dirs so callers can
+        # surface read errors (see ``report._analyze_path``) instead of dropping them.
+        if resolved not in seen:
+            seen.add(resolved)
+            result.append(resolved)
     return sorted(result, key=lambda p: normalize_report_path(p, root=base))
 
 
