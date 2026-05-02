@@ -229,6 +229,9 @@ def test_metrics_postgres_public_schema_table_not_false_edge_to_cte() -> None:
     m = collect_metrics(Linter(dialect="postgres").parse_string(sql).tree)
     assert m.ctes == 1
     assert m.cte_dependency_depth == 1
+
+
+def test_c107_fails_when_chain_exceeds_threshold() -> None:
     """Long CTE chains should fail when max_cte_dependency_depth is tight."""
     sql = """
     WITH

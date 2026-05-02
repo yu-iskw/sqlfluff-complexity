@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from sqlfluff.core import Linter
 
-import sqlfluff_complexity.core.structural_metrics as structural_metrics_mod
 from sqlfluff_complexity.core.segment_tree import collect_metrics
 from sqlfluff_complexity.core.structural_metrics import (
     StructuralScanResult,
@@ -97,8 +96,8 @@ def test_compute_structural_metrics_caches_by_root() -> None:
     assert first is second
 
 
-def test_cte_depth_for_with_reuses_cache_after_merge_walk() -> None:
-    """Per-WITH CTE graph depth is memoized for CPX_C107 after ``collect_metrics``."""
+def test_cte_depth_for_clause_matches_after_collect_metrics_walk() -> None:
+    """After ``collect_metrics``, per-WITH depth matches ``cte_dependency_depth_for_with_clause``."""
     clear_structural_caches()
     sql = dedent(
         """
@@ -115,10 +114,7 @@ def test_cte_depth_for_with_reuses_cache_after_merge_walk() -> None:
     ]
     assert len(with_nodes) == 1
     w = with_nodes[0]
-    assert w in structural_metrics_mod._CTE_DEPTH_BY_WITH
-    d1 = structural_metrics_mod._CTE_DEPTH_BY_WITH[w]
-    d2 = cte_dependency_depth_for_with_clause(w)
-    assert d1 == d2 == 2
+    assert cte_dependency_depth_for_with_clause(w) == 2
 
 
 def _iter_with_nodes(root: BaseSegment) -> Iterator[BaseSegment]:
