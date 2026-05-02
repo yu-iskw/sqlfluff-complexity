@@ -7,10 +7,24 @@ from typing import TYPE_CHECKING
 from sqlfluff.core import Linter
 
 from sqlfluff_complexity.core.segment_tree import collect_metrics
+from sqlfluff_complexity.core.structural_metrics import cte_dependency_depth_for_with_clause
 from sqlfluff_complexity.tests.sqlfluff_helpers import lint_sql, rule_violations
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from sqlfluff.core.parser.segments.base import BaseSegment
+
+
+def _iter_with_compound_statements(root: BaseSegment) -> Iterator[BaseSegment]:
+    """Preorder DFS over ``with_compound_statement`` segments (consistent tree walk order)."""
+    stack = [root]
+    while stack:
+        seg = stack.pop()
+        if getattr(seg, "type", "") == "with_compound_statement":
+            yield seg
+        children = tuple(getattr(seg, "segments", ()) or ())
+        stack.extend(reversed(children))
 
 
 def _parse(sql: str, *, dialect: str = "ansi") -> BaseSegment:
@@ -113,6 +127,58 @@ def test_metrics_schema_qualified_table_not_counted_as_cte_ref() -> None:
     m = collect_metrics(_parse(sql))
     assert m.cte_dependency_depth == 1
     assert m.ctes == 1
+
+
+def test_c107_outer_with_not_penalized_for_nested_with_depth() -> None:
+    """Outer WITH depth must ignore deeper chains inside a nested WITH body."""
+    sql = """
+    WITH outer_wrap AS (
+      WITH
+        a AS (SELECT 1 AS id),
+        b AS (SELECT * FROM a),
+        c AS (SELECT * FROM b),
+        d AS (SELECT * FROM c)
+      SELECT * FROM d
+    )
+    SELECT * FROM outer_wrap
+    """
+    tree = _parse(sql)
+    with_roots = list(_iter_with_compound_statements(tree))
+    assert len(with_roots) == 2
+    outer_with, inner_with = with_roots
+    assert cte_dependency_depth_for_with_clause(outer_with) == 1
+    assert cte_dependency_depth_for_with_clause(inner_with) == 4
+
+
+def test_c107_lint_outer_passes_inner_flags_nested_chain() -> None:
+    """Outer WITH should not violate from inner depth; inner WITH still enforces its own chain."""
+    sql = """
+    WITH outer_wrap AS (
+      WITH
+        a AS (SELECT 1 AS id),
+        b AS (SELECT * FROM a),
+        c AS (SELECT * FROM b),
+        d AS (SELECT * FROM c)
+      SELECT * FROM d
+    )
+    SELECT * FROM outer_wrap
+    """
+    linted = lint_sql(
+        sql,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C107
+
+        [sqlfluff:rules:CPX_C107]
+        max_cte_dependency_depth = 3
+        """,
+    )
+    violations = rule_violations(linted, "CPX_C107")
+    descs = [v.desc() for v in violations]
+    assert len(violations) == 1
+    assert any("CTE dependency depth is 4" in d for d in descs)
+    assert all("depth is 2" not in d and "depth is 1" not in d for d in descs)
 
 
 def test_c107_fails_when_chain_exceeds_threshold() -> None:

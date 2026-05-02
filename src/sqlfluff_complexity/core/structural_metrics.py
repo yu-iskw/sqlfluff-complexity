@@ -54,6 +54,16 @@ def _cte_dependency_depth_for_with(with_root: BaseSegment) -> int:
     return _longest_dependency_chain_depth(names_in_scope, edges)
 
 
+def cte_dependency_depth_for_with_clause(with_root: BaseSegment) -> int:
+    """Longest CTE dependency chain among **direct** CTEs of this ``with_compound_statement`` only.
+
+    Nested ``WITH`` clauses inside a CTE body are separate scopes; use this for CPX_C107 so the
+    outer clause is not judged by the inner clause's depth (see aggregate ``ComplexityMetrics``
+    ``cte_dependency_depth``, which maxes across all ``WITH`` blocks in the tree).
+    """
+    return _cte_dependency_depth_for_with(with_root)
+
+
 def direct_child_common_table_expressions(with_root: BaseSegment) -> tuple[BaseSegment, ...]:
     """Top-level CTE segments directly under a ``with_compound_statement``."""
     return tuple(

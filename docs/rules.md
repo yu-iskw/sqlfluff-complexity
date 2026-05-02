@@ -111,6 +111,11 @@ Only bare `table_reference` names (single identifier) to other CTEs in the same 
 edges. Schema-qualified names like `warehouse.orders` are ignored for matching so they cannot be
 mistaken for a CTE alias. `ref()`, sources, macros, and other dotted relations are not resolved—unknown references are ignored rather than guessed.
 
+`CPX_C107` evaluates the dependency chain for **this** `WITH` clause only. A nested `WITH` inside a
+CTE body is linted as its own `with_compound_statement` when the rule runs on it, so the outer
+`WITH` is not failed using the inner chain's depth. The **report** output field `cte_dependency_depth`
+is still the **maximum** depth across all `WITH` blocks in the file (a broader signal).
+
 CTE definitions may include an explicit column list (`WITH x (c1, c2) AS (...)`); the dependency
 walk uses the query body after `AS`, not the column list bracket.
 
