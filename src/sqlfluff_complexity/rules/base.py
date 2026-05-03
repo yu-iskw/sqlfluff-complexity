@@ -51,10 +51,12 @@ def _file_segment_via_parent_pointers(segment: BaseSegment) -> BaseSegment | Non
 def file_segment_from_context(context: RuleContext) -> BaseSegment:  # noqa: PLR0911
     """Return the ``file`` segment for the current rule context.
 
-    SQLFluff rule crawlers populate ``parent_stack`` with ancestors from the parse
-    root; prefer that over ``get_parent()`` pointers (which may be unset on
-    segments obtained outside a full lint crawl). Falls back to ``get_parent()``
-    when the stack is empty, then to ``context.segment``.
+    Resolution order:
+
+    1. If ``context.segment`` is already ``file``, return it.
+    2. Else scan ``context.parent_stack`` for a ``file`` ancestor (SQLFluff crawlers).
+    3. Else walk ``get_parent()`` from ``context.segment`` (may be unset outside lint).
+    4. Else return ``context.segment`` (caller should treat as best-effort subtree root).
     """
     seg = context.segment
     if getattr(seg, "type", "") == "file":
@@ -84,7 +86,11 @@ def eval_file_root_metric_threshold(
     policy: ComplexityPolicy,
     spec: MetricRuleSpec,
 ) -> LintResult | None:
-    """Lint one metric threshold using file-level parse metrics (report parity)."""
+    """Lint one metric threshold using file-level parse metrics (report parity).
+
+    Delegates to :func:`metric_lint_result` with ``anchor_segment`` set to the resolved
+    ``file`` root; see that function if ``ValueError`` is raised from inconsistent inputs.
+    """
     root = file_segment_from_context(context)
     analysis = analyze_segment_tree(root)
     return metric_lint_result(
@@ -164,7 +170,11 @@ def metric_lint_result(  # noqa: PLR0913
     on the same segment (avoids a second full tree walk on violations).
 
     When ``anchor_segment`` is set, use it for the ``LintResult`` anchor (e.g. ``file``
-    root when metrics were computed from ``analyze_segment_tree(file)``).
+    root when metrics were computed from ``analyze_segment_tree(file)``). Callers
+    must pass ``metrics`` and ``precomputed_analysis`` from that same analysis root;
+    prefer :func:`eval_file_root_metric_threshold` for file-level rules so the trio
+    stays aligned. If ``anchor_segment`` is set with ``precomputed_analysis`` but
+    ``metrics`` disagrees on ``spec.metric_name``, raises ``ValueError``.
     """
     if policy.mode == "report":
         return None
@@ -175,6 +185,17 @@ def metric_lint_result(  # noqa: PLR0913
         return None
 
     analysis = precomputed_analysis or analyze_segment_tree(context.segment)
+    if (
+        anchor_segment is not None
+        and precomputed_analysis is not None
+        and int(getattr(precomputed_analysis.metrics, spec.metric_name)) != actual
+    ):
+        message = (
+            "anchor_segment and precomputed_analysis disagree on metric value; "
+            "pass metrics and precomputed_analysis from the same analyze_segment_tree root."
+        )
+        raise ValueError(message)
+
     show_contributors, max_contributors = contributor_display_settings(
         context.config,
         spec.rule_id,
