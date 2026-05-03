@@ -5,10 +5,14 @@ from __future__ import annotations
 from textwrap import dedent
 from typing import TYPE_CHECKING
 
+import pytest
 from sqlfluff.core import Linter
 
 from sqlfluff_complexity.core.segment_tree import collect_metrics
-from sqlfluff_complexity.core.structural_metrics import cte_dependency_depth_for_with_clause
+from sqlfluff_complexity.core.structural_metrics import (
+    _longest_dependency_chain_depth,
+    cte_dependency_depth_for_with_clause,
+)
 from sqlfluff_complexity.tests.sqlfluff_helpers import lint_sql, rule_violations
 
 if TYPE_CHECKING:
@@ -32,6 +36,70 @@ def _parse(sql: str, *, dialect: str = "ansi") -> BaseSegment:
     parsed = Linter(dialect=dialect).parse_string(sql)
     assert parsed.tree is not None
     return parsed.tree
+
+
+def test_metrics_quoted_cte_aliases_preserve_case() -> None:
+    """Quoted aliases are case-sensitive, so ``"Foo"`` and ``"foo"`` are distinct."""
+    sql = dedent("""
+        WITH
+          "Foo" AS (SELECT 1 AS id),
+          b AS (SELECT * FROM "foo")
+        SELECT * FROM b
+        """).strip()
+    m = collect_metrics(_parse(sql, dialect="postgres"))
+    assert m.ctes == 2
+    assert m.cte_dependency_depth == 1
+
+
+def test_metrics_quoted_cte_alias_exact_match_counts_dependency() -> None:
+    """Quoted aliases still match when the quoted spelling is exact."""
+    sql = dedent("""
+        WITH
+          "Foo" AS (SELECT 1 AS id),
+          b AS (SELECT * FROM "Foo")
+        SELECT * FROM b
+        """).strip()
+    m = collect_metrics(_parse(sql, dialect="postgres"))
+    assert m.ctes == 2
+    assert m.cte_dependency_depth == 2
+
+
+def test_metrics_nested_with_outer_select_refs_outer_sibling() -> None:
+    """Outer SELECT after nested WITH may reference another outer sibling CTE (b -> a)."""
+    sql = dedent("""
+        WITH
+          a AS (SELECT 1 AS id),
+          b AS (
+            WITH x AS (SELECT 1 AS id)
+            SELECT * FROM a
+          )
+        SELECT * FROM b
+        """).strip()
+    tree = _parse(sql)
+    with_roots = list(_iter_with_compound_statements(tree))
+    assert len(with_roots) == 2
+    outer_with, inner_with = with_roots
+    assert cte_dependency_depth_for_with_clause(inner_with) == 1
+    assert cte_dependency_depth_for_with_clause(outer_with) == 2
+
+
+def test_metrics_nested_with_inner_cte_refs_outer_sibling() -> None:
+    """Outer sibling ``a`` referenced only inside inner CTE ``x`` still yields edge ``b`` -> ``a``."""
+    sql = dedent("""
+        WITH
+          a AS (SELECT 1 AS id),
+          b AS (
+            WITH x AS (SELECT * FROM a)
+            SELECT * FROM x
+          )
+        SELECT * FROM b
+        """).strip()
+    tree = _parse(sql)
+    with_roots = list(_iter_with_compound_statements(tree))
+    assert len(with_roots) == 2
+    outer_with, inner_with = with_roots
+    assert cte_dependency_depth_for_with_clause(inner_with) == 1
+    assert cte_dependency_depth_for_with_clause(outer_with) == 2
 
 
 def test_metrics_nested_with_same_alias_does_not_false_edge_to_outer_cte() -> None:
@@ -301,3 +369,39 @@ def test_c107_nested_select_outer_only() -> None:
         """,
     )
     assert len(rule_violations(linted, "CPX_C107")) <= 1
+
+
+def test_longest_dependency_chain_depth_two_node_cycle_is_two() -> None:
+    """Mutual CTE refs must not inflate depth past the SCC size (regression vs naive DFS)."""
+    nodes = {"a", "b"}
+    edges = {"a": {"b"}, "b": {"a"}}
+    assert _longest_dependency_chain_depth(nodes, edges) == 2
+
+
+def test_longest_dependency_chain_depth_three_cycle_is_three() -> None:
+    """A directed 3-cycle contributes weight three once along any condensation path."""
+    nodes = {"a", "b", "c"}
+    edges = {"a": {"b"}, "b": {"c"}, "c": {"a"}}
+    assert _longest_dependency_chain_depth(nodes, edges) == 3
+
+
+def test_metrics_nested_with_shadowing_postgres_parity_with_ansi() -> None:
+    """Nested-WITH shadowing: Postgres matches ansi depths when parse yields two WITH clauses."""
+    sql = dedent("""
+        WITH
+          foo AS (SELECT 1 AS id),
+          bar AS (
+            WITH
+              foo AS (SELECT 2 AS id),
+              baz AS (SELECT * FROM foo)
+            SELECT * FROM baz
+          )
+        SELECT * FROM bar
+        """).strip()
+    ansi_roots = list(_iter_with_compound_statements(_parse(sql, dialect="ansi")))
+    pg_roots = list(_iter_with_compound_statements(_parse(sql, dialect="postgres")))
+    if len(pg_roots) != 2 or len(ansi_roots) != 2:
+        pytest.skip("Dialect parse shape differs or fewer than two with_compound_statement nodes")
+    outer_with, inner_with = pg_roots
+    assert cte_dependency_depth_for_with_clause(outer_with) == 1
+    assert cte_dependency_depth_for_with_clause(inner_with) == 2

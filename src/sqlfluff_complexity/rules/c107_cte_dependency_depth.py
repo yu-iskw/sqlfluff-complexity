@@ -1,4 +1,8 @@
-"""Rule CPX_C107: CTE dependency chain too deep."""
+"""Rule CPX_C107: CTE dependency chain too deep.
+
+Dependency edges use bare table names among sibling CTEs. Schema-qualified names are not matched
+to CTEs. Unqualified names may still be base tables at execution time.
+"""
 
 from __future__ import annotations
 
@@ -26,7 +30,11 @@ def _anchor_cte_dependency_violation(with_root: BaseSegment) -> BaseSegment:
 
 
 class Rule_CPX_C107(BaseRule):  # noqa: N801
-    """CTE dependency depth within a WITH clause exceeds the configured limit."""
+    """CTE dependency depth within a WITH clause exceeds the configured limit.
+
+    Depth is derived from sibling CTE reference edges on the parse tree (bare identifiers only;
+    qualified references are excluded). See ``structural_metrics`` module docstrings for limits.
+    """
 
     groups: tuple[str, ...] = ("all", "complexity")
     config_keywords: ClassVar[list[str]] = ["max_cte_dependency_depth"]
