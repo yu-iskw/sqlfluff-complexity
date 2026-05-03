@@ -5,7 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from sqlfluff_complexity.tests.fixture_loader import read_sql_fixture
-from sqlfluff_complexity.tests.sqlfluff_helpers import lint_sql, rule_violations
+from sqlfluff_complexity.tests.sqlfluff_helpers import (
+    lint_sql,
+    rule_violations,
+    single_sql_lint_violation,
+)
 
 
 def test_c102_reports_join_count_violation() -> None:
@@ -202,6 +206,130 @@ def test_path_override_changes_rule_limit_for_matching_file() -> None:
 
     assert len(violations) == 1
     assert "join count 2 exceeds max_joins=1" in violations[0].desc()
+
+
+def test_c108_reports_nested_case_depth_violation() -> None:
+    """CPX_C108 should fail when nested CASE depth exceeds max_nested_case_depth."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c108_nested_case"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C108
+
+        [sqlfluff:rules:CPX_C108]
+        max_nested_case_depth = 1
+        show_contributors = true
+        max_contributors = 3
+        """,
+    )
+
+    assert linted.tree is not None
+    assert getattr(linted.tree, "type", "") == "file"
+    violation = single_sql_lint_violation(linted, "CPX_C108")
+    assert violation.segment is linted.tree
+    assert "nested CASE depth 2 exceeds max_nested_case_depth=1" in violation.desc()
+    assert "Top contributors:" in violation.desc()
+    assert "case_expression" in violation.desc()
+
+
+def test_c109_reports_set_operation_violation() -> None:
+    """CPX_C109 should fail when set_operation_count exceeds max_set_operations."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c109_set_ops_two"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C109
+
+        [sqlfluff:rules:CPX_C109]
+        max_set_operations = 1
+        show_contributors = true
+        max_contributors = 3
+        """,
+    )
+
+    assert linted.tree is not None
+    assert getattr(linted.tree, "type", "") == "file"
+    violation = single_sql_lint_violation(linted, "CPX_C109")
+    assert violation.segment is linted.tree
+    assert "set operation count 2 exceeds max_set_operations=1" in violation.desc()
+    assert "Top contributors:" in violation.desc()
+    assert "set_operator" in violation.desc()
+
+
+def test_c109_parenthesized_union_emits_single_violation_when_over_limit() -> None:
+    """Parenthesized unions share one file-level set_operation_count (no duplicate hits)."""
+    sql = "(select 1 union all select 2) union all select 3"
+    linted = lint_sql(
+        sql,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C109
+
+        [sqlfluff:rules:CPX_C109]
+        max_set_operations = 0
+        """,
+    )
+
+    assert linted.tree is not None
+    assert getattr(linted.tree, "type", "") == "file"
+    violation = single_sql_lint_violation(linted, "CPX_C109")
+    assert violation.segment is linted.tree
+    assert "set operation count 2 exceeds max_set_operations=0" in violation.desc()
+
+
+def test_path_override_max_nested_case_depth_for_c108() -> None:
+    """path_overrides on CPX_C201 should tighten max_nested_case_depth for CPX_C108."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c108_nested_case"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C108
+
+        [sqlfluff:rules:CPX_C108]
+        max_nested_case_depth = 10
+
+        [sqlfluff:rules:CPX_C201]
+        path_overrides =
+            models/staging/*.sql:max_nested_case_depth=1
+        """,
+        fname=str(Path("models/staging/orders.sql")),
+    )
+
+    assert linted.tree is not None
+    assert getattr(linted.tree, "type", "") == "file"
+    violation = single_sql_lint_violation(linted, "CPX_C108")
+    assert violation.segment is linted.tree
+    assert "nested CASE depth 2 exceeds max_nested_case_depth=1" in violation.desc()
+
+
+def test_path_override_max_set_operations_for_c109() -> None:
+    """path_overrides on CPX_C201 should tighten max_set_operations for CPX_C109."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c109_set_ops_two"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C109
+
+        [sqlfluff:rules:CPX_C109]
+        max_set_operations = 12
+
+        [sqlfluff:rules:CPX_C201]
+        path_overrides =
+            models/marts/*.sql:max_set_operations=1
+        """,
+        fname=str(Path("models/marts/union_stack.sql")),
+    )
+
+    assert linted.tree is not None
+    assert getattr(linted.tree, "type", "") == "file"
+    violation = single_sql_lint_violation(linted, "CPX_C109")
+    assert violation.segment is linted.tree
+    assert "set operation count 2 exceeds max_set_operations=1" in violation.desc()
 
 
 def test_path_override_report_mode_suppresses_rule_violation() -> None:

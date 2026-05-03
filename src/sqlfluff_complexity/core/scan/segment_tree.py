@@ -27,6 +27,7 @@ def analyze_segment_tree(root: BaseSegment) -> ComplexityAnalysis:
     counter = _MetricCounter()
     counter.walk(root, active_selects=0, nested_depth=0, case_depth=0)
     return ComplexityAnalysis(
+        root=root,
         metrics=counter.to_metrics(),
         contributors=tuple(counter.contributors),
     )
@@ -43,7 +44,12 @@ def is_nested_select_statement(segment: BaseSegment) -> bool:
     Used to avoid duplicate rule hits on nested selects. When parent metadata
     is unavailable, returns False so rules keep prior behavior.
     """
-    if getattr(segment, "type", "") != "select_statement":
+    return _segment_has_ancestor_of_type(segment, "select_statement")
+
+
+def _segment_has_ancestor_of_type(segment: BaseSegment, segment_type: str) -> bool:
+    """True when ``segment`` is of ``segment_type`` and an ancestor shares that type."""
+    if getattr(segment, "type", "") != segment_type:
         return False
 
     current: BaseSegment | None = segment
@@ -51,7 +57,7 @@ def is_nested_select_statement(segment: BaseSegment) -> bool:
         parent = _parent_segment(current)
         if parent is None:
             break
-        if getattr(parent, "type", "") == "select_statement":
+        if getattr(parent, "type", "") == segment_type:
             return True
         current = parent
     return False
@@ -135,6 +141,7 @@ class _MetricCounter:
             nested_depth,
         )
         self._count_segment(segment, segment_type)
+        self._add_structural_contributor(segment, segment_type, case_depth)
 
         child_case_depth = case_depth + 1 if segment_type == "case_expression" else case_depth
         self._walk_children(
@@ -199,6 +206,17 @@ class _MetricCounter:
                 segment,
                 reason="boolean and/or operator",
             )
+
+    def _add_structural_contributor(
+        self,
+        segment: BaseSegment,
+        segment_type: str,
+        case_depth: int,
+    ) -> None:
+        if segment_type == "set_operator":
+            self._add_contributor("set_operation_count", segment, reason="set operator")
+        elif segment_type == "case_expression" and case_depth > 0:
+            self._add_contributor("expression_depth", segment, reason="nested case expression")
 
     def _is_boolean_operator(self, segment: BaseSegment) -> bool:
         return (

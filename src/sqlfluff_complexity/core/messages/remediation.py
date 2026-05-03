@@ -28,6 +28,14 @@ REMEDIATIONS: dict[str, str] = {
     "CPX_C107": (
         "Consider splitting the query into simpler intermediate models or reducing chained CTEs."
     ),
+    "CPX_C108": (
+        "Consider flattening nested CASE logic into smaller expressions, mapping tables, or "
+        "upstream classification steps."
+    ),
+    "CPX_C109": (
+        "Consider replacing stacked UNION/INTERSECT/EXCEPT with a single query, staging models, or "
+        "a unioned intermediate model."
+    ),
     "CPX_C201": (
         "Reduce the largest contributing metric first; inspect the metric breakdown and top "
         "contributors."

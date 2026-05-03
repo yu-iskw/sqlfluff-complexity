@@ -4,16 +4,18 @@
 
 ## Metric Summary
 
-| Rule       | Metric                              | Default | Config key                 |
-| ---------- | ----------------------------------- | ------: | -------------------------- |
-| `CPX_C101` | Common table expressions            |       8 | `max_ctes`                 |
-| `CPX_C102` | Join clauses                        |       8 | `max_joins`                |
-| `CPX_C103` | Nested subquery depth               |       3 | `max_subquery_depth`       |
-| `CPX_C104` | `CASE` expressions                  |      10 | `max_case_expressions`     |
-| `CPX_C105` | Boolean `AND` / `OR` operators      |      20 | `max_boolean_operators`    |
-| `CPX_C106` | Window functions                    |      10 | `max_window_functions`     |
-| `CPX_C107` | Longest CTE dependency chain        |       5 | `max_cte_dependency_depth` |
-| `CPX_C201` | Aggregate weighted complexity score |      60 | `max_complexity_score`     |
+| Rule       | Metric                                            | Default | Config key                 |
+| ---------- | ------------------------------------------------- | ------: | -------------------------- |
+| `CPX_C101` | Common table expressions                          |       8 | `max_ctes`                 |
+| `CPX_C102` | Join clauses                                      |       8 | `max_joins`                |
+| `CPX_C103` | Nested subquery depth                             |       3 | `max_subquery_depth`       |
+| `CPX_C104` | `CASE` expressions                                |      10 | `max_case_expressions`     |
+| `CPX_C105` | Boolean `AND` / `OR` operators                    |      20 | `max_boolean_operators`    |
+| `CPX_C106` | Window functions                                  |      10 | `max_window_functions`     |
+| `CPX_C107` | Longest CTE dependency chain                      |       5 | `max_cte_dependency_depth` |
+| `CPX_C108` | Nested `CASE` depth (`case_expression` nesting)   |      10 | `max_nested_case_depth`    |
+| `CPX_C109` | Set operations (`UNION` / `INTERSECT` / `EXCEPT`) |      12 | `max_set_operations`       |
+| `CPX_C201` | Aggregate weighted complexity score               |      60 | `max_complexity_score`     |
 
 ## CPX_C101: Too Many CTEs
 
@@ -130,6 +132,32 @@ walk uses the query body after `AS`, not the column list bracket.
 ```ini
 [sqlfluff:rules:CPX_C107]
 max_cte_dependency_depth = 5
+```
+
+## CPX_C108: Nested CASE Depth Too High
+
+Flags a statement when **`expression_depth`** exceeds `max_nested_case_depth`.
+
+This metric is the **maximum nesting depth of `case_expression` segments** in the parse tree (a `CASE` nested inside another `CASE` increases depth). It is **not** a generic expression-tree depth and it is **not** the same as **`CPX_C104`**, which counts how many `CASE` expressions appear (`case_expressions`).
+
+`CPX_C108` evaluates **`expression_depth` on the whole parse tree** (the same scope as `sqlfluff-complexity report`) and runs once per file via the parse root, matching report output for nested CASE depth.
+
+```ini
+[sqlfluff:rules:CPX_C108]
+max_nested_case_depth = 10
+```
+
+## CPX_C109: Too Many Set Operations
+
+Flags a statement when **`set_operation_count`** exceeds `max_set_operations`.
+
+The metric counts **`set_operator`** segments (stacked `UNION`, `INTERSECT`, `EXCEPT`, including `UNION ALL`). Each operator between query blocks adds to the count.
+
+`CPX_C109` evaluates **`set_operation_count` on the whole parse tree** (the same scope as `sqlfluff-complexity report`), so nested parenthesized unions and per-arm `select_statement` fragments cannot duplicate violations. The rule runs once per file via the parse root.
+
+```ini
+[sqlfluff:rules:CPX_C109]
+max_set_operations = 12
 ```
 
 ## CPX_C201: Aggregate Complexity Score Too High

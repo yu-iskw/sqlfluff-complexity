@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from sqlfluff.core import FluffConfig, Linter
+from sqlfluff.core.errors import SQLLintError
 
 if TYPE_CHECKING:
     from sqlfluff.core.errors import SQLBaseError
@@ -27,3 +28,21 @@ def lint_sql(sql: str, config: str, *, fname: str = "model.sql") -> LintedFile:
 def rule_violations(linted: LintedFile, rule_code: str) -> list[SQLBaseError]:
     """Return violations matching one SQLFluff rule code."""
     return [violation for violation in linted.violations if violation.rule_code() == rule_code]
+
+
+def single_sql_lint_violation(linted: LintedFile, rule_code: str) -> SQLLintError:
+    """Return the sole lint violation for ``rule_code``, narrowed to ``SQLLintError``.
+
+    Intended for **pytest** tests. Uses explicit exceptions (not ``assert``) so checks
+    still run under ``python -O``. Wrong violation count raises ``ValueError``; wrong
+    violation type raises ``TypeError``.
+    """
+    violations = rule_violations(linted, rule_code)
+    if len(violations) != 1:
+        message = f"expected one {rule_code} violation, got {len(violations)}"
+        raise ValueError(message)
+    first = violations[0]
+    if not isinstance(first, SQLLintError):
+        message = f"expected SQLLintError for {rule_code}, got {type(first).__name__}"
+        raise TypeError(message)
+    return first

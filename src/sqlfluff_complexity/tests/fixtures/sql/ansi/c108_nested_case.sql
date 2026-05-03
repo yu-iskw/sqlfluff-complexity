@@ -1,0 +1,6 @@
+SELECT
+  CASE
+    WHEN true THEN
+      CASE WHEN 1 = 1 THEN 1 ELSE 0 END
+    ELSE 0
+  END AS x

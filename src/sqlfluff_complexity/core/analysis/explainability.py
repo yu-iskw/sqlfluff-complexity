@@ -31,7 +31,7 @@ _REFACTORING_PHRASES: dict[str, str] = {
     "window_functions": "separating dense window calculations",
     "cte_dependency_depth": "reducing chained CTE dependencies",
     "set_operation_count": "simplifying stacked set operations",
-    "expression_depth": "flattening deeply nested expressions",
+    "expression_depth": "flattening nested CASE expressions",
 }
 
 

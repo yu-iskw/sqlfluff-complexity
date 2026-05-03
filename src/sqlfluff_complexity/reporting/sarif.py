@@ -35,6 +35,8 @@ def _sarif_rules() -> list[dict[str, Any]]:
         "CPX_C105",
         "CPX_C106",
         "CPX_C107",
+        "CPX_C108",
+        "CPX_C109",
         "CPX_C201",
         "CPX_PARSE_ERROR",
     )
