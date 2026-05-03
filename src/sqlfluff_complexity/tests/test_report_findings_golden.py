@@ -83,6 +83,7 @@ def test_sarif_metadata_covers_all_rules(tmp_path: Path) -> None:
         "CPX_C104",
         "CPX_C105",
         "CPX_C106",
+        "CPX_C107",
         "CPX_C201",
         "CPX_PARSE_ERROR",
     ):

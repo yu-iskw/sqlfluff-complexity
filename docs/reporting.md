@@ -16,8 +16,8 @@ The console output includes one row per file:
 
 ```text
 sqlfluff-complexity report
-path score ctes joins subquery_depth case_expressions boolean_operators window_functions
-models/orders.sql 14 1 2 0 1 3 1
+path score ctes joins subquery_depth case_expressions boolean_operators window_functions cte_dependency_depth set_operation_count expression_depth
+models/orders.sql 14 1 2 0 1 3 1 2 0 1
 ```
 
 When findings exist, each rule line may append a short bracketed contributor summary (`line` / `col` / segment type) so reviewers can jump to the SQLFluff segments that drove the metric.
@@ -35,6 +35,14 @@ Optional per-rule settings (in `.sqlfluff`) tune verbosity without changing thre
 
 - `show_contributors` (default `true`): include compact contributor locations in lint messages and reports.
 - `max_contributors` (default `3`): cap how many contributor lines are shown per violation.
+
+### Interpreting `cte_dependency_depth` in reports
+
+The **`cte_dependency_depth`** column (and JSON `metrics.cte_dependency_depth`) is the **maximum**
+dependency-chain depth **across every `WITH` block** in that file’s parse tree. **`CPX_C107`** compares
+thresholds per **`WITH` clause** when linting—so one large report number does not imply every outer
+`WITH` failed lint if only a nested `WITH` carried the chain. Use findings or `sqlfluff lint` output
+when reconciling report rows with rule failures.
 
 ## JSON Report
 
@@ -80,7 +88,10 @@ Example (excerpt):
         "subquery_depth": 0,
         "case_expressions": 0,
         "boolean_operators": 0,
-        "window_functions": 0
+        "window_functions": 0,
+        "cte_dependency_depth": 0,
+        "set_operation_count": 0,
+        "expression_depth": 0
       },
       "contributors": [
         {
@@ -111,7 +122,7 @@ sqlfluff-complexity report \
   models/
 ```
 
-SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C106`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, and `properties.remediation`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
+SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C107`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, and `properties.remediation`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
 
 The SARIF output does not embed full SQL source text in messages.
 

@@ -17,6 +17,9 @@ _SCORE_METRIC_KEYS: tuple[str, ...] = (
     "case_expressions",
     "boolean_operators",
     "window_functions",
+    "cte_dependency_depth",
+    "set_operation_count",
+    "expression_depth",
 )
 
 _REFACTORING_PHRASES: dict[str, str] = {
@@ -26,6 +29,9 @@ _REFACTORING_PHRASES: dict[str, str] = {
     "case_expressions": "moving dense CASE logic into upstream models or lookup tables",
     "boolean_operators": "simplifying dense predicates",
     "window_functions": "separating dense window calculations",
+    "cte_dependency_depth": "reducing chained CTE dependencies",
+    "set_operation_count": "simplifying stacked set operations",
+    "expression_depth": "flattening deeply nested expressions",
 }
 
 

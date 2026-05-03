@@ -106,6 +106,14 @@ REPORT_LIMITS = (
         "max_window_functions",
         message_label="window function count",
     ),
+    ReportLimit(
+        "CPX_C107",
+        "cte_dependency_depth",
+        "max_cte_dependency_depth",
+        "CTE dependency depth",
+        "max_cte_dependency_depth",
+        message_label="CTE dependency depth",
+    ),
 )
 
 
@@ -143,9 +151,13 @@ def analyze_paths(
 
 def format_console_report(report: ComplexityReport) -> str:
     """Format a complexity report for terminal output."""
+    column_headers = (
+        "path score ctes joins subquery_depth case_expressions boolean_operators window_functions "
+        "cte_dependency_depth set_operation_count expression_depth"
+    )
     lines = [
         "sqlfluff-complexity report",
-        "path score ctes joins subquery_depth case_expressions boolean_operators window_functions",
+        column_headers,
     ]
     for entry in report.entries:
         lines.extend(_format_console_entry(entry))
@@ -509,6 +521,7 @@ def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
         max_case_expressions=_config_int(config, "CPX_C104", "max_case_expressions", 10),
         max_boolean_operators=_config_int(config, "CPX_C105", "max_boolean_operators", 20),
         max_window_functions=_config_int(config, "CPX_C106", "max_window_functions", 10),
+        max_cte_dependency_depth=_config_int(config, "CPX_C107", "max_cte_dependency_depth", 5),
         max_complexity_score=_config_int(
             config,
             "CPX_C201",
@@ -516,18 +529,6 @@ def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
             DEFAULT_MAX_COMPLEXITY_SCORE,
         ),
     )
-
-
-def _metrics_dict(metrics: ComplexityMetrics) -> dict[str, int]:
-    return {
-        "boolean_operators": metrics.boolean_operators,
-        "case_expressions": metrics.case_expressions,
-        "ctes": metrics.ctes,
-        "joins": metrics.joins,
-        "subqueries": metrics.subqueries,
-        "subquery_depth": metrics.subquery_depth,
-        "window_functions": metrics.window_functions,
-    }
 
 
 def _json_entry(entry: ReportEntry) -> dict[str, object]:
@@ -548,7 +549,7 @@ def _json_entry(entry: ReportEntry) -> dict[str, object]:
         base["metrics"] = None
         base["score"] = None
         return base
-    base["metrics"] = _metrics_dict(entry.metrics)
+    base["metrics"] = entry.metrics.to_report_counters()
     base["score"] = entry.score
     return base
 
@@ -562,13 +563,13 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
         return [f"{entry.path} ERROR Missing metrics."]
 
     metrics = entry.metrics
-    lines = [
-        (
-            f"{entry.path} {entry.score} {metrics.ctes} {metrics.joins} "
-            f"{metrics.subquery_depth} {metrics.case_expressions} "
-            f"{metrics.boolean_operators} {metrics.window_functions}"
-        ),
-    ]
+    header_line = (
+        f"{entry.path} {entry.score} {metrics.ctes} {metrics.joins} "
+        f"{metrics.subquery_depth} {metrics.case_expressions} "
+        f"{metrics.boolean_operators} {metrics.window_functions} "
+        f"{metrics.cte_dependency_depth} {metrics.set_operation_count} {metrics.expression_depth}"
+    )
+    lines = [header_line]
     for finding in entry.findings:
         if finding.rule_id == "CPX_PARSE_ERROR":
             lines.append(f"  {finding.rule_id}: {finding.message}")

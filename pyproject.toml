@@ -115,6 +115,11 @@ reportIncompatibleVariableOverride = false
 paths = ["src/sqlfluff_complexity"]
 min_confidence = 80
 
+# Bandit: production code only; tests use assert (B101) by design.
+[tool.bandit]
+exclude_dirs = ["src/sqlfluff_complexity/tests"]
+skips = ["B101"]
+
 [tool.coverage.run]
 branch = true
 source = ["src/sqlfluff_complexity"]

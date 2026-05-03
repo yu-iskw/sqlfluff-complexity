@@ -7,7 +7,7 @@
 ```ini
 [sqlfluff]
 dialect = snowflake
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C201
 ```
 
 You can also enable only the rules you are ready to enforce:
@@ -22,15 +22,16 @@ rules = CPX_C102,CPX_C103,CPX_C201
 
 The plugin default config sets these limits:
 
-| Rule       | Config key              | Default |
-| ---------- | ----------------------- | ------: |
-| `CPX_C101` | `max_ctes`              |       8 |
-| `CPX_C102` | `max_joins`             |       8 |
-| `CPX_C103` | `max_subquery_depth`    |       3 |
-| `CPX_C104` | `max_case_expressions`  |      10 |
-| `CPX_C105` | `max_boolean_operators` |      20 |
-| `CPX_C106` | `max_window_functions`  |      10 |
-| `CPX_C201` | `max_complexity_score`  |      60 |
+| Rule       | Config key                 | Default |
+| ---------- | -------------------------- | ------: |
+| `CPX_C101` | `max_ctes`                 |       8 |
+| `CPX_C102` | `max_joins`                |       8 |
+| `CPX_C103` | `max_subquery_depth`       |       3 |
+| `CPX_C104` | `max_case_expressions`     |      10 |
+| `CPX_C105` | `max_boolean_operators`    |      20 |
+| `CPX_C106` | `max_window_functions`     |      10 |
+| `CPX_C107` | `max_cte_dependency_depth` |       5 |
+| `CPX_C201` | `max_complexity_score`     |      60 |
 
 Example override:
 
@@ -51,13 +52,15 @@ Default weights:
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0
 mode = enforce
 ```
 
 The aggregate score uses maximum nested subquery depth, not raw subquery count.
 
-## Path Overrides
+The **`cte_dependency_depth`** component in `complexity_weights` applies to the **file-level**
+metric (maximum chain depth across all `WITH` blocks in the parsed tree), not to each `WITH` in
+isolation—see [Reporting: interpreting `cte_dependency_depth`](reporting.md#interpreting-cte_dependency_depth-in-reports) and [CPX_C107](rules.md#cpx_c107-cte-dependency-depth-too-high).
 
 Use `path_overrides` when different model areas need different budgets. Patterns use normalized path strings and glob-style matching.
 
@@ -77,7 +80,7 @@ Supported override keys:
 - `max_subquery_depth`
 - `max_case_expressions`
 - `max_boolean_operators`
-- `max_window_functions`
+- `max_cte_dependency_depth`
 - `max_complexity_score`
 - `mode`
 

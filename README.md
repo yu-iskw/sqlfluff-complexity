@@ -3,8 +3,8 @@
 SQLFluff rules and reports for finding SQL and dbt models that are too complex to review safely.
 
 `sqlfluff-complexity` adds CPX rules to SQLFluff for CTE count, join count, nested
-subquery depth, `CASE` expressions, boolean predicates, window functions, and an
-aggregate weighted complexity score. The same metric engine also powers a companion
+subquery depth, `CASE` expressions, boolean predicates, window functions, CTE dependency
+depth, and an aggregate weighted complexity score. The same metric engine also powers a companion
 `sqlfluff-complexity report` command for non-blocking console, JSON, and SARIF reports.
 
 ## Who It Is For
@@ -32,7 +32,7 @@ Then enable CPX rules in `.sqlfluff` and run SQLFluff:
 ```ini
 [sqlfluff]
 dialect = postgres
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C201
 ```
 
 ```bash
@@ -50,6 +50,19 @@ For a complete walkthrough, see [docs/quickstart.md](docs/quickstart.md).
 - [dbt usage](docs/dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
 - [Dialects](docs/dialects.md): tested dialects and dbt adapter mapping caveats.
 - [Docs index](docs/index.md): all user, contributor, and design documents.
+
+## Large dbt projects
+
+This plugin does **not** read dbt artifacts (`manifest.json`, `run_results.json`, `catalog.json`) or graph metadata. Complexity is measured from the SQLFluff parse tree only—which aligns well with [SQLFluff’s dbt templater](docs/dbt.md) so `ref()`, `source()`, and macros compile before linting.
+
+Practical adoption patterns:
+
+- Use the dbt templater when you need compiled SQL fidelity; keep `sqlfluff-complexity` focused on structural signals from parsed SQL.
+- Tune thresholds per rule and use [`path_overrides`](docs/configuration.md) on `CPX_C201` where staging vs marts need different budgets.
+- Prefer `sqlfluff lint` on changed models in CI and [`sqlfluff-complexity report`](docs/reporting.md) for broader visibility without failing builds.
+- For **CTE dependency depth**, see [docs/rules.md](docs/rules.md) (CPX_C107) and [docs/reporting.md](docs/reporting.md) (report vs per-`WITH` lint).
+
+See also [dbt usage](docs/dbt.md) and [configuration](docs/configuration.md).
 
 ## Project Status
 

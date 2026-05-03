@@ -4,15 +4,16 @@
 
 ## Metric Summary
 
-| Rule       | Metric                              | Default | Config key              |
-| ---------- | ----------------------------------- | ------: | ----------------------- |
-| `CPX_C101` | Common table expressions            |       8 | `max_ctes`              |
-| `CPX_C102` | Join clauses                        |       8 | `max_joins`             |
-| `CPX_C103` | Nested subquery depth               |       3 | `max_subquery_depth`    |
-| `CPX_C104` | `CASE` expressions                  |      10 | `max_case_expressions`  |
-| `CPX_C105` | Boolean `AND` / `OR` operators      |      20 | `max_boolean_operators` |
-| `CPX_C106` | Window functions                    |      10 | `max_window_functions`  |
-| `CPX_C201` | Aggregate weighted complexity score |      60 | `max_complexity_score`  |
+| Rule       | Metric                              | Default | Config key                 |
+| ---------- | ----------------------------------- | ------: | -------------------------- |
+| `CPX_C101` | Common table expressions            |       8 | `max_ctes`                 |
+| `CPX_C102` | Join clauses                        |       8 | `max_joins`                |
+| `CPX_C103` | Nested subquery depth               |       3 | `max_subquery_depth`       |
+| `CPX_C104` | `CASE` expressions                  |      10 | `max_case_expressions`     |
+| `CPX_C105` | Boolean `AND` / `OR` operators      |      20 | `max_boolean_operators`    |
+| `CPX_C106` | Window functions                    |      10 | `max_window_functions`     |
+| `CPX_C107` | Longest CTE dependency chain        |       5 | `max_cte_dependency_depth` |
+| `CPX_C201` | Aggregate weighted complexity score |      60 | `max_complexity_score`     |
 
 ## CPX_C101: Too Many CTEs
 
@@ -98,6 +99,39 @@ Many window functions can indicate dense analytic logic. Consider extracting rep
 max_window_functions = 10
 ```
 
+## CPX_C107: CTE Dependency Depth Too High
+
+Flags a `WITH` clause when the longest chain of CTE references (within that statement’s parse tree)
+exceeds `max_cte_dependency_depth`.
+
+Raw CTE count (`CPX_C101`) and dependency depth measure different things: many independent CTEs can be
+easier to follow than a long chain where each CTE builds on the previous one.
+
+Only bare `table_reference` names (single identifier) to other CTEs in the same `WITH` count as
+edges. Schema-qualified names like `warehouse.orders` are ignored for matching so they cannot be
+mistaken for a CTE alias. `ref()`, sources, macros, and other dotted relations are not resolved—unknown references are ignored rather than guessed.
+
+`CPX_C107` evaluates the dependency chain for **this** `WITH` clause only. A nested `WITH` inside a
+CTE body is linted as its own `with_compound_statement` when the rule runs on it, so the outer
+`WITH` is not failed using the inner chain's depth. The **report** output field `cte_dependency_depth`
+is still the **maximum** depth across all `WITH` blocks in the file (a broader signal).
+
+**Limitations (parse-tree heuristics):**
+
+- Alias parsing uses the **first** `identifier` child of each `common_table_expression`; unusual structures could theoretically mismatch (rare with SQLFluff’s grammar).
+- Nested `WITH` blocks inside a CTE body are **not** traversed when collecting `table_reference`
+  names for edges between **this** clause's CTEs—so a bare name that resolves only inside an inner
+  `WITH` cannot be mistaken for a reference to an outer CTE that shares the same alias.
+- Cyclic CTE reference graphs are handled safely but depth in a cycle is **approximate** (rare in typical SQL).
+
+CTE definitions may include an explicit column list (`WITH x (c1, c2) AS (...)`); the dependency
+walk uses the query body after `AS`, not the column list bracket.
+
+```ini
+[sqlfluff:rules:CPX_C107]
+max_cte_dependency_depth = 5
+```
+
 ## CPX_C201: Aggregate Complexity Score Too High
 
 Flags a statement when the weighted aggregate complexity score exceeds `max_complexity_score`.
@@ -109,7 +143,7 @@ Violation messages include the computed score, the configured `max_complexity_sc
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0
 mode = enforce
 ```
 
@@ -122,6 +156,9 @@ ctes * ctes_weight
 + case_expressions * case_expressions_weight
 + boolean_operators * boolean_operators_weight
 + window_functions * window_functions_weight
++ cte_dependency_depth * cte_dependency_depth_weight
++ set_operation_count * set_operation_count_weight
++ expression_depth * expression_depth_weight
 ```
 
 See [configuration](configuration.md) for path overrides and report-mode rollout patterns.

@@ -25,6 +25,9 @@ REMEDIATIONS: dict[str, str] = {
         "Consider splitting analytic/window logic into clearer phases or deduplicating repeated "
         "window specifications."
     ),
+    "CPX_C107": (
+        "Consider splitting the query into simpler intermediate models or reducing chained CTEs."
+    ),
     "CPX_C201": (
         "Reduce the largest contributing metric first; inspect the metric breakdown and top "
         "contributors."
@@ -36,7 +39,7 @@ CPX_RULE_IDS: tuple[str, ...] = tuple(sorted(REMEDIATIONS))
 
 def remediation_for_rule(rule_id: str) -> str:
     """Return short remediation guidance for a CPX rule id."""
-    if rule_id not in REMEDIATIONS:
+    if rule_id not in CPX_RULE_IDS:
         message = f"Unknown CPX rule_id: {rule_id!r}"
         raise KeyError(message)
     return REMEDIATIONS[rule_id]

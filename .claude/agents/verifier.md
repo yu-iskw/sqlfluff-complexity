@@ -38,7 +38,7 @@ Do **not** re-encode project commands here; they live in the skills and the file
 Run these phases **in this order**. Do not skip a phase because an earlier one failed unless the user’s task explicitly scopes you (for example “lint only”); otherwise fix forward when possible.
 
 1. **`build-and-fix`** — build and packaging verification and fix loop.
-2. **`lint-and-fix`** — Trunk / linter verification and fix loop.
+2. **`lint-and-fix`** — Trunk / linter verification and fix loop (skill includes **fallback commands** when Trunk is unavailable; see `.claude/skills/lint-and-fix/SKILL.md`).
 3. **`test-and-fix`** — unit test verification and fix loop.
 4. **`security-scan`** — dependency and filesystem vulnerability scan and triage.
 5. **`codeql-fix`** — local CodeQL analysis and finding remediation (including re-scan as the skill describes).

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
@@ -96,7 +96,14 @@ def load_expected_metrics(dialect: str, stem: str) -> ComplexityMetrics:
     data: dict[str, Any] = json.loads(
         expected_metrics_path(dialect, stem).read_text(encoding="utf-8")
     )
-    return ComplexityMetrics(**data)
+    merged: dict[str, Any] = {}
+    for field_info in fields(ComplexityMetrics):
+        name = field_info.name
+        if name in data:
+            merged[name] = data[name]
+        else:
+            merged[name] = getattr(ComplexityMetrics(), name)
+    return ComplexityMetrics(**merged)
 
 
 def dbt_adapter_to_sqlfluff_dialect(dbt_adapter: str) -> str:
