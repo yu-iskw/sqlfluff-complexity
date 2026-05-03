@@ -178,6 +178,16 @@ def test_dispatch_config_unknown_subcommand_returns_nonzero(
     assert "config_command='unknown'" in err
 
 
+def test_dispatch_unknown_top_level_command_returns_nonzero(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A namespace with a command but no matching handler must not exit 0 silently."""
+    args = argparse.Namespace(command="not-a-real-command", config_command=None)
+    assert _dispatch_cli(args) == 2
+    err = capsys.readouterr().err
+    assert "no handler for command" in err
+
+
 def test_config_preset_prints_recommended_config(capsys: pytest.CaptureFixture[str]) -> None:
     """Preset generation should print plain SQLFluff config to stdout."""
     assert main(["config", "preset", "recommended", "--dialect", "postgres"]) == 0

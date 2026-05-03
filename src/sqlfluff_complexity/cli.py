@@ -45,14 +45,24 @@ def _dispatch_cli(args: argparse.Namespace) -> int:
         ("report", None): _run_report,
     }
     handler = handlers.get((args.command, config_command))
-    if args.command == "config" and handler is None:
-        print(
+    if handler is not None:
+        return handler(args)
+
+    err: str | None = None
+    if args.command == "config":
+        err = (
             "sqlfluff-complexity: unknown or missing `config` subcommand "
-            f"(got config_command={config_command!r}).",
-            file=sys.stderr,
+            f"(got config_command={config_command!r})."
         )
+    elif args.command is not None:
+        err = (
+            "sqlfluff-complexity: no handler for command "
+            f"{args.command!r} (config_command={config_command!r})."
+        )
+    if err is not None:
+        print(err, file=sys.stderr)
         return 2
-    return handler(args) if handler is not None else 0
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:

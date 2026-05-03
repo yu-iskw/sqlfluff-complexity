@@ -84,6 +84,8 @@ make clean        # Clean build artifacts
 - Trunk pins tool versions: avoid installing the same linters globally
 - Commit `uv.lock` (do not gitignore it)
 - If Trunk errors about a missing tool, run `trunk install`
+- **`make test` / nox flakiness:** If pytest-cov reports SQLite `DataError` / missing tables, or you see missing SQLFluff files under `.nox`, delete stale coverage data (`rm -f .coverage .coverage.* coverage.xml` — **not** `rm -f .coverage*`, which would also remove `.coveragerc`). Nox sessions clear those files before each run; if problems persist, recreate envs with `rm -rf .nox` then `make test` again. For a fast loop without nox: `uv run pytest src/sqlfluff_complexity/tests`.
+- **Presets vs defaults:** Keep `[sqlfluff:rules:CPX_*]` numbers in [plugin_default_config.cfg](src/sqlfluff_complexity/plugin_default_config.cfg) aligned with the `recommended` row in [presets.py](src/sqlfluff_complexity/core/config/presets.py) and the docs tables when you change thresholds.
 
 ## Parallel or multi-step work (Claude Code)
 

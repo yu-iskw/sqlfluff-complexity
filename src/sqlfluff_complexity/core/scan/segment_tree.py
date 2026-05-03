@@ -276,6 +276,11 @@ class _MetricCounter:
 
 
 def _has_descendant_type(segment: BaseSegment, segment_type: str) -> bool:
+    """Depth-first search for ``segment_type`` under ``segment`` (separate pass from ``walk``).
+
+    Used only for derived-table detection; typical SQL keeps this cheap. If profiling shows
+    hotspots, fold detection into the main walk instead of re-traversing subtrees.
+    """
     stack = list(getattr(segment, "segments", ()) or ())
     while stack:
         current = stack.pop()

@@ -32,3 +32,14 @@ for cleaned_dir in "${cleaned_dirs[@]}"; do
 		rm -r "${MODULE_DIR:?}/${cleaned_dir}"
 	fi
 done
+
+# Stale pytest-cov / coverage.py files can break parallel nox runs (SQLite merge errors).
+# Policy matches dev/coverage_cleanup.py, dev/coverage_bootstrap.py, and noxfile (keep in sync).
+# Remove .coverage and .coverage.* only — not .coverage* — so .coveragerc is preserved.
+rm -f "${MODULE_DIR}/.coverage"
+shopt -s nullglob
+for cov in "${MODULE_DIR}"/.coverage.*; do
+	rm -f "${cov}"
+done
+shopt -u nullglob
+rm -f "${MODULE_DIR}/coverage.xml"

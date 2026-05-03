@@ -1,4 +1,9 @@
-"""Rule CPX_C110: too many derived tables."""
+"""Rule CPX_C110: too many derived tables.
+
+Uses ``RootOnlyCrawler`` like CPX_C108/CPX_C109 (one evaluation at the parse ``file`` root;
+metrics still scan the full tree). If a templater omits a ``file`` ancestor, reconsider
+``SegmentSeekerCrawler({"file"})``.
+"""
 
 from __future__ import annotations
 
