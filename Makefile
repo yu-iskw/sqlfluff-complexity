@@ -42,9 +42,9 @@ format:
 dead-code vulture:
 	uv run vulture
 
-# Run the unit tests.
-.PHONY: test
-test:
+# Run unit tests with coverage (pytest-cov / coverage.py).
+.PHONY: test coverage
+test coverage:
 	bash ./dev/test_python.sh
 
 .PHONY: test-dialect-extra

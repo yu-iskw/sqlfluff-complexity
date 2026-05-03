@@ -26,10 +26,13 @@ Authoritative Trunk configuration: **[`.trunk/trunk.yaml`](../../../.trunk/trunk
    - With Trunk: **`make format`** (`trunk fmt -a`) for formatters; otherwise edit source.
    - Without Trunk: use **fallback format** commands (Ruff format, Prettier on docs—see below).
    - Resolve findings by changing code, types, imports, or structure—not with suppressions (see **Constraints**).
-
 4. **Verify**
    - With Trunk: **`make lint`** until clean.
+   - For type-only triage, `uv run pyright` also reads `pyproject.toml` `[tool.pyright]`; prefer Trunk for CI parity.
+   - When the change affects **executable code** (behavior, types, imports beyond formatting), run **`make test`** after lint passes (pytest-cov; see **Resources**). Same entrypoint as CI: `dev/test_python.sh`. Formatting- or comment-only edits may stop after `make lint`.
    - Without Trunk: re-run the **full fallback suite** you used in Identify until each configured tier passes or is explicitly **SKIPPED** with reason (missing binary).
+   - If verification passes: move to the next issue or finish if all are resolved.
+   - If verification fails: analyze the new failure and repeat the loop.
 
 ## Fallback: Trunk unavailable
 
@@ -90,9 +93,9 @@ Run **only if** the corresponding CLI is available (`command -v …`). Install v
 
 ## Termination Criteria
 
-- **`make lint`** succeeds (best), **or**
-- **Fallback Tier 1** (Ruff + Pyright + Pylint + Bandit) succeeds with documented skips for optional tiers, **or**
-- Max iteration limit (default: 5), or human escalation.
+- No more errors reported by **`make lint`** (best), **or** **Fallback Tier 1** (Ruff + Pyright + Pylint + Bandit) succeeds with documented skips for optional tiers.
+- When fixes touched executable code: **`make test`** passes before claiming the loop is complete (pytest-cov via `make test`).
+- Reached max iteration limit (default: 5), or human escalation.
 
 ## Examples
 
@@ -112,5 +115,6 @@ Run **only if** the corresponding CLI is available (`command -v …`). Install v
 ## Resources
 
 - [Trunk Documentation](https://docs.trunk.io/): Official Trunk CLI.
+- [pytest-cov](https://pytest-cov.readthedocs.io/) / [Coverage.py](https://coverage.readthedocs.io/): Test coverage used by `make test` / `make coverage`.
 - Repo: **[`.trunk/trunk.yaml`](../../../.trunk/trunk.yaml)** — enabled linters and versions.
 - Repo: **[AGENTS.md](../../../AGENTS.md)** — `make` targets and stack overview.
