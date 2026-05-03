@@ -291,9 +291,11 @@ def test_path_override_max_nested_case_depth_for_c108() -> None:
         fname=str(Path("models/staging/orders.sql")),
     )
 
-    violations = rule_violations(linted, "CPX_C108")
-    assert len(violations) == 1
-    assert "nested CASE depth 2 exceeds max_nested_case_depth=1" in violations[0].desc()
+    assert linted.tree is not None
+    assert getattr(linted.tree, "type", "") == "file"
+    violation = single_sql_lint_violation(linted, "CPX_C108")
+    assert violation.segment is linted.tree
+    assert "nested CASE depth 2 exceeds max_nested_case_depth=1" in violation.desc()
 
 
 def test_path_override_max_set_operations_for_c109() -> None:
@@ -315,9 +317,11 @@ def test_path_override_max_set_operations_for_c109() -> None:
         fname=str(Path("models/marts/union_stack.sql")),
     )
 
-    violations = rule_violations(linted, "CPX_C109")
-    assert len(violations) == 1
-    assert "set operation count 2 exceeds max_set_operations=1" in violations[0].desc()
+    assert linted.tree is not None
+    assert getattr(linted.tree, "type", "") == "file"
+    violation = single_sql_lint_violation(linted, "CPX_C109")
+    assert violation.segment is linted.tree
+    assert "set operation count 2 exceeds max_set_operations=1" in violation.desc()
 
 
 def test_path_override_report_mode_suppresses_rule_violation() -> None:

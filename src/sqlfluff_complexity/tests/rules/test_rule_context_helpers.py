@@ -98,7 +98,9 @@ def test_file_segment_from_context_raises_when_file_unresolvable() -> None:
         templated_file=None,
         path=Path("m.sql"),
         config=cfg,
-        # RuleContext requires BaseSegment; stub exercises unlinked-parent edge case.
+        # RuleContext types segment as BaseSegment; _StubSegment is minimal on purpose.
+        # If SQLFluff ever validates segment types at construction, replace with a
+        # detached real segment from parse_string instead of this cast.
         segment=cast("BaseSegment", _StubSegment()),
         parent_stack=(),
     )
