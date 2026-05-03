@@ -151,7 +151,7 @@ Flags a statement when **`set_operation_count`** exceeds `max_set_operations`.
 
 The metric counts **`set_operator`** segments (stacked `UNION`, `INTERSECT`, `EXCEPT`, including `UNION ALL`). Each operator between query blocks adds to the count.
 
-`CPX_C109` crawls **`set_expression`** roots when SQLFluff wraps the statement that way, so stacked unions are measured as one compound query (not per-arm `select_statement` fragments). **Nested** `set_expression` nodes (for example parenthesized `(a union b) union c`) are skipped so the rule fires once on the outer compound, matching file-level `set_operation_count`.
+`CPX_C109` evaluates **`set_operation_count` on the whole parse tree** (the same scope as `sqlfluff-complexity report`), so nested parenthesized unions and per-arm `select_statement` fragments cannot duplicate violations. The rule runs once per file via the parse root.
 
 ```ini
 [sqlfluff:rules:CPX_C109]

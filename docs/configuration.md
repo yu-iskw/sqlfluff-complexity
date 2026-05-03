@@ -66,6 +66,8 @@ isolation—see [Reporting: interpreting `cte_dependency_depth`](reporting.md#in
 
 Use `path_overrides` when different model areas need different budgets. Patterns use normalized path strings and glob-style matching.
 
+Paths are matched with `fnmatch` against the **path string SQLFluff uses for the file** (typically the path passed to lint or report, often relative to the project root). Absolute paths under `/tmp/...` will not match `models/**/*.sql` unless your globs account for them.
+
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60

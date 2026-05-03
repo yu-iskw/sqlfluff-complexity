@@ -245,7 +245,7 @@ def test_c109_reports_set_operation_violation() -> None:
 
 
 def test_c109_parenthesized_union_emits_single_violation_when_over_limit() -> None:
-    """Nested set_expression arms must not duplicate CPX_C109 violations (outer root only)."""
+    """Parenthesized unions share one file-level set_operation_count (no duplicate hits)."""
     sql = "(select 1 union all select 2) union all select 3"
     linted = lint_sql(
         sql,

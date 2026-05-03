@@ -1,13 +1,16 @@
-"""Tests for nested-segment helpers used by CPX rules."""
+"""Tests for rule context helpers."""
 
 from __future__ import annotations
 
-from sqlfluff.core import Linter
+from pathlib import Path
+
+from sqlfluff.core import FluffConfig, Linter
+from sqlfluff.core.rules.context import RuleContext
 
 from sqlfluff_complexity.core.scan.segment_tree import (
     is_nested_select_statement,
-    is_nested_set_expression,
 )
+from sqlfluff_complexity.rules.base import file_segment_from_context
 
 
 def _all_segments_of_type(sql: str, segment_type: str) -> list:
@@ -22,26 +25,23 @@ def _all_segments_of_type(sql: str, segment_type: str) -> list:
     return found
 
 
-def test_is_nested_set_expression_true_for_inner_union() -> None:
-    """Parenthesized union yields one inner set_expression under an outer set_expression."""
-    expressions = _all_segments_of_type(
-        "(select 1 union all select 2) union all select 3",
-        "set_expression",
+def test_file_segment_from_context_finds_file_in_parent_stack() -> None:
+    """Lint contexts carry ``file`` on ``parent_stack`` when ``get_parent()`` is unset."""
+    cfg = FluffConfig.from_kwargs(dialect="ansi")
+    linter = Linter(config=cfg)
+    root = linter.parse_string("select 1").tree
+    assert getattr(root, "type", "") == "file"
+    inner = root.segments[0]
+    ctx = RuleContext(
+        dialect=linter.dialect,
+        fix=False,
+        templated_file=None,
+        path=Path("m.sql"),
+        config=cfg,
+        segment=inner,
+        parent_stack=(root,),
     )
-    assert len(expressions) == 2
-    nested = [s for s in expressions if is_nested_set_expression(s)]
-    assert len(nested) == 1
-    assert is_nested_set_expression(nested[0]) is True
-
-
-def test_is_nested_set_expression_false_for_only_outer_union() -> None:
-    """A single flat union has one set_expression with no set_expression ancestor."""
-    expressions = _all_segments_of_type(
-        "select 1 union all select 2 union all select 3",
-        "set_expression",
-    )
-    assert len(expressions) == 1
-    assert is_nested_set_expression(expressions[0]) is False
+    assert file_segment_from_context(ctx) is root
 
 
 def test_is_nested_select_statement_inner_derived_table() -> None:

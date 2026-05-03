@@ -46,15 +46,6 @@ def is_nested_select_statement(segment: BaseSegment) -> bool:
     return _segment_has_ancestor_of_type(segment, "select_statement")
 
 
-def is_nested_set_expression(segment: BaseSegment) -> bool:
-    """Return True when this set_expression sits under another set_expression.
-
-    Used to avoid duplicate CPX_C109 hits when parentheses nest unions (inner
-    ``set_expression`` plus outer ``set_expression``).
-    """
-    return _segment_has_ancestor_of_type(segment, "set_expression")
-
-
 def _segment_has_ancestor_of_type(segment: BaseSegment, segment_type: str) -> bool:
     """True when ``segment`` is of ``segment_type`` and an ancestor shares that type."""
     if getattr(segment, "type", "") != segment_type:

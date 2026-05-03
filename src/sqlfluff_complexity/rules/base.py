@@ -20,17 +20,26 @@ from sqlfluff_complexity.core.messages.violation_messages import (
 from sqlfluff_complexity.core.scan.segment_tree import (
     analyze_segment_tree,
     is_nested_select_statement,
-    is_nested_set_expression,
 )
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from sqlfluff.core.parser.segments.base import BaseSegment
-    from sqlfluff.core.rules import RuleContext
+    from sqlfluff.core.rules.context import RuleContext
 
     from sqlfluff_complexity.core.analysis import ComplexityAnalysis
     from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
+
+
+def file_segment_from_context(context: RuleContext) -> BaseSegment:
+    """Return the ``file`` segment for the current rule context (lint uses parent_stack)."""
+    if getattr(context.segment, "type", "") == "file":
+        return context.segment
+    for seg in context.parent_stack:
+        if getattr(seg, "type", "") == "file":
+            return seg
+    return context.segment
 
 
 @dataclass(frozen=True)
@@ -59,25 +68,6 @@ def metric_lint_result_outer_select_only(
         policy,
         spec,
         is_nested_select_statement,
-        precomputed_analysis=precomputed_analysis,
-    )
-
-
-def metric_lint_result_outer_set_expression_only(
-    context: RuleContext,
-    metrics: ComplexityMetrics,
-    policy: ComplexityPolicy,
-    spec: MetricRuleSpec,
-    *,
-    precomputed_analysis: ComplexityAnalysis | None = None,
-) -> LintResult | None:
-    """Like ``metric_lint_result`` but skip nested ``set_expression`` crawl hits."""
-    return _metric_lint_result_skip_when(
-        context,
-        metrics,
-        policy,
-        spec,
-        is_nested_set_expression,
         precomputed_analysis=precomputed_analysis,
     )
 

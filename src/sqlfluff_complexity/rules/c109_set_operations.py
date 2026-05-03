@@ -5,13 +5,14 @@ from __future__ import annotations
 from typing import ClassVar
 
 from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
-from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
+from sqlfluff.core.rules.crawlers import RootOnlyCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
 from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
-    metric_lint_result_outer_set_expression_only,
+    file_segment_from_context,
+    metric_lint_result,
     resolve_context_policy,
 )
 
@@ -25,7 +26,7 @@ class Rule_CPX_C109(BaseRule):  # noqa: N801
         "show_contributors",
         "max_contributors",
     ]
-    crawl_behaviour = SegmentSeekerCrawler({"set_expression"})
+    crawl_behaviour = RootOnlyCrawler()
     is_fix_compatible = False
     max_set_operations: int
 
@@ -43,8 +44,9 @@ class Rule_CPX_C109(BaseRule):  # noqa: N801
             context,
             ComplexityPolicy(max_set_operations=int(self.max_set_operations)),
         )
-        analysis = analyze_segment_tree(context.segment)
-        return metric_lint_result_outer_set_expression_only(
+        root = file_segment_from_context(context)
+        analysis = analyze_segment_tree(root)
+        return metric_lint_result(
             context,
             analysis.metrics,
             policy,
