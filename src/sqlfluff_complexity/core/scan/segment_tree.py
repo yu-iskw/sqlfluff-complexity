@@ -57,6 +57,26 @@ def is_nested_select_statement(segment: BaseSegment) -> bool:
     return False
 
 
+def is_nested_set_expression(segment: BaseSegment) -> bool:
+    """Return True when this set_expression sits under another set_expression.
+
+    Used to avoid duplicate CPX_C109 hits when parentheses nest unions (inner
+    ``set_expression`` plus outer ``set_expression``).
+    """
+    if getattr(segment, "type", "") != "set_expression":
+        return False
+
+    current: BaseSegment | None = segment
+    for _ in range(256):
+        parent = _parent_segment(current)
+        if parent is None:
+            break
+        if getattr(parent, "type", "") == "set_expression":
+            return True
+        current = parent
+    return False
+
+
 def _parent_segment(segment: BaseSegment | None) -> BaseSegment | None:
     if segment is None:
         return None

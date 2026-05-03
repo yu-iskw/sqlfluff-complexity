@@ -20,6 +20,7 @@ from sqlfluff_complexity.core.messages.violation_messages import (
 from sqlfluff_complexity.core.scan.segment_tree import (
     analyze_segment_tree,
     is_nested_select_statement,
+    is_nested_set_expression,
 )
 
 if TYPE_CHECKING:
@@ -50,6 +51,26 @@ def metric_lint_result_outer_select_only(
 ) -> LintResult | None:
     """Like ``metric_lint_result`` but skip nested ``select_statement`` crawl hits."""
     if is_nested_select_statement(context.segment):
+        return None
+    return metric_lint_result(
+        context,
+        metrics,
+        policy,
+        spec,
+        precomputed_analysis=precomputed_analysis,
+    )
+
+
+def metric_lint_result_outer_set_expression_only(
+    context: RuleContext,
+    metrics: ComplexityMetrics,
+    policy: ComplexityPolicy,
+    spec: MetricRuleSpec,
+    *,
+    precomputed_analysis: ComplexityAnalysis | None = None,
+) -> LintResult | None:
+    """Like ``metric_lint_result`` but skip nested ``set_expression`` crawl hits."""
+    if is_nested_set_expression(context.segment):
         return None
     return metric_lint_result(
         context,

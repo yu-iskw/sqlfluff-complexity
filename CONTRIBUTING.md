@@ -17,6 +17,9 @@ This project uses:
 - pytest orchestrated by Nox for tests
 - Trunk for linting and formatting
 
+The editable package stanza in `uv.lock` should match `[project].version` in `pyproject.toml`; if
+you bump the package version, re-run `uv lock` (or `make setup`) so the lockfile does not drift.
+
 ## Common Commands
 
 ```bash

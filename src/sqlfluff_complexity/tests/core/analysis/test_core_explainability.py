@@ -163,6 +163,12 @@ def test_refactoring_hint_many_contributors() -> None:
     assert ", or " in hint
 
 
+def test_refactoring_hint_expression_depth_mentions_nested_case() -> None:
+    """expression_depth contributor hint should reflect nested CASE semantics."""
+    hint = refactoring_hint_for_contributors(["expression_depth"])
+    assert "nested CASE" in hint
+
+
 def test_refactoring_hint_empty_falls_back() -> None:
     """No known contributors should still yield a short actionable hint."""
     assert "Consider " in refactoring_hint_for_contributors([])

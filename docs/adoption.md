@@ -47,6 +47,8 @@ jobs:
           path: complexity.sarif
 ```
 
+If the repository already uses `uv`, replace the `pip install` step with something like `uv sync --frozen` (or `uv pip install sqlfluff sqlfluff-complexity`) and invoke the CLI with `uv run sqlfluff-complexity report …` so the job uses the same resolver as local development.
+
 Same flags work locally; see [Reporting](reporting.md) for JSON and `--fail-on-error`.
 
 ## CI: lint changed SQL only

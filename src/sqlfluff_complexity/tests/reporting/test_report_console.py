@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from sqlfluff_complexity.report import analyze_paths, format_console_report
+from sqlfluff_complexity.tests.fixture_loader import read_sql_fixture
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -45,3 +46,37 @@ def test_console_report_finding_message_matches_lint_case_expression_label(tmp_p
     c104 = next(f for f in entry.findings if f.rule_id == "CPX_C104")
     assert "CASE expression count" in c104.message or "CASE expression" in c104.message
     assert "cASE" not in c104.message
+
+
+def test_console_report_c108_nested_case_finding(tmp_path: Path) -> None:
+    """Console report should list CPX_C108 when nested CASE depth exceeds the limit."""
+    sql_file = tmp_path / "nested_case.sql"
+    sql_file.write_text(
+        read_sql_fixture("ansi", "c108_nested_case"),
+        encoding="utf-8",
+    )
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(
+        "[sqlfluff:rules:CPX_C108]\nmax_nested_case_depth = 1\n",
+        encoding="utf-8",
+    )
+    report = analyze_paths([sql_file], dialect="ansi", config_path=cfg)
+    text = format_console_report(report)
+    assert "CPX_C108: nested CASE depth 2 exceeds max_nested_case_depth=1" in text
+
+
+def test_console_report_c109_set_operations_finding(tmp_path: Path) -> None:
+    """Console report should list CPX_C109 when set operation count exceeds the limit."""
+    sql_file = tmp_path / "union_stack.sql"
+    sql_file.write_text(
+        read_sql_fixture("ansi", "c109_set_ops_two"),
+        encoding="utf-8",
+    )
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(
+        "[sqlfluff:rules:CPX_C109]\nmax_set_operations = 1\n",
+        encoding="utf-8",
+    )
+    report = analyze_paths([sql_file], dialect="ansi", config_path=cfg)
+    text = format_console_report(report)
+    assert "CPX_C109: set operation count 2 exceeds max_set_operations=1" in text

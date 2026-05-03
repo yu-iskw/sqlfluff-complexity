@@ -244,6 +244,74 @@ def test_c109_reports_set_operation_violation() -> None:
     assert "set operation count 2 exceeds max_set_operations=1" in violations[0].desc()
 
 
+def test_c109_parenthesized_union_emits_single_violation_when_over_limit() -> None:
+    """Nested set_expression arms must not duplicate CPX_C109 violations (outer root only)."""
+    sql = "(select 1 union all select 2) union all select 3"
+    linted = lint_sql(
+        sql,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C109
+
+        [sqlfluff:rules:CPX_C109]
+        max_set_operations = 0
+        """,
+    )
+
+    violations = rule_violations(linted, "CPX_C109")
+    assert len(violations) == 1
+    assert "set operation count 2 exceeds max_set_operations=0" in violations[0].desc()
+
+
+def test_path_override_max_nested_case_depth_for_c108() -> None:
+    """path_overrides on CPX_C201 should tighten max_nested_case_depth for CPX_C108."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c108_nested_case"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C108
+
+        [sqlfluff:rules:CPX_C108]
+        max_nested_case_depth = 10
+
+        [sqlfluff:rules:CPX_C201]
+        path_overrides =
+            models/staging/*.sql:max_nested_case_depth=1
+        """,
+        fname=str(Path("models/staging/orders.sql")),
+    )
+
+    violations = rule_violations(linted, "CPX_C108")
+    assert len(violations) == 1
+    assert "nested CASE depth 2 exceeds max_nested_case_depth=1" in violations[0].desc()
+
+
+def test_path_override_max_set_operations_for_c109() -> None:
+    """path_overrides on CPX_C201 should tighten max_set_operations for CPX_C109."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c109_set_ops_two"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C109
+
+        [sqlfluff:rules:CPX_C109]
+        max_set_operations = 12
+
+        [sqlfluff:rules:CPX_C201]
+        path_overrides =
+            models/marts/*.sql:max_set_operations=1
+        """,
+        fname=str(Path("models/marts/union_stack.sql")),
+    )
+
+    violations = rule_violations(linted, "CPX_C109")
+    assert len(violations) == 1
+    assert "set operation count 2 exceeds max_set_operations=1" in violations[0].desc()
+
+
 def test_path_override_report_mode_suppresses_rule_violation() -> None:
     """A matching mode=report override should suppress SQLFluff rule enforcement."""
     linted = lint_sql(

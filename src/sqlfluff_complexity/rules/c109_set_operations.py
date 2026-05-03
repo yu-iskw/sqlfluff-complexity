@@ -11,7 +11,7 @@ from sqlfluff_complexity.core.config.policy import ComplexityPolicy
 from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
-    metric_lint_result_outer_select_only,
+    metric_lint_result_outer_set_expression_only,
     resolve_context_policy,
 )
 
@@ -44,7 +44,7 @@ class Rule_CPX_C109(BaseRule):  # noqa: N801
             ComplexityPolicy(max_set_operations=int(self.max_set_operations)),
         )
         analysis = analyze_segment_tree(context.segment)
-        return metric_lint_result_outer_select_only(
+        return metric_lint_result_outer_set_expression_only(
             context,
             analysis.metrics,
             policy,
