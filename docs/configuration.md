@@ -65,6 +65,18 @@ The **`cte_dependency_depth`** component in `complexity_weights` applies to the 
 metric (maximum chain depth across all `WITH` blocks in the parsed tree), not to each `WITH` in
 isolation—see [Reporting: interpreting `cte_dependency_depth`](reporting.md#interpreting-cte_dependency_depth-in-reports) and [CPX_C107](rules.md#cpx_c107-cte-dependency-depth-too-high).
 
+### SQLFluff nested configuration by path
+
+If you want different strictness in different parts of the repository, SQLFluff already supports **stacking configuration by path**: it merges settings from config files along the directory chain toward each file being linted, with values from files **closer to that file** overriding earlier ones. See [SQLFluff: Setting configuration — Nesting](https://docs.sqlfluff.com/en/stable/configuration/setting_configuration.html#nesting).
+
+CPX options use the same `[sqlfluff:rules:CPX_*]` sections as other rules, so nested `.sqlfluff` files (or other [supported config filenames](https://docs.sqlfluff.com/en/stable/configuration/setting_configuration.html#configuration-files) in those directories) should follow upstream merge rules.
+
+**Templater caveat:** SQLFluff does **not** allow setting `templater` in config files under subdirectories of the working directory (same nesting documentation). For example, do not rely on `models/staging/.sqlfluff` alone to switch `templater = dbt`; keep templater (and related dbt templater sections) in root or higher-level config.
+
+This repository **has not exhaustively verified** nested-file workflows across every CPX rule and every `sqlfluff` / `sqlfluff-complexity` entry point. If you see unexpected behavior, prefer a **single root config** plus **`path_overrides`** below, or open an issue with a minimal reproduction.
+
+Compared to **`path_overrides`** (next): nesting spreads policy across multiple files using standard SQLFluff; `path_overrides` keeps one file and applies glob lines under `[sqlfluff:rules:CPX_C201]` for CPX-specific thresholds and `mode`.
+
 Use `path_overrides` when different model areas need different budgets. Patterns use normalized path strings and glob-style matching.
 
 Paths are matched with `fnmatch` against the **path string SQLFluff uses for the file** (typically the path passed to lint or report, often relative to the project root). Absolute paths under `/tmp/...` will not match `models/**/*.sql` unless your globs account for them.

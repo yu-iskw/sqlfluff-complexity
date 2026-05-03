@@ -47,7 +47,7 @@ For a complete walkthrough, see [docs/quickstart.md](docs/quickstart.md).
 ## Documentation
 
 - [Quick start](docs/quickstart.md): install, configure, and run the first lint.
-- [Configuration](docs/configuration.md): thresholds, aggregate weights, and path overrides.
+- [Configuration](docs/configuration.md): thresholds, aggregate weights, [SQLFluff nested config by path](docs/configuration.md#sqlfluff-nested-configuration-by-path), and `path_overrides`.
 - [Rules reference](docs/rules.md): CPX rule codes and what each metric counts.
 - [Reporting](docs/reporting.md): console and SARIF report mode.
 - [Adoption](docs/adoption.md): calibration, CI/SARIF examples, before/after SQL vignette.
