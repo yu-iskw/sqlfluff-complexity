@@ -98,6 +98,7 @@ def test_file_segment_from_context_raises_when_file_unresolvable() -> None:
         templated_file=None,
         path=Path("m.sql"),
         config=cfg,
+        # RuleContext requires BaseSegment; stub exercises unlinked-parent edge case.
         segment=cast("BaseSegment", _StubSegment()),
         parent_stack=(),
     )

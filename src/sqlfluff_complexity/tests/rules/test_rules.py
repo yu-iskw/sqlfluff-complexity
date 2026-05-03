@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
-
-if TYPE_CHECKING:
-    from sqlfluff.core.errors import SQLLintError
 
 from sqlfluff_complexity.tests.fixture_loader import read_sql_fixture
-from sqlfluff_complexity.tests.sqlfluff_helpers import lint_sql, rule_violations
+from sqlfluff_complexity.tests.sqlfluff_helpers import (
+    lint_sql,
+    rule_violations,
+    single_sql_lint_violation,
+)
 
 
 def test_c102_reports_join_count_violation() -> None:
@@ -222,12 +222,9 @@ def test_c108_reports_nested_case_depth_violation() -> None:
         """,
     )
 
-    violations = rule_violations(linted, "CPX_C108")
-
     assert linted.tree is not None
     assert getattr(linted.tree, "type", "") == "file"
-    assert len(violations) == 1
-    violation = cast("SQLLintError", violations[0])
+    violation = single_sql_lint_violation(linted, "CPX_C108")
     assert violation.segment is linted.tree
     assert "nested CASE depth 2 exceeds max_nested_case_depth=1" in violation.desc()
 
@@ -246,12 +243,9 @@ def test_c109_reports_set_operation_violation() -> None:
         """,
     )
 
-    violations = rule_violations(linted, "CPX_C109")
-
     assert linted.tree is not None
     assert getattr(linted.tree, "type", "") == "file"
-    assert len(violations) == 1
-    violation = cast("SQLLintError", violations[0])
+    violation = single_sql_lint_violation(linted, "CPX_C109")
     assert violation.segment is linted.tree
     assert "set operation count 2 exceeds max_set_operations=1" in violation.desc()
 
@@ -271,11 +265,9 @@ def test_c109_parenthesized_union_emits_single_violation_when_over_limit() -> No
         """,
     )
 
-    violations = rule_violations(linted, "CPX_C109")
     assert linted.tree is not None
     assert getattr(linted.tree, "type", "") == "file"
-    assert len(violations) == 1
-    violation = cast("SQLLintError", violations[0])
+    violation = single_sql_lint_violation(linted, "CPX_C109")
     assert violation.segment is linted.tree
     assert "set operation count 2 exceeds max_set_operations=0" in violation.desc()
 
