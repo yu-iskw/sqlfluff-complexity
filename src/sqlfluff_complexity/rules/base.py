@@ -154,7 +154,38 @@ def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) 
     return resolve_policy(base_policy, raw_overrides, path)
 
 
-def metric_lint_result(  # noqa: PLR0913, PLR0912
+def _validate_metric_lint_anchor_and_precomputed(
+    anchor_segment: BaseSegment | None,
+    precomputed_analysis: ComplexityAnalysis | None,
+    *,
+    actual: int,
+    metric_name: str,
+) -> None:
+    """Raise ``ValueError`` when anchor + precomputed inputs are inconsistent."""
+    if anchor_segment is None:
+        return
+    if precomputed_analysis is None:
+        message = (
+            "anchor_segment requires precomputed_analysis so violation anchors and "
+            "contributor analysis use the same parse subtree."
+        )
+        raise ValueError(message)
+    if anchor_segment is not precomputed_analysis.root:
+        message = (
+            "anchor_segment must be the same segment as precomputed_analysis.root "
+            "(the root passed to analyze_segment_tree for that analysis)."
+        )
+        raise ValueError(message)
+    precomputed_actual = int(getattr(precomputed_analysis.metrics, metric_name))
+    if precomputed_actual != actual:
+        message = (
+            "anchor_segment and precomputed_analysis disagree on metric value; "
+            "pass metrics and precomputed_analysis from the same analyze_segment_tree root."
+        )
+        raise ValueError(message)
+
+
+def metric_lint_result(  # noqa: PLR0913
     context: RuleContext,
     metrics: ComplexityMetrics,
     policy: ComplexityPolicy,
@@ -165,19 +196,12 @@ def metric_lint_result(  # noqa: PLR0913, PLR0912
 ) -> LintResult | None:
     """Build a lint result for one metric threshold, if violated.
 
-    When ``precomputed_analysis`` is provided, use it for contributor lines instead
-    of re-running :func:`sqlfluff_complexity.core.scan.segment_tree.analyze_segment_tree`
-    on the same segment (avoids a second full tree walk on violations).
+    Optional ``precomputed_analysis`` supplies contributors without a second tree walk.
 
-    When ``anchor_segment`` is set, use it for the ``LintResult`` anchor (e.g. ``file``
-    root when metrics were computed from ``analyze_segment_tree(file)``). ``anchor_segment``
-    requires ``precomputed_analysis`` so contributors and anchor share the same subtree;
-    otherwise raises ``ValueError``. Callers must pass ``metrics`` and ``precomputed_analysis``
-    from that same analysis root; prefer :func:`eval_file_root_metric_threshold` for
-    file-level rules so the trio stays aligned. If ``anchor_segment`` and
-    ``precomputed_analysis`` are set, ``anchor_segment`` must be ``precomputed_analysis.root``.
-    If ``metrics`` disagrees with ``precomputed_analysis.metrics`` on ``spec.metric_name``,
-    raises ``ValueError``.
+    If ``anchor_segment`` is set, ``precomputed_analysis`` is required, must equal
+    ``precomputed_analysis.root``, and ``metrics`` must match that analysis for
+    ``spec.metric_name``; otherwise ``ValueError``. Prefer :func:`eval_file_root_metric_threshold`
+    for file-level rules so anchor, metrics, and analysis stay aligned.
     """
     if policy.mode == "report":
         return None
@@ -187,28 +211,14 @@ def metric_lint_result(  # noqa: PLR0913, PLR0912
     if actual <= limit:
         return None
 
-    if anchor_segment is not None and precomputed_analysis is None:
-        message = (
-            "anchor_segment requires precomputed_analysis so violation anchors and "
-            "contributor analysis use the same parse subtree."
-        )
-        raise ValueError(message)
+    _validate_metric_lint_anchor_and_precomputed(
+        anchor_segment,
+        precomputed_analysis,
+        actual=actual,
+        metric_name=spec.metric_name,
+    )
 
     analysis = precomputed_analysis or analyze_segment_tree(context.segment)
-    if anchor_segment is not None and precomputed_analysis is not None:
-        if anchor_segment is not precomputed_analysis.root:
-            message = (
-                "anchor_segment must be the same segment as precomputed_analysis.root "
-                "(the root passed to analyze_segment_tree for that analysis)."
-            )
-            raise ValueError(message)
-        precomputed_actual = int(getattr(precomputed_analysis.metrics, spec.metric_name))
-        if precomputed_actual != actual:
-            message = (
-                "anchor_segment and precomputed_analysis disagree on metric value; "
-                "pass metrics and precomputed_analysis from the same analyze_segment_tree root."
-            )
-            raise ValueError(message)
 
     show_contributors, max_contributors = contributor_display_settings(
         context.config,
