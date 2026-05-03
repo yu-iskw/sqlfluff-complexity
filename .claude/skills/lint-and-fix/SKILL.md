@@ -17,8 +17,10 @@ An autonomous loop for the agent to identify, fix, and verify linting and format
    - For formatting issues, run `make format` (which executes `trunk fmt -a`).
    - For linting violations, apply the minimum necessary change to the source code to resolve the error.
    - Resolve findings by changing code, types, imports, or structure—not with suppressions (see **Constraints**).
-4. **Verify**: Re-run `make lint` (Ruff, **Pyright**, Pylint, and security tools via Trunk).
+4. **Verify**:
+   - Re-run `make lint` (Ruff, **Pyright**, Pylint, and security tools via Trunk).
    - For type-only triage, `uv run pyright` also reads `pyproject.toml` `[tool.pyright]`; prefer Trunk for CI parity.
+   - When the change affects **executable code** (behavior, types, imports beyond formatting), run **`make test`** after lint passes (pytest-cov; see **Resources**). Same entrypoint as CI: `dev/test_python.sh`. Formatting- or comment-only edits may stop after `make lint`.
    - If passed: Move to the next issue or finish if all are resolved.
    - If failed: Analyze the new failure and repeat the loop.
 
@@ -32,6 +34,7 @@ An autonomous loop for the agent to identify, fix, and verify linting and format
 ## Termination Criteria
 
 - No more errors reported by `make lint`.
+- When fixes touched executable code: **`make test`** passes.
 - Reached max iteration limit (default: 5).
 
 ## Examples
@@ -45,3 +48,4 @@ An autonomous loop for the agent to identify, fix, and verify linting and format
 ## Resources
 
 - [Trunk Documentation](https://docs.trunk.io/): Official documentation for the Trunk CLI.
+- [pytest-cov](https://pytest-cov.readthedocs.io/) / [Coverage.py](https://coverage.readthedocs.io/): Test coverage used by `make test` / `make coverage`.
