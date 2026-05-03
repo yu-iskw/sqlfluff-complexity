@@ -27,6 +27,7 @@ def analyze_segment_tree(root: BaseSegment) -> ComplexityAnalysis:
     counter = _MetricCounter()
     counter.walk(root, active_selects=0, nested_depth=0, case_depth=0)
     return ComplexityAnalysis(
+        root=root,
         metrics=counter.to_metrics(),
         contributors=tuple(counter.contributors),
     )

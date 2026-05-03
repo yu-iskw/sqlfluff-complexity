@@ -34,6 +34,7 @@ class MetricContributor:
 class ComplexityAnalysis:
     """Metrics plus per-segment contributors for explainability."""
 
+    root: BaseSegment
     metrics: ComplexityMetrics
     contributors: tuple[MetricContributor, ...]
 

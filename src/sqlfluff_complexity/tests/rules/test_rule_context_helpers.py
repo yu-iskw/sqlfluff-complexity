@@ -230,6 +230,43 @@ def test_eval_file_root_metric_threshold_returns_none_when_under_limit(
     assert eval_file_root_metric_threshold(ctx, policy, spec) is None
 
 
+def test_metric_lint_result_raises_when_anchor_not_precomputed_root() -> None:
+    """anchor_segment must be precomputed_analysis.root, not another file segment."""
+    cfg = FluffConfig.from_kwargs(dialect="ansi")
+    linter = Linter(config=cfg)
+    nested_root = linter.parse_string(read_sql_fixture("ansi", "c108_nested_case")).tree
+    simple_root = linter.parse_string("select 1").tree
+    nested_analysis = analyze_segment_tree(nested_root)
+    simple_analysis = analyze_segment_tree(simple_root)
+    inner = _all_segments_of_type(nested_root, "select_statement")[0]
+    ctx = RuleContext(
+        dialect=linter.dialect,
+        fix=False,
+        templated_file=None,
+        path=Path("m.sql"),
+        config=cfg,
+        segment=inner,
+        parent_stack=(nested_root,),
+    )
+    spec = MetricRuleSpec(
+        rule_id="CPX_C108",
+        metric_name="expression_depth",
+        config_key="max_nested_case_depth",
+        policy_key="max_nested_case_depth",
+        description_label="nested CASE depth",
+    )
+    policy = ComplexityPolicy(max_nested_case_depth=1)
+    with pytest.raises(ValueError, match="anchor_segment must be the same segment"):
+        metric_lint_result(
+            ctx,
+            nested_analysis.metrics,
+            policy,
+            spec,
+            precomputed_analysis=simple_analysis,
+            anchor_segment=nested_root,
+        )
+
+
 def test_metric_lint_result_raises_when_anchor_and_precomputed_metrics_mismatch() -> None:
     """Passing mismatched metrics vs precomputed_analysis with anchor_segment must fail fast."""
     cfg = FluffConfig.from_kwargs(dialect="ansi")
@@ -263,5 +300,5 @@ def test_metric_lint_result_raises_when_anchor_and_precomputed_metrics_mismatch(
             policy,
             spec,
             precomputed_analysis=simple_analysis,
-            anchor_segment=nested_root,
+            anchor_segment=simple_root,
         )

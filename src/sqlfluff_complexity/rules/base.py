@@ -154,7 +154,7 @@ def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) 
     return resolve_policy(base_policy, raw_overrides, path)
 
 
-def metric_lint_result(  # noqa: PLR0913
+def metric_lint_result(  # noqa: PLR0913, PLR0912
     context: RuleContext,
     metrics: ComplexityMetrics,
     policy: ComplexityPolicy,
@@ -175,7 +175,8 @@ def metric_lint_result(  # noqa: PLR0913
     otherwise raises ``ValueError``. Callers must pass ``metrics`` and ``precomputed_analysis``
     from that same analysis root; prefer :func:`eval_file_root_metric_threshold` for
     file-level rules so the trio stays aligned. If ``anchor_segment`` and
-    ``precomputed_analysis`` are set but ``metrics`` disagrees on ``spec.metric_name``,
+    ``precomputed_analysis`` are set, ``anchor_segment`` must be ``precomputed_analysis.root``.
+    If ``metrics`` disagrees with ``precomputed_analysis.metrics`` on ``spec.metric_name``,
     raises ``ValueError``.
     """
     if policy.mode == "report":
@@ -195,6 +196,12 @@ def metric_lint_result(  # noqa: PLR0913
 
     analysis = precomputed_analysis or analyze_segment_tree(context.segment)
     if anchor_segment is not None and precomputed_analysis is not None:
+        if anchor_segment is not precomputed_analysis.root:
+            message = (
+                "anchor_segment must be the same segment as precomputed_analysis.root "
+                "(the root passed to analyze_segment_tree for that analysis)."
+            )
+            raise ValueError(message)
         precomputed_actual = int(getattr(precomputed_analysis.metrics, spec.metric_name))
         if precomputed_actual != actual:
             message = (
