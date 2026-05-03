@@ -51,6 +51,18 @@ def test_resolve_policy_normalizes_posix_paths() -> None:
     assert policy.max_ctes == EXPECTED_NORMALIZED_MAX_CTES
 
 
+def test_resolve_policy_accepts_nested_case_and_set_operation_keys() -> None:
+    """Path overrides should accept CPX_C108/C109 policy keys."""
+    policy = resolve_policy(
+        ComplexityPolicy(max_nested_case_depth=10, max_set_operations=12),
+        "models/marts/*.sql:max_nested_case_depth=2,max_set_operations=3",
+        "models/marts/revenue.sql",
+    )
+
+    assert policy.max_nested_case_depth == 2
+    assert policy.max_set_operations == 3
+
+
 @pytest.mark.parametrize(
     "raw_overrides",
     [

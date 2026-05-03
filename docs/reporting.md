@@ -122,7 +122,9 @@ sqlfluff-complexity report \
   models/
 ```
 
-SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C107`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, and `properties.remediation`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
+SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C109`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, and `properties.remediation`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
+
+For copy-paste CI (SARIF upload, changed-file lint patterns), see [Adoption](adoption.md).
 
 The SARIF output does not embed full SQL source text in messages.
 

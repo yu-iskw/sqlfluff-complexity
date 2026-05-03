@@ -57,6 +57,12 @@ def get_rules() -> list[type[BaseRule]]:
     from sqlfluff_complexity.rules.c107_cte_dependency_depth import (  # noqa: PLC0415
         Rule_CPX_C107,
     )
+    from sqlfluff_complexity.rules.c108_nested_case_depth import (  # noqa: PLC0415
+        Rule_CPX_C108,
+    )
+    from sqlfluff_complexity.rules.c109_set_operations import (  # noqa: PLC0415
+        Rule_CPX_C109,
+    )
     from sqlfluff_complexity.rules.c201_aggregate_score import (  # noqa: PLC0415
         Rule_CPX_C201,
     )
@@ -69,6 +75,8 @@ def get_rules() -> list[type[BaseRule]]:
         Rule_CPX_C105,
         Rule_CPX_C106,
         Rule_CPX_C107,
+        Rule_CPX_C108,
+        Rule_CPX_C109,
         Rule_CPX_C201,
     ]
 
@@ -108,6 +116,16 @@ def get_configs_info() -> dict[str, dict[str, Any]]:
             "definition": (
                 "Maximum longest CTE reference chain within one WITH clause "
                 "(parsed-tree dependency depth)."
+            ),
+        },
+        "max_nested_case_depth": {
+            "definition": (
+                "Maximum nesting depth of case_expression segments (inner CASE inside outer CASE)."
+            ),
+        },
+        "max_set_operations": {
+            "definition": (
+                "Maximum set_operator segments (UNION / INTERSECT / EXCEPT arms) in one statement."
             ),
         },
         "max_complexity_score": {

@@ -204,6 +204,46 @@ def test_path_override_changes_rule_limit_for_matching_file() -> None:
     assert "join count 2 exceeds max_joins=1" in violations[0].desc()
 
 
+def test_c108_reports_nested_case_depth_violation() -> None:
+    """CPX_C108 should fail when nested CASE depth exceeds max_nested_case_depth."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c108_nested_case"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C108
+
+        [sqlfluff:rules:CPX_C108]
+        max_nested_case_depth = 1
+        """,
+    )
+
+    violations = rule_violations(linted, "CPX_C108")
+
+    assert len(violations) == 1
+    assert "nested CASE depth 2 exceeds max_nested_case_depth=1" in violations[0].desc()
+
+
+def test_c109_reports_set_operation_violation() -> None:
+    """CPX_C109 should fail when set_operation_count exceeds max_set_operations."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c109_set_ops_two"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C109
+
+        [sqlfluff:rules:CPX_C109]
+        max_set_operations = 1
+        """,
+    )
+
+    violations = rule_violations(linted, "CPX_C109")
+
+    assert len(violations) == 1
+    assert "set operation count 2 exceeds max_set_operations=1" in violations[0].desc()
+
+
 def test_path_override_report_mode_suppresses_rule_violation() -> None:
     """A matching mode=report override should suppress SQLFluff rule enforcement."""
     linted = lint_sql(

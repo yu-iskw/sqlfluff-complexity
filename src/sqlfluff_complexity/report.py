@@ -118,6 +118,22 @@ REPORT_LIMITS = (
         "max_cte_dependency_depth",
         message_label="CTE dependency depth",
     ),
+    ReportLimit(
+        "CPX_C108",
+        "expression_depth",
+        "max_nested_case_depth",
+        "Nested CASE depth",
+        "max_nested_case_depth",
+        message_label="nested CASE depth",
+    ),
+    ReportLimit(
+        "CPX_C109",
+        "set_operation_count",
+        "max_set_operations",
+        "Set operation count",
+        "max_set_operations",
+        message_label="set operation count",
+    ),
 )
 
 
@@ -518,6 +534,8 @@ def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
         max_boolean_operators=_config_int(config, "CPX_C105", "max_boolean_operators", 20),
         max_window_functions=_config_int(config, "CPX_C106", "max_window_functions", 10),
         max_cte_dependency_depth=_config_int(config, "CPX_C107", "max_cte_dependency_depth", 5),
+        max_nested_case_depth=_config_int(config, "CPX_C108", "max_nested_case_depth", 10),
+        max_set_operations=_config_int(config, "CPX_C109", "max_set_operations", 12),
         max_complexity_score=_config_int(
             config,
             "CPX_C201",

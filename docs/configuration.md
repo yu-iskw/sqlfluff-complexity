@@ -7,7 +7,7 @@
 ```ini
 [sqlfluff]
 dialect = snowflake
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C201
 ```
 
 You can also enable only the rules you are ready to enforce:
@@ -31,6 +31,8 @@ The plugin default config sets these limits:
 | `CPX_C105` | `max_boolean_operators`    |      20 |
 | `CPX_C106` | `max_window_functions`     |      10 |
 | `CPX_C107` | `max_cte_dependency_depth` |       5 |
+| `CPX_C108` | `max_nested_case_depth`    |      10 |
+| `CPX_C109` | `max_set_operations`       |      12 |
 | `CPX_C201` | `max_complexity_score`     |      60 |
 
 Example override:
@@ -80,7 +82,10 @@ Supported override keys:
 - `max_subquery_depth`
 - `max_case_expressions`
 - `max_boolean_operators`
+- `max_window_functions`
 - `max_cte_dependency_depth`
+- `max_nested_case_depth`
+- `max_set_operations`
 - `max_complexity_score`
 - `mode`
 

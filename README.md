@@ -3,8 +3,9 @@
 SQLFluff rules and reports for finding SQL and dbt models that are too complex to review safely.
 
 `sqlfluff-complexity` adds CPX rules to SQLFluff for CTE count, join count, nested
-subquery depth, `CASE` expressions, boolean predicates, window functions, CTE dependency
-depth, and an aggregate weighted complexity score. The same metric engine also powers a companion
+subquery depth, `CASE` expressions, nested `CASE` depth, boolean predicates, window functions,
+CTE dependency depth, set operations (`UNION` / `INTERSECT` / `EXCEPT`), and an aggregate weighted
+complexity score. The same metric engine also powers a companion
 `sqlfluff-complexity report` command for non-blocking console, JSON, and SARIF reports.
 
 ## Who It Is For
@@ -32,7 +33,7 @@ Then enable CPX rules in `.sqlfluff` and run SQLFluff:
 ```ini
 [sqlfluff]
 dialect = postgres
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C201
 ```
 
 ```bash
@@ -47,6 +48,7 @@ For a complete walkthrough, see [docs/quickstart.md](docs/quickstart.md).
 - [Configuration](docs/configuration.md): thresholds, aggregate weights, and path overrides.
 - [Rules reference](docs/rules.md): CPX rule codes and what each metric counts.
 - [Reporting](docs/reporting.md): console and SARIF report mode.
+- [Adoption](docs/adoption.md): calibration, CI/SARIF examples, before/after SQL vignette.
 - [dbt usage](docs/dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
 - [Dialects](docs/dialects.md): tested dialects and dbt adapter mapping caveats.
 - [Docs index](docs/index.md): all user, contributor, and design documents.
