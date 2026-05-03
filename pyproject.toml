@@ -45,7 +45,7 @@ packages = ["src/sqlfluff_complexity"]
 
 [project]
 name = "sqlfluff-complexity"
-version = "0.3.2"
+version = "0.4.0"
 authors = [{ name = "yu-iskw" }]
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -68,7 +68,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 description = "SQLFluff plugin for SQL and dbt model complexity rules"
-dependencies = ["sqlfluff>=3.0.0,<4.0.0"]
+dependencies = ["sqlfluff>=4.0.0,<5.0.0"]
 
 [project.scripts]
 sqlfluff-complexity = "sqlfluff_complexity.cli:main"
@@ -84,7 +84,7 @@ markers = [
 ]
 
 [dependency-groups]
-dbt = ["dbt-duckdb>=1.10.1", "sqlfluff-templater-dbt>=3.5.0"]
+dbt = ["dbt-duckdb>=1.10.1", "sqlfluff-templater-dbt>=4.0.0,<5.0.0"]
 dev = [
   "xenon>=0.9.3",
   "nox>=2026.4.10",

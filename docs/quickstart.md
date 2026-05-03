@@ -4,6 +4,8 @@ This guide gets `sqlfluff-complexity` running in a SQLFluff project with the def
 
 ## 1. Install
 
+**Requirements:** `sqlfluff-complexity` 0.4.x needs **SQLFluff 4.x** (`sqlfluff>=4,<5`) in the same environment. If you must stay on SQLFluff 3, pin **`sqlfluff-complexity<0.4`**. For dbt, use **`sqlfluff-templater-dbt` 4.x** with SQLFluff 4; see [dbt usage](dbt.md).
+
 Install `sqlfluff-complexity` in the same Python environment where you run SQLFluff.
 
 ```bash

@@ -20,7 +20,9 @@ See [ADR 0004](adr/0004-defer-dbt-manifest-metrics-for-v1.md) for the decision r
 
 ## Install dbt Templater Dependencies
 
-SQLFluff's dbt templater is packaged separately from SQLFluff. Install the templater and the adapter for your warehouse in the same environment where you run SQLFluff.
+SQLFluff's dbt templater is packaged separately from SQLFluff. Install versions that match your SQLFluff major: **`sqlfluff-complexity` 0.4.x expects SQLFluff 4.x and `sqlfluff-templater-dbt` 4.x** (see [CHANGELOG.md](../CHANGELOG.md) if you are upgrading from SQLFluff 3).
+
+Install the templater and the adapter for your warehouse in the same environment where you run SQLFluff.
 
 Example for Postgres:
 
