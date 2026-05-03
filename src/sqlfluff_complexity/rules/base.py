@@ -185,16 +185,14 @@ def metric_lint_result(  # noqa: PLR0913
         return None
 
     analysis = precomputed_analysis or analyze_segment_tree(context.segment)
-    if (
-        anchor_segment is not None
-        and precomputed_analysis is not None
-        and int(getattr(precomputed_analysis.metrics, spec.metric_name)) != actual
-    ):
-        message = (
-            "anchor_segment and precomputed_analysis disagree on metric value; "
-            "pass metrics and precomputed_analysis from the same analyze_segment_tree root."
-        )
-        raise ValueError(message)
+    if anchor_segment is not None and precomputed_analysis is not None:
+        precomputed_actual = int(getattr(precomputed_analysis.metrics, spec.metric_name))
+        if precomputed_actual != actual:
+            message = (
+                "anchor_segment and precomputed_analysis disagree on metric value; "
+                "pass metrics and precomputed_analysis from the same analyze_segment_tree root."
+            )
+            raise ValueError(message)
 
     show_contributors, max_contributors = contributor_display_settings(
         context.config,
