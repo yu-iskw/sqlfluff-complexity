@@ -238,6 +238,23 @@ def test_c110_does_not_count_cte_definitions_as_derived_tables() -> None:
     assert rule_violations(linted, "CPX_C110") == []
 
 
+def test_c110_ignores_scalar_subquery_in_table_function_argument() -> None:
+    """CPX_C110 should not count scalar subqueries inside table-valued functions."""
+    linted = lint_sql(
+        "select * from generate_series(1, (select max(id) from foo)) as g(n)",
+        """
+        [sqlfluff]
+        dialect = postgres
+        rules = CPX_C110
+
+        [sqlfluff:rules:CPX_C110]
+        max_derived_tables = 0
+        """,
+    )
+
+    assert rule_violations(linted, "CPX_C110") == []
+
+
 def test_path_override_changes_rule_limit_for_matching_file() -> None:
     """Path overrides should apply the most specific matching policy to SQLFluff rules."""
     linted = lint_sql(

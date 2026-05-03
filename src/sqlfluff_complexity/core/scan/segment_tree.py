@@ -256,11 +256,13 @@ class _MetricCounter:
         )
 
     def _is_derived_table(self, segment: BaseSegment, under_cte_scope: bool) -> bool:
-        return (
-            not under_cte_scope
-            and getattr(segment, "type", "") == "from_expression_element"
-            and _has_descendant_type(segment, "select_statement")
-        )
+        if under_cte_scope or getattr(segment, "type", "") != "from_expression_element":
+            return False
+        table_expression = _direct_child_of_type(segment, "table_expression")
+        if table_expression is None:
+            return False
+        bracketed = _direct_child_of_type(table_expression, "bracketed")
+        return bracketed is not None and _has_descendant_type(bracketed, "select_statement")
 
     def to_metrics(self) -> ComplexityMetrics:
         """Convert collected counters to the public metric model."""
@@ -292,3 +294,10 @@ def _has_descendant_type(segment: BaseSegment, segment_type: str) -> bool:
             return True
         stack.extend(getattr(current, "segments", ()) or ())
     return False
+
+
+def _direct_child_of_type(segment: BaseSegment, segment_type: str) -> BaseSegment | None:
+    for child in getattr(segment, "segments", ()) or ():
+        if getattr(child, "type", "") == segment_type:
+            return child
+    return None
