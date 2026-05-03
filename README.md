@@ -16,6 +16,8 @@ an aggregate weighted complexity score. The same metric engine also powers a com
 
 ## Quick Start
 
+**Requires SQLFluff 4.x** in the same environment (`sqlfluff>=4,<5`). SQLFluff 3 is not supported as of `sqlfluff-complexity` 0.4.0; pin `sqlfluff-complexity<0.4` if you cannot upgrade SQLFluff yet.
+
 Install the custom SQLFluff plugin in the same Python environment where you run SQLFluff:
 
 ```bash
