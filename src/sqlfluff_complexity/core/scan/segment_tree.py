@@ -141,6 +141,7 @@ class _MetricCounter:
             nested_depth,
         )
         self._count_segment(segment, segment_type)
+        self._add_structural_contributor(segment, segment_type, case_depth)
 
         child_case_depth = case_depth + 1 if segment_type == "case_expression" else case_depth
         self._walk_children(
@@ -205,6 +206,17 @@ class _MetricCounter:
                 segment,
                 reason="boolean and/or operator",
             )
+
+    def _add_structural_contributor(
+        self,
+        segment: BaseSegment,
+        segment_type: str,
+        case_depth: int,
+    ) -> None:
+        if segment_type == "set_operator":
+            self._add_contributor("set_operation_count", segment, reason="set operator")
+        elif segment_type == "case_expression" and case_depth > 0:
+            self._add_contributor("expression_depth", segment, reason="nested case expression")
 
     def _is_boolean_operator(self, segment: BaseSegment) -> bool:
         return (

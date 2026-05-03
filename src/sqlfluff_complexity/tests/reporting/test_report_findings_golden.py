@@ -125,3 +125,37 @@ def test_contributor_segment_types_on_complex_fixture(tmp_path: Path) -> None:
     segment_types = {c.segment_type for c in all_contribs}
     assert entry.metrics.joins >= 1
     assert "join_clause" in segment_types
+
+
+def test_c109_report_location_prefers_set_operator_contributor(tmp_path: Path) -> None:
+    """CPX_C109 should not fall back to an earlier unrelated contributor location."""
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(
+        """
+        [sqlfluff:rules:CPX_C102]
+        max_joins = 99
+
+        [sqlfluff:rules:CPX_C109]
+        max_set_operations = 0
+        """,
+        encoding="utf-8",
+    )
+    sql_path = tmp_path / "union_after_join.sql"
+    sql_path.write_text(
+        """
+        select *
+        from t
+        join u on t.id = u.id
+        union all
+        select *
+        from v
+        """,
+        encoding="utf-8",
+    )
+
+    report = analyze_paths([sql_path], dialect="ansi", config_path=cfg)
+    c109 = next(f for e in report.entries for f in e.findings if f.rule_id == "CPX_C109")
+
+    assert c109.location.line == 5
+    assert [c.metric for c in c109.contributors] == ["set_operation_count"]
+    assert [c.segment_type for c in c109.contributors] == ["set_operator"]

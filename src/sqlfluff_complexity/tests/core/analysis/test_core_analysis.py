@@ -43,6 +43,25 @@ def test_analyze_segment_tree_records_join_and_boolean_contributors() -> None:
     assert "boolean_operators" in kinds
 
 
+def test_analyze_segment_tree_records_structural_metric_contributors() -> None:
+    """Structural metrics should expose contributors for lint/report locations."""
+    sql = """
+        select
+            case when x = 1 then case when y = 2 then 'a' else 'b' end else 'c' end as label
+        from t
+        union all
+        select 'd' as label from u
+    """
+    analysis = analyze_segment_tree(_parse_tree(sql))
+    assert analysis.metrics.expression_depth == 2
+    assert analysis.metrics.set_operation_count == 1
+
+    expression_contributors = [c for c in analysis.contributors if c.metric == "expression_depth"]
+    set_op_contributors = [c for c in analysis.contributors if c.metric == "set_operation_count"]
+    assert [c.segment_type for c in expression_contributors] == ["case_expression"]
+    assert [c.segment_type for c in set_op_contributors] == ["set_operator"]
+
+
 def test_compact_segment_raw_truncates_before_regex_on_huge_raw() -> None:
     """Avoid scanning megabyte literals when building contributor snippets."""
     huge = "x" * 5000
