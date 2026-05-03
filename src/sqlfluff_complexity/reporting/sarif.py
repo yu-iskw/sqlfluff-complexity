@@ -37,6 +37,7 @@ def _sarif_rules() -> list[dict[str, Any]]:
         "CPX_C107",
         "CPX_C108",
         "CPX_C109",
+        "CPX_C110",
         "CPX_C201",
         "CPX_PARSE_ERROR",
     )
@@ -102,6 +103,7 @@ def findings_to_sarif_payload(findings: Sequence[ComplexityFinding]) -> dict[str
                 "case_expressions": finding.metrics.case_expressions,
                 "cte_dependency_depth": finding.metrics.cte_dependency_depth,
                 "ctes": finding.metrics.ctes,
+                "derived_tables": finding.metrics.derived_tables,
                 "expression_depth": finding.metrics.expression_depth,
                 "joins": finding.metrics.joins,
                 "set_operation_count": finding.metrics.set_operation_count,

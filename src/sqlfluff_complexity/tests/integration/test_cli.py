@@ -16,10 +16,11 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 from typing import TYPE_CHECKING
 
-from sqlfluff_complexity.cli import main
+from sqlfluff_complexity.cli import _dispatch_cli, main
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -30,6 +31,12 @@ if TYPE_CHECKING:
 def test_main_exits_successfully() -> None:
     """The initialized package CLI should be callable."""
     assert main([]) == 0
+
+
+def test_dispatch_no_subcommand_returns_zero() -> None:
+    """No subcommand: ``command`` is unset and dispatch returns idle success (see cli docstring)."""
+    args = argparse.Namespace(command=None, config_command=None)
+    assert _dispatch_cli(args) == 0
 
 
 def test_report_prints_console_metrics(
@@ -141,13 +148,76 @@ def test_config_check_valid_returns_zero(tmp_path: Path) -> None:
     cfg.write_text(
         """
         [sqlfluff:rules:CPX_C201]
-        complexity_weights = joins:2
+        complexity_weights = joins:2,derived_tables:0
         path_overrides =
-            models/*.sql:max_joins=4
+            models/*.sql:max_joins=4,max_derived_tables=2
         """,
         encoding="utf-8",
     )
     assert main(["config-check", "--dialect", "ansi", "--config", str(cfg)]) == 0
+
+
+def test_config_check_invalid_derived_table_threshold_nonzero(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(
+        """
+        [sqlfluff:rules:CPX_C110]
+        max_derived_tables = not-int
+        """,
+        encoding="utf-8",
+    )
+    assert main(["config-check", "--dialect", "ansi", "--config", str(cfg)]) == 1
+    assert "config-check failed" in capsys.readouterr().out
+
+
+def test_dispatch_config_unknown_subcommand_returns_nonzero(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Future `config` subcommands without a handler must not exit 0 silently."""
+    args = argparse.Namespace(command="config", config_command="unknown")
+    assert _dispatch_cli(args) == 2
+    err = capsys.readouterr().err
+    assert "unknown or missing" in err
+    assert "config_command='unknown'" in err
+
+
+def test_dispatch_unknown_top_level_command_returns_nonzero(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A namespace with a command but no matching handler must not exit 0 silently."""
+    args = argparse.Namespace(command="not-a-real-command", config_command=None)
+    assert _dispatch_cli(args) == 2
+    err = capsys.readouterr().err
+    assert "no handler for command" in err
+
+
+def test_config_preset_prints_recommended_config(capsys: pytest.CaptureFixture[str]) -> None:
+    """Preset generation should print plain SQLFluff config to stdout."""
+    assert main(["config", "preset", "recommended", "--dialect", "postgres"]) == 0
+
+    output = capsys.readouterr().out
+    rules_line = (
+        "rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,"
+        "CPX_C108,CPX_C109,CPX_C110,CPX_C201"
+    )
+    assert "[sqlfluff]" in output
+    assert "dialect = postgres" in output
+    assert rules_line in output
+    assert "[sqlfluff:rules:CPX_C110]" in output
+    assert "max_derived_tables = 4" in output
+    assert "derived_tables:0" in output
+
+
+def test_config_preset_report_only_uses_report_mode(capsys: pytest.CaptureFixture[str]) -> None:
+    """The report_only preset should generate non-enforcing aggregate mode."""
+    assert main(["config", "preset", "report_only", "--dialect", "snowflake"]) == 0
+
+    output = capsys.readouterr().out
+    assert "dialect = snowflake" in output
+    assert "mode = report" in output
 
 
 def test_config_check_invalid_weights_nonzero(

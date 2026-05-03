@@ -182,6 +182,79 @@ def test_c106_reports_window_function_violation() -> None:
     assert "window function count 2 exceeds max_window_functions=1" in violations[0].desc()
 
 
+def test_c110_reports_derived_table_violation() -> None:
+    """CPX_C110 should fail when inline derived tables exceed the limit."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c110_derived_tables_two"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C110
+
+        [sqlfluff:rules:CPX_C110]
+        max_derived_tables = 1
+        """,
+    )
+
+    violations = rule_violations(linted, "CPX_C110")
+
+    assert len(violations) == 1
+    desc = violations[0].desc()
+    assert "derived table count 2 exceeds max_derived_tables=1" in desc
+    assert "inline derived tables" in desc
+
+
+def test_c110_allows_derived_table_count_at_limit() -> None:
+    """CPX_C110 should pass when derived tables are at the configured limit."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c110_derived_tables_two"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C110
+
+        [sqlfluff:rules:CPX_C110]
+        max_derived_tables = 2
+        """,
+    )
+
+    assert rule_violations(linted, "CPX_C110") == []
+
+
+def test_c110_does_not_count_cte_definitions_as_derived_tables() -> None:
+    """CPX_C110 should not treat CTE query bodies as derived tables."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c110_ctes_not_derived_tables"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C110
+
+        [sqlfluff:rules:CPX_C110]
+        max_derived_tables = 0
+        """,
+    )
+
+    assert rule_violations(linted, "CPX_C110") == []
+
+
+def test_c110_ignores_scalar_subquery_in_table_function_argument() -> None:
+    """CPX_C110 should not count scalar subqueries inside table-valued functions."""
+    linted = lint_sql(
+        "select * from generate_series(1, (select max(id) from foo)) as g(n)",
+        """
+        [sqlfluff]
+        dialect = postgres
+        rules = CPX_C110
+
+        [sqlfluff:rules:CPX_C110]
+        max_derived_tables = 0
+        """,
+    )
+
+    assert rule_violations(linted, "CPX_C110") == []
+
+
 def test_path_override_changes_rule_limit_for_matching_file() -> None:
     """Path overrides should apply the most specific matching policy to SQLFluff rules."""
     linted = lint_sql(
@@ -206,6 +279,31 @@ def test_path_override_changes_rule_limit_for_matching_file() -> None:
 
     assert len(violations) == 1
     assert "join count 2 exceeds max_joins=1" in violations[0].desc()
+
+
+def test_path_override_changes_derived_table_limit_for_matching_file() -> None:
+    """Path overrides should support CPX_C110 derived table thresholds."""
+    linted = lint_sql(
+        read_sql_fixture("ansi", "c110_derived_tables_two"),
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C110
+
+        [sqlfluff:rules:CPX_C110]
+        max_derived_tables = 4
+
+        [sqlfluff:rules:CPX_C201]
+        path_overrides =
+            models/staging/*.sql:max_derived_tables=1
+        """,
+        fname=str(Path("models/staging/orders.sql")),
+    )
+
+    violations = rule_violations(linted, "CPX_C110")
+
+    assert len(violations) == 1
+    assert "derived table count 2 exceeds max_derived_tables=1" in violations[0].desc()
 
 
 def test_c108_reports_nested_case_depth_violation() -> None:

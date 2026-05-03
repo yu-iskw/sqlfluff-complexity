@@ -61,6 +61,10 @@ def test_dbt_templater_parses_model_with_ref() -> None:
         case_expressions=1,
         boolean_operators=1,
         window_functions=0,
+        cte_dependency_depth=0,
+        set_operation_count=0,
+        expression_depth=0,
+        derived_tables=0,
     )
 
 

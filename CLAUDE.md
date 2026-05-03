@@ -10,7 +10,7 @@ The `@AGENTS.md` import inlines that file at session start (Claude Code reads th
 
 - **[`settings.json`](.claude/settings.json)** — Permissions, hooks, environment
 - **[`hooks/`](.claude/hooks/)** — Scripts for tool lifecycle events
-- **[`skills/`](.claude/skills/)** — Slash skills (`SKILL.md` per directory)
+- **[`skills/`](.claude/skills/)** — Maintainer slash skills (`SKILL.md` per directory). End-user skills for downstream SQLFluff projects live at repository root [`skills/`](skills/) (not loaded by Claude Code automatically; copy or link as needed).
 - **[`agents/`](.claude/agents/)** — Subagent prompt files for the Task tool
 - **[`commands/`](.claude/commands/)** — One-off command markdown if present
 
@@ -22,4 +22,4 @@ Authoritative list of subagents and skills is in [AGENTS.md](AGENTS.md); definit
 - For hooks, new skills, path-scoped rules, or stricter tool permissions, change files under [`.claude/`](.claude/) and [`settings.json`](.claude/settings.json).
 - If the optional `improve-claude-config` skill is added under `.claude/skills/`, use it to evolve the local config safely.
 
-**Other products** (Cursor, Codex, Gemini, Copilot) do not load `skills/`, `agents/`, or `settings.json` automatically—use [AGENTS.md](AGENTS.md) and each tool’s own config as documented there.
+**Other products** (Cursor, Codex, Gemini, Copilot) do not load [`.claude/skills/`](.claude/skills/), [`.claude/agents/`](.claude/agents/), or [`.claude/settings.json`](.claude/settings.json) automatically—use [AGENTS.md](AGENTS.md) and each tool’s own config as documented there. Root [`skills/`](skills/) is for users to install into their client; it is not auto-discovered like `.claude/skills/`.

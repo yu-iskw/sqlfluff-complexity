@@ -25,7 +25,13 @@ BOOLEAN_OPERATOR_RAW = {"AND", "OR"}
 def analyze_segment_tree(root: BaseSegment) -> ComplexityAnalysis:
     """Collect metrics and per-segment contributors from a SQLFluff segment tree."""
     counter = _MetricCounter()
-    counter.walk(root, active_selects=0, nested_depth=0, case_depth=0)
+    counter.walk(
+        root,
+        active_selects=0,
+        nested_depth=0,
+        case_depth=0,
+        under_cte_scope=False,
+    )
     return ComplexityAnalysis(
         root=root,
         metrics=counter.to_metrics(),
@@ -48,7 +54,11 @@ def is_nested_select_statement(segment: BaseSegment) -> bool:
 
 
 def _segment_has_ancestor_of_type(segment: BaseSegment, segment_type: str) -> bool:
-    """True when ``segment`` is of ``segment_type`` and an ancestor shares that type."""
+    """True when ``segment`` is of ``segment_type`` and an ancestor shares that type.
+
+    Parent walks are capped at 256 hops to avoid unbounded work if parent metadata is
+    cyclic or unexpectedly deep.
+    """
     if getattr(segment, "type", "") != segment_type:
         return False
 
@@ -83,6 +93,7 @@ class _MetricCounter:
         self.case_expressions = 0
         self.boolean_operators = 0
         self.window_functions = 0
+        self.derived_tables = 0
         self._structural = StructuralScanResult(0, 0, 0)
         self.contributors: list[MetricContributor] = []
 
@@ -123,15 +134,24 @@ class _MetricCounter:
         active_selects: int,
         nested_depth: int,
         case_depth: int,
+        under_cte_scope: bool,
     ) -> None:
         """Walk a segment and its children."""
         self._structural = merge_structural_scan(self._structural, segment, case_depth)
         segment_type = getattr(segment, "type", "")
 
         if segment_type == "common_table_expression":
+            # Count the CTE here, then walk only its subtree with under_cte_scope so
+            # derived_tables skips inline FROM (SELECT ...) inside the CTE body.
             self.ctes += 1
             self._add_contributor("ctes", segment, reason="common table expression")
-            self._walk_children(segment, active_selects=0, nested_depth=0, case_depth=case_depth)
+            self._walk_children(
+                segment,
+                active_selects=0,
+                nested_depth=0,
+                case_depth=case_depth,
+                under_cte_scope=True,
+            )
             return
 
         next_active_selects, next_nested_depth = self._select_depths(
@@ -140,7 +160,7 @@ class _MetricCounter:
             active_selects,
             nested_depth,
         )
-        self._count_segment(segment, segment_type)
+        self._count_segment(segment, segment_type, under_cte_scope)
         self._add_structural_contributor(segment, segment_type, case_depth)
 
         child_case_depth = case_depth + 1 if segment_type == "case_expression" else case_depth
@@ -149,6 +169,7 @@ class _MetricCounter:
             active_selects=next_active_selects,
             nested_depth=next_nested_depth,
             case_depth=child_case_depth,
+            under_cte_scope=under_cte_scope,
         )
 
     def _walk_children(
@@ -157,6 +178,7 @@ class _MetricCounter:
         active_selects: int,
         nested_depth: int,
         case_depth: int,
+        under_cte_scope: bool,
     ) -> None:
         for child in getattr(segment, "segments", ()) or ():
             self.walk(
@@ -164,6 +186,7 @@ class _MetricCounter:
                 active_selects=active_selects,
                 nested_depth=nested_depth,
                 case_depth=case_depth,
+                under_cte_scope=under_cte_scope,
             )
 
     def _select_depths(
@@ -189,7 +212,12 @@ class _MetricCounter:
         )
         return active_selects + 1, nested_depth
 
-    def _count_segment(self, segment: BaseSegment, segment_type: str) -> None:
+    def _count_segment(
+        self,
+        segment: BaseSegment,
+        segment_type: str,
+        under_cte_scope: bool,
+    ) -> None:
         if segment_type == "join_clause":
             self.joins += 1
             self._add_contributor("joins", segment, reason="join clause")
@@ -206,6 +234,9 @@ class _MetricCounter:
                 segment,
                 reason="boolean and/or operator",
             )
+        elif self._is_derived_table(segment, under_cte_scope):
+            self.derived_tables += 1
+            self._add_contributor("derived_tables", segment, reason="derived table")
 
     def _add_structural_contributor(
         self,
@@ -224,6 +255,15 @@ class _MetricCounter:
             and getattr(segment, "raw_upper", "") in BOOLEAN_OPERATOR_RAW
         )
 
+    def _is_derived_table(self, segment: BaseSegment, under_cte_scope: bool) -> bool:
+        if under_cte_scope or getattr(segment, "type", "") != "from_expression_element":
+            return False
+        table_expression = _direct_child_of_type(segment, "table_expression")
+        if table_expression is None:
+            return False
+        bracketed = _direct_child_of_type(table_expression, "bracketed")
+        return bracketed is not None and _has_descendant_type(bracketed, "select_statement")
+
     def to_metrics(self) -> ComplexityMetrics:
         """Convert collected counters to the public metric model."""
         return ComplexityMetrics(
@@ -237,4 +277,27 @@ class _MetricCounter:
             cte_dependency_depth=self.cte_dependency_depth,
             set_operation_count=self.set_operation_count,
             expression_depth=self.expression_depth,
+            derived_tables=self.derived_tables,
         )
+
+
+def _has_descendant_type(segment: BaseSegment, segment_type: str) -> bool:
+    """Depth-first search for ``segment_type`` under ``segment`` (separate pass from ``walk``).
+
+    Used only for derived-table detection; typical SQL keeps this cheap. If profiling shows
+    hotspots, fold detection into the main walk instead of re-traversing subtrees.
+    """
+    stack = list(getattr(segment, "segments", ()) or ())
+    while stack:
+        current = stack.pop()
+        if getattr(current, "type", "") == segment_type:
+            return True
+        stack.extend(getattr(current, "segments", ()) or ())
+    return False
+
+
+def _direct_child_of_type(segment: BaseSegment, segment_type: str) -> BaseSegment | None:
+    for child in getattr(segment, "segments", ()) or ():
+        if getattr(child, "type", "") == segment_type:
+            return child
+    return None
