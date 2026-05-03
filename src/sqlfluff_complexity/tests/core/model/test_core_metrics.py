@@ -30,9 +30,21 @@ def test_complexity_metrics_score_uses_default_weights() -> None:
         case_expressions=2,
         boolean_operators=4,
         window_functions=1,
+        derived_tables=99,
     )
 
     assert metrics.score(DEFAULT_WEIGHTS) == _EXPECTED_DEFAULT_WEIGHT_SCORE
+    assert metrics.score(DEFAULT_WEIGHTS | {"derived_tables": 1}) == (
+        _EXPECTED_DEFAULT_WEIGHT_SCORE + 99
+    )
+
+
+def test_complexity_metrics_reports_derived_tables() -> None:
+    """Report counters and breakdown should expose derived table metrics."""
+    metrics = ComplexityMetrics(derived_tables=2)
+
+    assert metrics.to_report_counters()["derived_tables"] == 2
+    assert "derived_tables=2" in metrics.format_breakdown()
 
 
 def test_parse_weights_overrides_defaults() -> None:

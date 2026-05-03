@@ -7,7 +7,7 @@
 ```ini
 [sqlfluff]
 dialect = snowflake
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C201
 ```
 
 You can also enable only the rules you are ready to enforce:
@@ -33,6 +33,7 @@ The plugin default config sets these limits:
 | `CPX_C107` | `max_cte_dependency_depth` |       5 |
 | `CPX_C108` | `max_nested_case_depth`    |      10 |
 | `CPX_C109` | `max_set_operations`       |      12 |
+| `CPX_C110` | `max_derived_tables`       |       4 |
 | `CPX_C201` | `max_complexity_score`     |      60 |
 
 Example override:
@@ -54,7 +55,7 @@ Default weights:
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0,derived_tables:0
 mode = enforce
 ```
 
@@ -88,6 +89,7 @@ Supported override keys:
 - `max_cte_dependency_depth`
 - `max_nested_case_depth`
 - `max_set_operations`
+- `max_derived_tables`
 - `max_complexity_score`
 - `mode`
 
@@ -102,6 +104,25 @@ sqlfluff-complexity config-check --dialect postgres --config .sqlfluff
 ```
 
 The command loads the same SQLFluff config as report mode, runs the existing parsers, and exits non-zero on invalid values.
+
+## Presets
+
+For a copyable starting point, generate plain SQLFluff config from a preset:
+
+```bash
+sqlfluff-complexity config preset recommended --dialect postgres
+```
+
+Available presets:
+
+| Preset        | Use case                                     |
+| ------------- | -------------------------------------------- |
+| `report_only` | Baseline complexity without enforcing C201   |
+| `lenient`     | Low-noise rollout for teams new to CPX rules |
+| `recommended` | Conservative defaults for most teams         |
+| `strict`      | Mature projects that want tighter thresholds |
+
+Presets are emitted to stdout only. They do not create hidden runtime behavior; after copying the generated config, tune the normal SQLFluff rule sections and path overrides as needed.
 
 ## Enforcement Versus Reporting
 

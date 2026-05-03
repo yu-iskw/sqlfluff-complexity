@@ -8,5 +8,6 @@
   "window_functions": 0,
   "cte_dependency_depth": 0,
   "set_operation_count": 0,
-  "expression_depth": 0
+  "expression_depth": 0,
+  "derived_tables": 1
 }

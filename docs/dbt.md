@@ -42,7 +42,7 @@ Minimal `.sqlfluff` example:
 [sqlfluff]
 dialect = postgres
 templater = dbt
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C201
 
 [sqlfluff:templater:dbt]
 project_dir = .

@@ -134,6 +134,14 @@ REPORT_LIMITS = (
         "max_set_operations",
         message_label="set operation count",
     ),
+    ReportLimit(
+        "CPX_C110",
+        "derived_tables",
+        "max_derived_tables",
+        "Derived table count",
+        "max_derived_tables",
+        message_label="derived table count",
+    ),
 )
 
 
@@ -173,7 +181,7 @@ def format_console_report(report: ComplexityReport) -> str:
     """Format a complexity report for terminal output."""
     column_headers = (
         "path score ctes joins subquery_depth case_expressions boolean_operators window_functions "
-        "cte_dependency_depth set_operation_count expression_depth"
+        "cte_dependency_depth set_operation_count expression_depth derived_tables"
     )
     lines = [
         "sqlfluff-complexity report",
@@ -536,6 +544,7 @@ def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
         max_cte_dependency_depth=_config_int(config, "CPX_C107", "max_cte_dependency_depth", 5),
         max_nested_case_depth=_config_int(config, "CPX_C108", "max_nested_case_depth", 10),
         max_set_operations=_config_int(config, "CPX_C109", "max_set_operations", 12),
+        max_derived_tables=_config_int(config, "CPX_C110", "max_derived_tables", 4),
         max_complexity_score=_config_int(
             config,
             "CPX_C201",
@@ -581,7 +590,8 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
         f"{entry.path} {entry.score} {metrics.ctes} {metrics.joins} "
         f"{metrics.subquery_depth} {metrics.case_expressions} "
         f"{metrics.boolean_operators} {metrics.window_functions} "
-        f"{metrics.cte_dependency_depth} {metrics.set_operation_count} {metrics.expression_depth}"
+        f"{metrics.cte_dependency_depth} {metrics.set_operation_count} "
+        f"{metrics.expression_depth} {metrics.derived_tables}"
     )
     lines = [header_line]
     for finding in entry.findings:

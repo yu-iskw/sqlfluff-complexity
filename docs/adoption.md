@@ -11,10 +11,10 @@ This page complements [Reporting](reporting.md) and [Configuration](configuratio
    sqlfluff-complexity report --dialect postgres --config .sqlfluff --format json --output complexity.json models/
    ```
 
-3. **Inspect columns** in console output or JSON: `set_operation_count` counts `set_operator` parse segments (stacked `UNION` / `INTERSECT` / `EXCEPT`). `expression_depth` is **not** general expression-tree depth; it is the **maximum nesting depth of `case_expression` segments** (nested `CASE` inside `CASE`). Do not confuse it with `CPX_C104`, which counts how many `CASE` expressions appear (`case_expressions`).
-4. **Set generous thresholds** in `[sqlfluff:rules:CPX_C108]` / `CPX_C109` (and existing CPX sections) so the first CI run is informative, not blocking.
+3. **Inspect columns** in console output or JSON: `set_operation_count` counts `set_operator` parse segments (stacked `UNION` / `INTERSECT` / `EXCEPT`). `expression_depth` is **not** general expression-tree depth; it is the **maximum nesting depth of `case_expression` segments** (nested `CASE` inside `CASE`). `derived_tables` counts inline `from (select ...)` / `join (select ...)` relations **outside CTE query bodies** (inside a `WITH` CTE definition those are skipped so they are not double-counted with `ctes`).
+4. **Set generous thresholds** in `[sqlfluff:rules:CPX_C108]`, `CPX_C109`, and `CPX_C110` (and existing CPX sections) so the first CI run is informative, not blocking.
 5. **Tighten with `path_overrides`** on `[sqlfluff:rules:CPX_C201]` so staging vs marts get different budgets (see [Configuration](configuration.md)).
-6. **Optionally raise `complexity_weights`** for `set_operation_count` and `expression_depth` in `CPX_C201` after baseline runs—default weights are often `0` until teams opt in.
+6. **Optionally raise `complexity_weights`** for `set_operation_count`, `expression_depth`, and `derived_tables` in `CPX_C201` after baseline runs—default weights are often `0` until teams opt in.
 
 ## CI: SARIF artifact
 

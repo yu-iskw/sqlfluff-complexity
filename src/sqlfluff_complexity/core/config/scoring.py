@@ -12,6 +12,7 @@ DEFAULT_WEIGHTS: dict[str, int] = {
     "cte_dependency_depth": 0,
     "set_operation_count": 0,
     "expression_depth": 0,
+    "derived_tables": 0,
 }
 
 VALID_WEIGHT_KEYS = frozenset(DEFAULT_WEIGHTS)

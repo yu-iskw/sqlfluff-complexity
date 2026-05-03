@@ -132,6 +132,7 @@ Some tools load mirrored skills under `.agents/skills/` instead of `.claude/`. O
 
 ### Where things live (quick map)
 
+- **[`skills/`](skills/)** — User-installable agent skills for adopting CPX in **other** repositories (for example [`skills/configure-cpx/`](skills/configure-cpx/)); copy or link into your tool’s skills directory
 - **This file** — Stack, `make` targets, style, testing, security, git, ADR pointers, Claude subagent/skill tables
 - **[CLAUDE.md](CLAUDE.md)** + **[`.claude/`](.claude/)** — Claude Code entrypoint and automation layout (see CLAUDE.md for directory breakdown and self-improvement rules)
 - **`.agents/skills/`** — Skills for tools that do not read `.claude/` (e.g. `postmortem`); may mirror `.claude/skills/`

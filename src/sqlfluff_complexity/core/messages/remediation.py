@@ -36,6 +36,10 @@ REMEDIATIONS: dict[str, str] = {
         "Consider replacing stacked UNION/INTERSECT/EXCEPT with a single query, staging models, or "
         "a unioned intermediate model."
     ),
+    "CPX_C110": (
+        "Consider promoting inline derived tables into named CTEs or intermediate models when they "
+        "hide review-critical transformation steps."
+    ),
     "CPX_C201": (
         "Reduce the largest contributing metric first; inspect the metric breakdown and top "
         "contributors."

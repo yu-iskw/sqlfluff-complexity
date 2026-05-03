@@ -23,6 +23,7 @@ class ComplexityMetrics:
     cte_dependency_depth: int = 0
     set_operation_count: int = 0
     expression_depth: int = 0
+    derived_tables: int = 0
 
     def score(self, weights: Mapping[str, int]) -> int:
         """Compute a weighted aggregate complexity score."""
@@ -36,6 +37,7 @@ class ComplexityMetrics:
             + self.cte_dependency_depth * weights.get("cte_dependency_depth", 0)
             + self.set_operation_count * weights.get("set_operation_count", 0)
             + self.expression_depth * weights.get("expression_depth", 0)
+            + self.derived_tables * weights.get("derived_tables", 0)
         )
 
     def to_report_counters(self) -> dict[str, int]:
@@ -45,6 +47,7 @@ class ComplexityMetrics:
             "case_expressions": self.case_expressions,
             "cte_dependency_depth": self.cte_dependency_depth,
             "ctes": self.ctes,
+            "derived_tables": self.derived_tables,
             "expression_depth": self.expression_depth,
             "joins": self.joins,
             "set_operation_count": self.set_operation_count,
@@ -61,5 +64,6 @@ class ComplexityMetrics:
             f"boolean_operators={self.boolean_operators}, "
             f"window_functions={self.window_functions}, "
             f"cte_dependency_depth={self.cte_dependency_depth}, "
-            f"set_operation_count={self.set_operation_count}, expression_depth={self.expression_depth}"
+            f"set_operation_count={self.set_operation_count}, "
+            f"expression_depth={self.expression_depth}, derived_tables={self.derived_tables}"
         )

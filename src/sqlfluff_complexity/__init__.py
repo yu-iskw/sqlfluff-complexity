@@ -63,6 +63,9 @@ def get_rules() -> list[type[BaseRule]]:
     from sqlfluff_complexity.rules.c109_set_operations import (  # noqa: PLC0415
         Rule_CPX_C109,
     )
+    from sqlfluff_complexity.rules.c110_derived_tables import (  # noqa: PLC0415
+        Rule_CPX_C110,
+    )
     from sqlfluff_complexity.rules.c201_aggregate_score import (  # noqa: PLC0415
         Rule_CPX_C201,
     )
@@ -77,6 +80,7 @@ def get_rules() -> list[type[BaseRule]]:
         Rule_CPX_C107,
         Rule_CPX_C108,
         Rule_CPX_C109,
+        Rule_CPX_C110,
         Rule_CPX_C201,
     ]
 
@@ -127,6 +131,9 @@ def get_configs_info() -> dict[str, dict[str, Any]]:
             "definition": (
                 "Maximum set_operator segments (UNION / INTERSECT / EXCEPT arms) in one statement."
             ),
+        },
+        "max_derived_tables": {
+            "definition": "Maximum inline derived tables allowed in one parsed SQL file.",
         },
         "max_complexity_score": {
             "definition": "Maximum aggregate complexity score allowed in one statement.",

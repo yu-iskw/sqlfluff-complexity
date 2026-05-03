@@ -15,6 +15,7 @@
 | `CPX_C107` | Longest CTE dependency chain                      |       5 | `max_cte_dependency_depth` |
 | `CPX_C108` | Nested `CASE` depth (`case_expression` nesting)   |      10 | `max_nested_case_depth`    |
 | `CPX_C109` | Set operations (`UNION` / `INTERSECT` / `EXCEPT`) |      12 | `max_set_operations`       |
+| `CPX_C110` | Inline derived tables                             |       4 | `max_derived_tables`       |
 | `CPX_C201` | Aggregate weighted complexity score               |      60 | `max_complexity_score`     |
 
 ## CPX_C101: Too Many CTEs
@@ -160,6 +161,22 @@ The metric counts **`set_operator`** segments (stacked `UNION`, `INTERSECT`, `EX
 max_set_operations = 12
 ```
 
+## CPX_C110: Too Many Derived Tables
+
+Flags a file when inline derived tables exceed `max_derived_tables`.
+
+The metric counts `from_expression_element` segments that contain an inline `select_statement`,
+such as `from (select ...) as alias` or `join (select ...) as alias`.
+
+**CTE query bodies are excluded:** inline `from (select ...)` / `join (select ...)` inside a
+`common_table_expression` is **not** counted, so the same structure is not double-penalized
+alongside `CPX_C101` (`ctes`). See fixture `c110_ctes_not_derived_tables.sql`.
+
+```ini
+[sqlfluff:rules:CPX_C110]
+max_derived_tables = 4
+```
+
 ## CPX_C201: Aggregate Complexity Score Too High
 
 Flags a statement when the weighted aggregate complexity score exceeds `max_complexity_score`.
@@ -171,7 +188,7 @@ Violation messages include the computed score, the configured `max_complexity_sc
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0,derived_tables:0
 mode = enforce
 ```
 
@@ -187,6 +204,7 @@ ctes * ctes_weight
 + cte_dependency_depth * cte_dependency_depth_weight
 + set_operation_count * set_operation_count_weight
 + expression_depth * expression_depth_weight
++ derived_tables * derived_tables_weight
 ```
 
 See [configuration](configuration.md) for path overrides and report-mode rollout patterns.

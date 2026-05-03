@@ -22,6 +22,8 @@ def _parse_tree(sql: str, *, dialect: str) -> Any:
     [
         ("ansi", "metrics_with_cte_join_case_window"),
         ("ansi", "metrics_nested_subquery_depth_2"),
+        ("ansi", "metrics_derived_tables"),
+        ("ansi", "metrics_insert_derived_subquery"),
     ],
 )
 def test_fixture_metrics_match_expected_json(dialect: str, stem: str) -> None:

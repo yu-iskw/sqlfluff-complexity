@@ -17,9 +17,11 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from sqlfluff_complexity.core.config.presets import preset_names, render_preset_config
 from sqlfluff_complexity.report import (
     ComplexityReport,
     analyze_paths,
@@ -34,17 +36,30 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
+def _dispatch_cli(args: argparse.Namespace) -> int:
+    """Run the subcommand handler for parsed CLI args (also used from tests)."""
+    config_command = getattr(args, "config_command", None)
+    handlers = {
+        ("config", "preset"): _run_config_preset,
+        ("config-check", None): _run_config_check,
+        ("report", None): _run_report,
+    }
+    handler = handlers.get((args.command, config_command))
+    if args.command == "config" and handler is None:
+        print(
+            "sqlfluff-complexity: unknown or missing `config` subcommand "
+            f"(got config_command={config_command!r}).",
+            file=sys.stderr,
+        )
+        return 2
+    return handler(args) if handler is not None else 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the sqlfluff-complexity command line interface."""
     parser = _build_parser()
     args = parser.parse_args(argv)
-
-    if args.command == "report":
-        return _run_report(args)
-    if args.command == "config-check":
-        return _run_config_check(args)
-
-    return 0
+    return _dispatch_cli(args)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -81,6 +96,19 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     check_parser.add_argument("--dialect", default="ansi", help="SQLFluff dialect to parse with.")
     check_parser.add_argument("--config", type=Path, help="SQLFluff config file to apply.")
+
+    config_parser = subparsers.add_parser(
+        "config",
+        help="Generate CPX SQLFluff configuration snippets.",
+    )
+    config_subparsers = config_parser.add_subparsers(dest="config_command")
+    config_subparsers.required = True
+    preset_parser = config_subparsers.add_parser(
+        "preset",
+        help="Print a generated CPX preset config to stdout.",
+    )
+    preset_parser.add_argument("name", choices=preset_names(), help="Preset name to render.")
+    preset_parser.add_argument("--dialect", default="ansi", help="SQLFluff dialect for the config.")
     return parser
 
 
@@ -121,4 +149,9 @@ def _run_config_check(args: argparse.Namespace) -> int:
         print(f"config-check failed: could not load config: {exc}", flush=True)
         return 1
     print("CPX configuration is valid.", flush=True)
+    return 0
+
+
+def _run_config_preset(args: argparse.Namespace) -> int:
+    print(render_preset_config(args.name, dialect=args.dialect), flush=True)
     return 0

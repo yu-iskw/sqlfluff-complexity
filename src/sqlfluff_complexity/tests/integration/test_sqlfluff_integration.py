@@ -51,7 +51,7 @@ def test_sqlfluff_accepts_all_cpx_rule_codes() -> None:
         """
         [sqlfluff]
         dialect = ansi
-        rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C201
+        rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C201
         """,
     )
 
@@ -72,7 +72,9 @@ def test_sqlfluff_applies_plugin_config_keywords() -> None:
 
         [sqlfluff:rules:CPX_C201]
         max_complexity_score = 60
-        complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+        complexity_weights =
+            ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,
+            window_functions:2,derived_tables:0
         mode = enforce
         path_overrides =
             models/*.sql:max_joins=2
