@@ -29,6 +29,12 @@ PYTHON_VERSIONS = ("3.10", "3.11", "3.12")
 TESTS_PATH = "src/sqlfluff_complexity/tests"
 DEFAULT_MARKER = "not dialect_extra and not dbt_templater"
 
+_PYTEST_COV_ARGS = (
+    "--cov=sqlfluff_complexity",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+)
+
 nox.options.sessions = ["tests"]
 nox.options.default_venv_backend = "uv"
 
@@ -54,7 +60,7 @@ def _pytest_args(marker: str, posargs: Sequence[str]) -> list[str]:
     if workers is None:
         workers = "2" if os.environ.get("CI") else "auto"
 
-    args = ["-v", "-s", "-m", marker]
+    args = ["-v", "-s", "-m", marker, *_PYTEST_COV_ARGS]
     if workers != "0":
         args = ["-n", workers, "--dist", "loadfile", *args]
 

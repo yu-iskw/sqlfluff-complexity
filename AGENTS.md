@@ -22,7 +22,7 @@ make lint-python  # Same as `make lint` (trunk check)
 make format       # Auto-format code via Trunk
 make dead-code    # Find unused code with Vulture (see pyproject [tool.vulture])
 make vulture      # Same as make dead-code
-make test         # Run pytest test suite
+make test         # Run pytest with coverage (pytest-cov); alias: `make coverage`
 make codeql       # Run local CodeQL analysis
 make build        # Build the package
 make clean        # Clean build artifacts

@@ -11,7 +11,7 @@ An autonomous loop for the agent to identify, analyze, and fix failing unit test
 
 ## Loop Logic
 
-1. **Identify**: Run `make test` to identify failing tests.
+1. **Identify**: Run `make test` to identify failing tests (pytest with **pytest-cov**; terminal shows coverage summary).
 2. **Analyze**: Examine the `pytest` output to determine:
    - The failing test file and line number.
    - The expected vs actual values (assertion errors).

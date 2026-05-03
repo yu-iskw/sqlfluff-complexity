@@ -89,6 +89,7 @@ dev = [
   "xenon>=0.9.3",
   "nox>=2026.4.10",
   "pytest>=8.3.5",
+  "pytest-cov>=6.0",
   "bandit>=1.8.3",
   "ruff>=0.15.0",
   "pyright>=1.1.0",
@@ -113,3 +114,11 @@ reportIncompatibleVariableOverride = false
 [tool.vulture]
 paths = ["src/sqlfluff_complexity"]
 min_confidence = 80
+
+[tool.coverage.run]
+branch = true
+source = ["src/sqlfluff_complexity"]
+
+[tool.coverage.report]
+show_missing = true
+omit = ["*/tests/*"]
