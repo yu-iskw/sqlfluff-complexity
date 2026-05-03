@@ -148,32 +148,36 @@ def test_metric_lint_result_anchor_segment_overrides_context_segment() -> None:
 
 
 @pytest.mark.parametrize(
-    "cpx_case",
+    ("spec", "policy"),
     [
         (
-            "CPX_C108",
-            "expression_depth",
-            "max_nested_case_depth",
-            "max_nested_case_depth",
-            "nested CASE depth",
-            {"max_nested_case_depth": 10},
+            MetricRuleSpec(
+                rule_id="CPX_C108",
+                metric_name="expression_depth",
+                config_key="max_nested_case_depth",
+                policy_key="max_nested_case_depth",
+                description_label="nested CASE depth",
+            ),
+            ComplexityPolicy(max_nested_case_depth=10),
         ),
         (
-            "CPX_C109",
-            "set_operation_count",
-            "max_set_operations",
-            "max_set_operations",
-            "set operation count",
-            {"max_set_operations": 10},
+            MetricRuleSpec(
+                rule_id="CPX_C109",
+                metric_name="set_operation_count",
+                config_key="max_set_operations",
+                policy_key="max_set_operations",
+                description_label="set operation count",
+            ),
+            ComplexityPolicy(max_set_operations=10),
         ),
     ],
     ids=["c108", "c109"],
 )
 def test_eval_file_root_metric_threshold_returns_none_when_under_limit(
-    cpx_case: tuple[str, str, str, str, str, dict[str, int]],
+    spec: MetricRuleSpec,
+    policy: ComplexityPolicy,
 ) -> None:
     """File-root helper should not emit a lint result when the metric is within policy."""
-    rule_id, metric_name, config_key, policy_key, description_label, policy_kwargs = cpx_case
     cfg = FluffConfig.from_kwargs(dialect="ansi")
     linter = Linter(config=cfg)
     root = linter.parse_string("select 1").tree
@@ -186,14 +190,6 @@ def test_eval_file_root_metric_threshold_returns_none_when_under_limit(
         segment=root,
         parent_stack=(),
     )
-    spec = MetricRuleSpec(
-        rule_id=rule_id,
-        metric_name=metric_name,
-        config_key=config_key,
-        policy_key=policy_key,
-        description_label=description_label,
-    )
-    policy = ComplexityPolicy(**policy_kwargs)
     assert eval_file_root_metric_threshold(ctx, policy, spec) is None
 
 
