@@ -10,8 +10,11 @@ from sqlfluff_complexity.core.analysis import (
     compact_segment_raw,
     segment_position,
 )
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
-from sqlfluff_complexity.core.structural_metrics import StructuralScanResult, merge_structural_scan
+from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.model.structural_metrics import (
+    StructuralScanResult,
+    merge_structural_scan,
+)
 
 if TYPE_CHECKING:
     from sqlfluff.core.parser.segments.base import BaseSegment

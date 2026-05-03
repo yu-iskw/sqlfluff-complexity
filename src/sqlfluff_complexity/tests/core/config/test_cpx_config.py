@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlfluff_complexity.core.cpx_config import truthy_config_string
+from sqlfluff_complexity.core.config.cpx_config import truthy_config_string
 
 
 def test_truthy_config_string_common_values() -> None:

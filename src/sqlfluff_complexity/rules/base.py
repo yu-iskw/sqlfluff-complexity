@@ -7,16 +7,26 @@ from typing import TYPE_CHECKING
 
 from sqlfluff.core.rules import LintResult
 
-from sqlfluff_complexity.core.cpx_config import contributor_display_settings
-from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
-from sqlfluff_complexity.core.segment_tree import analyze_segment_tree, is_nested_select_statement
-from sqlfluff_complexity.core.violation_messages import metric_threshold_violation_message
+from sqlfluff_complexity.core.config.cpx_config import contributor_display_settings
+from sqlfluff_complexity.core.config.policy import (
+    POLICY_MODES,
+    ComplexityPolicy,
+    resolve_policy,
+)
+from sqlfluff_complexity.core.messages.violation_messages import (
+    MetricThresholdViolationParams,
+    metric_threshold_violation_message,
+)
+from sqlfluff_complexity.core.scan.segment_tree import (
+    analyze_segment_tree,
+    is_nested_select_statement,
+)
 
 if TYPE_CHECKING:
     from sqlfluff.core.rules import RuleContext
 
     from sqlfluff_complexity.core.analysis import ComplexityAnalysis
-    from sqlfluff_complexity.core.metrics import ComplexityMetrics
+    from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 
 @dataclass(frozen=True)
@@ -73,7 +83,7 @@ def metric_lint_result(
     """Build a lint result for one metric threshold, if violated.
 
     When ``precomputed_analysis`` is provided, use it for contributor lines instead
-    of re-running :func:`sqlfluff_complexity.core.segment_tree.analyze_segment_tree`
+    of re-running :func:`sqlfluff_complexity.core.scan.segment_tree.analyze_segment_tree`
     on the same segment (avoids a second full tree walk on violations).
     """
     if policy.mode == "report":
@@ -91,15 +101,17 @@ def metric_lint_result(
     )
 
     description = metric_threshold_violation_message(
-        rule_id=spec.rule_id,
-        description_label=spec.description_label,
-        actual=actual,
-        config_key=spec.config_key,
-        limit=limit,
-        metric_name=spec.metric_name,
-        contributors=analysis.contributors,
-        max_contributors=max_contributors,
-        show_contributors=show_contributors,
+        MetricThresholdViolationParams(
+            rule_id=spec.rule_id,
+            description_label=spec.description_label,
+            actual=actual,
+            config_key=spec.config_key,
+            limit=limit,
+            metric_name=spec.metric_name,
+            contributors=analysis.contributors,
+            max_contributors=max_contributors,
+            show_contributors=show_contributors,
+        ),
     )
 
     return LintResult(

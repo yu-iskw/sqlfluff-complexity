@@ -41,6 +41,8 @@ uv run nox -s dbt_templater
 
 ## Test Suites
 
+Folder layout for tests is documented in [docs/tests-layout.md](docs/tests-layout.md) (`core/` mirrors the core package; `reporting/`, `integration/`, and `rules/` group cross-cutting suites).
+
 The default suite excludes optional markers so pull-request feedback stays fast. It includes
 SQLFluff integration smoke tests that verify plugin discovery, CPX rule config, default plugin
 config, and `python -m sqlfluff lint` behavior.

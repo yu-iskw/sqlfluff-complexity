@@ -8,7 +8,7 @@ from typing import Any, TextIO
 
 from sqlfluff_complexity import __version__
 from sqlfluff_complexity.core.analysis import MetricContributor
-from sqlfluff_complexity.core.findings import ComplexityFinding
+from sqlfluff_complexity.core.messages.findings import ComplexityFinding
 
 
 def _contributor_dict(contributor: MetricContributor) -> dict[str, Any]:

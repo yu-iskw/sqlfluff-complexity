@@ -11,7 +11,7 @@ from sqlfluff_complexity.reporting.sarif import findings_to_sarif_payload
 
 
 def _fixture_sql(name: str) -> Path:
-    root = Path(__file__).resolve().parent / "fixtures" / "sql" / "ansi"
+    root = Path(__file__).resolve().parent.parent / "fixtures" / "sql" / "ansi"
     return root / name
 
 

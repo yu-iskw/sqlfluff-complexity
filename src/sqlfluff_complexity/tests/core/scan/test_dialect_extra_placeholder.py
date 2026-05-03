@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from sqlfluff.core import FluffConfig, Linter
 
-from sqlfluff_complexity.core.segment_tree import collect_metrics
+from sqlfluff_complexity.core.scan.segment_tree import collect_metrics
 from sqlfluff_complexity.tests.fixture_loader import (
     dbt_adapter_to_sqlfluff_dialect,
     dialect_extra_fixtures,

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
-    from sqlfluff_complexity.core.metrics import ComplexityMetrics
+    from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 # Keys that participate in weighted aggregate scoring (order not used for sorting).
 _SCORE_METRIC_KEYS: tuple[str, ...] = (

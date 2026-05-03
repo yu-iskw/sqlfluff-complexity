@@ -14,7 +14,7 @@ from sqlfluff_complexity.core.analysis import (
     format_contributor_examples,
     segment_position,
 )
-from sqlfluff_complexity.core.segment_tree import analyze_segment_tree, collect_metrics
+from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree, collect_metrics
 
 
 def _parse_tree(sql: str, *, dialect: str = "ansi") -> Any:

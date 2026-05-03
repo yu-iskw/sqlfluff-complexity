@@ -50,6 +50,7 @@ For a complete walkthrough, see [docs/quickstart.md](docs/quickstart.md).
 - [dbt usage](docs/dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
 - [Dialects](docs/dialects.md): tested dialects and dbt adapter mapping caveats.
 - [Docs index](docs/index.md): all user, contributor, and design documents.
+- [Internal import migration](docs/migration-internal.md): if you import `sqlfluff_complexity.core` submodules directly, update paths after subpackage refactors.
 
 ## Large dbt projects
 

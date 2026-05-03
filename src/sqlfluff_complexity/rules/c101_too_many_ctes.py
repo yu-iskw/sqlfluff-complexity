@@ -7,8 +7,8 @@ from typing import ClassVar
 from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
-from sqlfluff_complexity.core.policy import ComplexityPolicy
-from sqlfluff_complexity.core.segment_tree import analyze_segment_tree
+from sqlfluff_complexity.core.config.policy import ComplexityPolicy
+from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     metric_lint_result,

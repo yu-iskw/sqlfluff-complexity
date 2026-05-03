@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from sqlfluff_complexity.core.policy import ComplexityPolicy, resolve_policy
+from sqlfluff_complexity.core.config.policy import ComplexityPolicy, resolve_policy
 
 EXPECTED_STAGING_MAX_COMPLEXITY_SCORE = 40
 EXPECTED_TIE_MAX_JOINS = 2

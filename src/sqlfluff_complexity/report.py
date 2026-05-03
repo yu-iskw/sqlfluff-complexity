@@ -13,25 +13,29 @@ from sqlfluff.core.parser.segments.base import BaseSegment
 from sqlfluff_complexity import __version__
 from sqlfluff_complexity.core.analysis import (
     MetricContributor,
+    explain_score_contributors,
     format_contributor_examples,
     format_contributor_summary,
-    segment_position,
-    top_contributors,
-    weighted_contributor_samples,
-)
-from sqlfluff_complexity.core.cpx_config import contributor_display_settings
-from sqlfluff_complexity.core.explainability import (
-    explain_score_contributors,
     ranked_weighted_contributions,
     refactoring_hint_for_contributors,
+    segment_position,
+    weighted_contributor_samples,
 )
-from sqlfluff_complexity.core.findings import ComplexityFinding, SourceLocation
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
-from sqlfluff_complexity.core.policy import POLICY_MODES, ComplexityPolicy, resolve_policy
-from sqlfluff_complexity.core.remediation import remediation_for_rule
-from sqlfluff_complexity.core.scoring import parse_weights
-from sqlfluff_complexity.core.segment_tree import analyze_segment_tree
-from sqlfluff_complexity.core.violation_messages import metric_threshold_violation_message
+from sqlfluff_complexity.core.config.cpx_config import contributor_display_settings
+from sqlfluff_complexity.core.config.policy import (
+    POLICY_MODES,
+    ComplexityPolicy,
+    resolve_policy,
+)
+from sqlfluff_complexity.core.config.scoring import parse_weights
+from sqlfluff_complexity.core.messages.findings import ComplexityFinding, SourceLocation
+from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
+from sqlfluff_complexity.core.messages.violation_messages import (
+    MetricThresholdViolationParams,
+    metric_threshold_violation_message_and_picked,
+)
+from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
 from sqlfluff_complexity.reporting.json import findings_to_json_payload
 from sqlfluff_complexity.reporting.sarif import findings_to_sarif_payload
 
@@ -375,26 +379,18 @@ def _metric_finding(
     if actual <= max_allowed:
         return None
 
-    message = metric_threshold_violation_message(
-        rule_id=limit_spec.rule_id,
-        description_label=limit_spec.message_label,
-        actual=actual,
-        config_key=limit_spec.config_key,
-        limit=max_allowed,
-        metric_name=limit_spec.metric_name,
-        contributors=contributors,
-        max_contributors=max_contributors,
-        show_contributors=show_contributors,
-    )
-    rem = remediation_for_rule(limit_spec.rule_id)
-    picked = (
-        top_contributors(
-            contributors,
-            metric=limit_spec.metric_name,
-            limit=max_contributors,
-        )
-        if show_contributors
-        else ()
+    message, picked, rem = metric_threshold_violation_message_and_picked(
+        MetricThresholdViolationParams(
+            rule_id=limit_spec.rule_id,
+            description_label=limit_spec.message_label,
+            actual=actual,
+            config_key=limit_spec.config_key,
+            limit=max_allowed,
+            metric_name=limit_spec.metric_name,
+            contributors=contributors,
+            max_contributors=max_contributors,
+            show_contributors=show_contributors,
+        ),
     )
     loc = _anchored_location(
         path_s=path_s,

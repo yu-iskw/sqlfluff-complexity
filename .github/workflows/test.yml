@@ -23,7 +23,7 @@ jobs:
         shell: bash
     env:
       PYTHON_PACKAGE_NAME: sqlfluff_complexity
-      PYTEST_XDIST_WORKERS: "2"
+      PYTEST_XDIST_WORKERS: "0"
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
