@@ -58,7 +58,9 @@ def _uv_sync(session: nox.Session, *additional_groups: str) -> None:
 def _pytest_args(marker: str, posargs: Sequence[str]) -> list[str]:
     workers = os.environ.get("PYTEST_XDIST_WORKERS")
     if workers is None:
-        workers = "2" if os.environ.get("CI") else "auto"
+        # Serial runs in CI avoid flaky interactions between pytest-xdist, coverage,
+        # and SQLFluff lazy dialect/rule imports. Override with PYTEST_XDIST_WORKERS.
+        workers = "0" if os.environ.get("CI") else "auto"
 
     args = ["-v", "-s", "-m", marker, *_PYTEST_COV_ARGS]
     if workers != "0":

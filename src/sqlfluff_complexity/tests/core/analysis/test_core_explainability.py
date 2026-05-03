@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from sqlfluff_complexity.core.explainability import (
+from sqlfluff_complexity.core.analysis import (
     explain_score_contributors,
     ranked_weighted_contributions,
     refactoring_hint_for_contributors,
 )
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 
 def test_ranked_contributions_ignores_zero_metric_values() -> None:

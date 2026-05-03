@@ -7,7 +7,7 @@ from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import Any
 
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 _FIXTURES_ROOT = Path(__file__).parent / "fixtures"
 _SQL_ROOT = _FIXTURES_ROOT / "sql"

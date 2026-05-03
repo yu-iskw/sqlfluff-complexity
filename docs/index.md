@@ -13,7 +13,9 @@ Start with [README](../README.md) for the project overview. These pages provide 
 
 ## Contributor Docs
 
+- [Test layout](tests-layout.md): how `tests/core/`, `reporting/`, `integration/`, and `rules/` are organized.
 - [Contributing](../CONTRIBUTING.md): setup, tests, fixture authoring, ADRs, and verifier workflow.
+- [Internal import migration](migration-internal.md): mapping old `core` module paths after layout changes (forks and tooling).
 - [Product design](product_design.md): product background and long-form design notes.
 - [Architecture decisions](adr/): accepted architectural decisions and trade-offs.
 

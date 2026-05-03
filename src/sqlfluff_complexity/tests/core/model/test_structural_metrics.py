@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING
 
 from sqlfluff.core import Linter
 
-from sqlfluff_complexity.core.segment_tree import collect_metrics
-from sqlfluff_complexity.core.structural_metrics import (
+from sqlfluff_complexity.core.model.structural_metrics import (
     StructuralScanResult,
     clear_structural_caches,
     compute_structural_metrics,
@@ -18,6 +17,7 @@ from sqlfluff_complexity.core.structural_metrics import (
     max_cte_dependency_depth,
     merge_structural_scan,
 )
+from sqlfluff_complexity.core.scan.segment_tree import collect_metrics
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

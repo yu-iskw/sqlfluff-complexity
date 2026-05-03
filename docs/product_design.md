@@ -635,7 +635,7 @@ from __future__ import annotations
 from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
-from sqlfluff_complexity.core.segment_tree import collect_metrics
+from sqlfluff_complexity.core.scan.segment_tree import collect_metrics
 
 
 class Rule_CPX_C102(BaseRule):
@@ -738,7 +738,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 
 @dataclass(frozen=True)
@@ -786,7 +786,7 @@ from collections.abc import Iterable
 
 from sqlfluff.core.parser.segments.base import BaseSegment
 
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 
 BOOLEAN_OPERATORS = {"AND", "OR"}

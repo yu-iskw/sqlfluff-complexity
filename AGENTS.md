@@ -100,20 +100,21 @@ Invoked from Claude Code (Task tool or slash flows). Definitions: [`.claude/agen
 
 Slash-invoked skills live under [`.claude/skills/<name>/SKILL.md`](.claude/skills/). Use a skill when it matches the task; each `SKILL.md` lists prerequisites (some require a CLI on `PATH`). Skills cite this file and `Makefile` targets rather than linking peer-to-peer to other `SKILL.md` files.
 
-| Skill                  | When to use                                                                                                 |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `build-and-fix`        | Build or packaging failures                                                                                 |
-| `codeql-fix`           | Local CodeQL (`make codeql`); requires CodeQL CLI                                                           |
-| `lint-and-fix`         | Trunk / linter failures; fallback linters if Trunk unavailable (see `.claude/skills/lint-and-fix/SKILL.md`) |
-| `test-and-fix`         | Failing tests                                                                                               |
-| `setup-dev-env`        | First-time or broken environment                                                                            |
-| `python-upgrade`       | Dependency upgrades with uv                                                                                 |
-| `security-scan`        | Trivy / OSV / Grype (`make scan-vulnerabilities`)                                                           |
-| `initialize-project`   | Renaming the template and bootstrapping                                                                     |
-| `manage-adr`           | ADRs in `docs/adr` (requires `adr` CLI)                                                                     |
-| `postmortem`           | Substantive session end; incidents; skip trivial chore-only sessions                                        |
-| `problem-solving`      | Single-pass XY-aware analysis and scored comparison (default 5 options)                                     |
-| `deep-problem-solving` | Same style of report after **ten** multiple-choice questions (one per turn)                                 |
+| Skill                       | When to use                                                                                                 |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `build-and-fix`             | Build or packaging failures                                                                                 |
+| `check-directory-structure` | After bulk edits; audit layout; fix flat/misplaced files                                                    |
+| `codeql-fix`                | Local CodeQL (`make codeql`); requires CodeQL CLI                                                           |
+| `lint-and-fix`              | Trunk / linter failures; fallback linters if Trunk unavailable (see `.claude/skills/lint-and-fix/SKILL.md`) |
+| `test-and-fix`              | Failing tests                                                                                               |
+| `setup-dev-env`             | First-time or broken environment                                                                            |
+| `python-upgrade`            | Dependency upgrades with uv                                                                                 |
+| `security-scan`             | Trivy / OSV / Grype (`make scan-vulnerabilities`)                                                           |
+| `initialize-project`        | Renaming the template and bootstrapping                                                                     |
+| `manage-adr`                | ADRs in `docs/adr` (requires `adr` CLI)                                                                     |
+| `postmortem`                | Substantive session end; incidents; skip trivial chore-only sessions                                        |
+| `problem-solving`           | Single-pass XY-aware analysis and scored comparison (default 5 options)                                     |
+| `deep-problem-solving`      | Same style of report after **ten** multiple-choice questions (one per turn)                                 |
 
 Some tools load mirrored skills under `.agents/skills/` instead of `.claude/`. Other repos may add `manage-changelog` when Changie is configured (see **Git workflow**).
 

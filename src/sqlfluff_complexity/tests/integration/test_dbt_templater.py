@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 from sqlfluff.core import FluffConfig, Linter
 
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
-from sqlfluff_complexity.core.segment_tree import collect_metrics
+from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
+from sqlfluff_complexity.core.scan.segment_tree import collect_metrics
 
-_DBT_PROJECT = Path(__file__).parent / "fixtures" / "dbt_mini_project"
+_DBT_PROJECT = Path(__file__).parent.parent / "fixtures" / "dbt_mini_project"
 _DBT_MODEL = _DBT_PROJECT / "models" / "fct_order_complexity.sql"
 _OPTIONAL_DBT_MODULES = (
     ("sqlfluff_templater_dbt", "sqlfluff-templater-dbt"),

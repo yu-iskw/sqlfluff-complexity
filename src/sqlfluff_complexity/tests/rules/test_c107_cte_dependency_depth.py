@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING
 import pytest
 from sqlfluff.core import Linter
 
-from sqlfluff_complexity.core.segment_tree import collect_metrics
-from sqlfluff_complexity.core.structural_metrics import (
+from sqlfluff_complexity.core.model.structural_metrics import (
     _longest_dependency_chain_depth,
     cte_dependency_depth_for_with_clause,
 )
+from sqlfluff_complexity.core.scan.segment_tree import collect_metrics
 from sqlfluff_complexity.tests.sqlfluff_helpers import lint_sql, rule_violations
 
 if TYPE_CHECKING:

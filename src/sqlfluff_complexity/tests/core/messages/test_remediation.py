@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from sqlfluff_complexity.core.remediation import CPX_RULE_IDS, remediation_for_rule
+from sqlfluff_complexity.core.messages.remediation import (
+    CPX_RULE_IDS,
+    remediation_for_rule,
+)
 
 
 @pytest.mark.parametrize("rule_id", CPX_RULE_IDS)

@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, ClassVar
 from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
-from sqlfluff_complexity.core.policy import ComplexityPolicy
-from sqlfluff_complexity.core.remediation import remediation_for_rule
-from sqlfluff_complexity.core.structural_metrics import (
+from sqlfluff_complexity.core.config.policy import ComplexityPolicy
+from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
+from sqlfluff_complexity.core.model.structural_metrics import (
     cte_dependency_depth_for_with_clause,
     direct_child_common_table_expressions,
 )

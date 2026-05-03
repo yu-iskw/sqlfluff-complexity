@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from sqlfluff_complexity.core.analysis import MetricContributor
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
+if TYPE_CHECKING:
+    from sqlfluff_complexity.core.analysis import MetricContributor
+    from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 
 @dataclass(frozen=True)

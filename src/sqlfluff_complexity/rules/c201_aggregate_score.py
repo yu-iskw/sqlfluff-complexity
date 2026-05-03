@@ -7,17 +7,20 @@ from typing import ClassVar
 from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
-from sqlfluff_complexity.core.analysis import format_contributor_examples
-from sqlfluff_complexity.core.cpx_config import contributor_display_settings
-from sqlfluff_complexity.core.explainability import (
+from sqlfluff_complexity.core.analysis import (
     explain_score_contributors,
+    format_contributor_examples,
     ranked_weighted_contributions,
     refactoring_hint_for_contributors,
 )
-from sqlfluff_complexity.core.policy import ComplexityPolicy
-from sqlfluff_complexity.core.remediation import remediation_for_rule
-from sqlfluff_complexity.core.scoring import parse_weights
-from sqlfluff_complexity.core.segment_tree import analyze_segment_tree, is_nested_select_statement
+from sqlfluff_complexity.core.config.cpx_config import contributor_display_settings
+from sqlfluff_complexity.core.config.policy import ComplexityPolicy
+from sqlfluff_complexity.core.config.scoring import parse_weights
+from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
+from sqlfluff_complexity.core.scan.segment_tree import (
+    analyze_segment_tree,
+    is_nested_select_statement,
+)
 from sqlfluff_complexity.rules.base import resolve_context_policy
 
 

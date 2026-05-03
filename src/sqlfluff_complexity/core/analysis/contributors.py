@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from sqlfluff_complexity.core.metrics import ComplexityMetrics
-
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping, Sequence
+
     from sqlfluff.core.parser.segments.base import BaseSegment
+
+    from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 
 _RAW_MAX_LEN = 120
