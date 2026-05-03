@@ -43,18 +43,7 @@ def is_nested_select_statement(segment: BaseSegment) -> bool:
     Used to avoid duplicate rule hits on nested selects. When parent metadata
     is unavailable, returns False so rules keep prior behavior.
     """
-    if getattr(segment, "type", "") != "select_statement":
-        return False
-
-    current: BaseSegment | None = segment
-    for _ in range(256):
-        parent = _parent_segment(current)
-        if parent is None:
-            break
-        if getattr(parent, "type", "") == "select_statement":
-            return True
-        current = parent
-    return False
+    return _segment_has_ancestor_of_type(segment, "select_statement")
 
 
 def is_nested_set_expression(segment: BaseSegment) -> bool:
@@ -63,7 +52,12 @@ def is_nested_set_expression(segment: BaseSegment) -> bool:
     Used to avoid duplicate CPX_C109 hits when parentheses nest unions (inner
     ``set_expression`` plus outer ``set_expression``).
     """
-    if getattr(segment, "type", "") != "set_expression":
+    return _segment_has_ancestor_of_type(segment, "set_expression")
+
+
+def _segment_has_ancestor_of_type(segment: BaseSegment, segment_type: str) -> bool:
+    """True when ``segment`` is of ``segment_type`` and an ancestor shares that type."""
+    if getattr(segment, "type", "") != segment_type:
         return False
 
     current: BaseSegment | None = segment
@@ -71,7 +65,7 @@ def is_nested_set_expression(segment: BaseSegment) -> bool:
         parent = _parent_segment(current)
         if parent is None:
             break
-        if getattr(parent, "type", "") == "set_expression":
+        if getattr(parent, "type", "") == segment_type:
             return True
         current = parent
     return False

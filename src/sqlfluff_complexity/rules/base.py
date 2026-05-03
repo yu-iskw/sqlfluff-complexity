@@ -24,6 +24,9 @@ from sqlfluff_complexity.core.scan.segment_tree import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sqlfluff.core.parser.segments.base import BaseSegment
     from sqlfluff.core.rules import RuleContext
 
     from sqlfluff_complexity.core.analysis import ComplexityAnalysis
@@ -50,13 +53,12 @@ def metric_lint_result_outer_select_only(
     precomputed_analysis: ComplexityAnalysis | None = None,
 ) -> LintResult | None:
     """Like ``metric_lint_result`` but skip nested ``select_statement`` crawl hits."""
-    if is_nested_select_statement(context.segment):
-        return None
-    return metric_lint_result(
+    return _metric_lint_result_skip_when(
         context,
         metrics,
         policy,
         spec,
+        is_nested_select_statement,
         precomputed_analysis=precomputed_analysis,
     )
 
@@ -70,7 +72,26 @@ def metric_lint_result_outer_set_expression_only(
     precomputed_analysis: ComplexityAnalysis | None = None,
 ) -> LintResult | None:
     """Like ``metric_lint_result`` but skip nested ``set_expression`` crawl hits."""
-    if is_nested_set_expression(context.segment):
+    return _metric_lint_result_skip_when(
+        context,
+        metrics,
+        policy,
+        spec,
+        is_nested_set_expression,
+        precomputed_analysis=precomputed_analysis,
+    )
+
+
+def _metric_lint_result_skip_when(  # noqa: PLR0913
+    context: RuleContext,
+    metrics: ComplexityMetrics,
+    policy: ComplexityPolicy,
+    spec: MetricRuleSpec,
+    skip_when: Callable[[BaseSegment], bool],
+    *,
+    precomputed_analysis: ComplexityAnalysis | None = None,
+) -> LintResult | None:
+    if skip_when(context.segment):
         return None
     return metric_lint_result(
         context,
