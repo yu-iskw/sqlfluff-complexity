@@ -95,8 +95,11 @@ def eval_file_root_metric_threshold(
 ) -> LintResult | None:
     """Lint one metric threshold using file-level parse metrics (report parity).
 
-    Delegates to :func:`metric_lint_result` with ``anchor_segment`` set to the resolved
-    ``file`` root; see that function if ``ValueError`` is raised from inconsistent inputs.
+    Resolves the parse ``file`` root via :func:`file_segment_from_context`, which raises
+    ``RuntimeError`` when no ``file`` segment can be found (broken parent links or an
+    unusual crawler context). Delegates to :func:`metric_lint_result` with
+    ``anchor_segment`` set to that root; see that function for ``ValueError`` from
+    inconsistent anchor/precomputed/metrics inputs.
     """
     root = file_segment_from_context(context)
     analysis = analyze_segment_tree(root)
