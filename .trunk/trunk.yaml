@@ -17,6 +17,10 @@ runtimes:
     - python@3.12.2
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
+  # dev/bootstrap_exp_fixtures.py builds static SQL literals; Bandit B608 is noise there only.
+  ignore:
+    - linters: [bandit]
+      paths: [dev/bootstrap_exp_fixtures.py]
   disabled:
     - checkov
     - trufflehog

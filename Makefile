@@ -85,5 +85,5 @@ test-publish:
 .PHONY: scan-vulnerabilities
 scan-vulnerabilities:
 	trivy fs .
-	osv-scanner scan -r .
+	osv-scanner scan --lockfile=uv.lock
 	grype .

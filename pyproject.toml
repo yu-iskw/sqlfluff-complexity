@@ -45,7 +45,7 @@ packages = ["src/sqlfluff_complexity"]
 
 [project]
 name = "sqlfluff-complexity"
-version = "0.4.0"
+version = "0.4.1"
 authors = [{ name = "yu-iskw" }]
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -116,6 +116,7 @@ paths = ["src/sqlfluff_complexity"]
 min_confidence = 80
 
 # Bandit: production code only; tests use assert (B101) by design.
+# Trunk ignores B608 for dev/bootstrap_exp_fixtures.py only (static SQL literals).
 [tool.bandit]
 exclude_dirs = ["src/sqlfluff_complexity/tests"]
 skips = ["B101"]
