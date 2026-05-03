@@ -46,7 +46,7 @@ jobs:
       PYTHON_NAME_SPACE: sqlfluff_complexity
     steps:
       - name: Download distributions
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: release-distributions
           path: dist/
