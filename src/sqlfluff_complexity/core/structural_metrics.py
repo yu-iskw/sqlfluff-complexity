@@ -188,7 +188,13 @@ def _cte_query_body(cte: BaseSegment) -> BaseSegment | None:
 
 
 def _table_reference_names(root: BaseSegment) -> set[str]:
-    """Bare ``table_reference`` names under ``root``, excluding nested ``WITH`` subtrees."""
+    """Bare ``table_reference`` names under ``root``, excluding nested ``WITH`` subtrees.
+
+    Skipping nested ``with_compound_statement`` avoids attributing inner-local refs to outer
+    sibling CTEs (shadowing false positives for CPX_C107). Tradeoff: a reference to an outer
+    sibling that appears only inside a nested ``WITH`` body is not counted here; fixing that
+    would require scope-aware binding (inner vs outer names), not a blind subtree skip.
+    """
     names: set[str] = set()
     stack: list[BaseSegment] = [root]
     while stack:

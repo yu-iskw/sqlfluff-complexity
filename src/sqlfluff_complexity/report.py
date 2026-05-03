@@ -151,10 +151,13 @@ def analyze_paths(
 
 def format_console_report(report: ComplexityReport) -> str:
     """Format a complexity report for terminal output."""
+    column_headers = (
+        "path score ctes joins subquery_depth case_expressions boolean_operators window_functions "
+        "cte_dependency_depth set_operation_count expression_depth"
+    )
     lines = [
         "sqlfluff-complexity report",
-        "path score ctes joins subquery_depth case_expressions boolean_operators window_functions "
-        "cte_dependency_depth set_operation_count expression_depth",
+        column_headers,
     ]
     for entry in report.entries:
         lines.extend(_format_console_entry(entry))
@@ -560,14 +563,13 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
         return [f"{entry.path} ERROR Missing metrics."]
 
     metrics = entry.metrics
-    lines = [
-        (
-            f"{entry.path} {entry.score} {metrics.ctes} {metrics.joins} "
-            f"{metrics.subquery_depth} {metrics.case_expressions} "
-            f"{metrics.boolean_operators} {metrics.window_functions} "
-            f"{metrics.cte_dependency_depth} {metrics.set_operation_count} {metrics.expression_depth}"
-        ),
-    ]
+    header_line = (
+        f"{entry.path} {entry.score} {metrics.ctes} {metrics.joins} "
+        f"{metrics.subquery_depth} {metrics.case_expressions} "
+        f"{metrics.boolean_operators} {metrics.window_functions} "
+        f"{metrics.cte_dependency_depth} {metrics.set_operation_count} {metrics.expression_depth}"
+    )
+    lines = [header_line]
     for finding in entry.findings:
         if finding.rule_id == "CPX_PARSE_ERROR":
             lines.append(f"  {finding.rule_id}: {finding.message}")
