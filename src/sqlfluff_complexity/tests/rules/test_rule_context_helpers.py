@@ -8,8 +8,18 @@ from typing import TYPE_CHECKING
 from sqlfluff.core import FluffConfig, Linter
 from sqlfluff.core.rules.context import RuleContext
 
-from sqlfluff_complexity.core.scan.segment_tree import is_nested_select_statement
-from sqlfluff_complexity.rules.base import file_segment_from_context
+from sqlfluff_complexity.core.config.policy import ComplexityPolicy
+from sqlfluff_complexity.core.scan.segment_tree import (
+    analyze_segment_tree,
+    is_nested_select_statement,
+)
+from sqlfluff_complexity.rules.base import (
+    MetricRuleSpec,
+    eval_file_root_metric_threshold,
+    file_segment_from_context,
+    metric_lint_result,
+)
+from sqlfluff_complexity.tests.fixture_loader import read_sql_fixture
 
 if TYPE_CHECKING:
     from sqlfluff.core.parser.segments.base import BaseSegment
@@ -95,3 +105,65 @@ def test_is_nested_select_statement_inner_derived_table() -> None:
     assert len(selects) >= 2
     inner_sel = selects[-1]
     assert is_nested_select_statement(inner_sel) is True
+
+
+def test_metric_lint_result_anchor_segment_overrides_context_segment() -> None:
+    """Violations can anchor on the analyzed root (e.g. ``file``) when it differs from context."""
+    cfg = FluffConfig.from_kwargs(dialect="ansi")
+    linter = Linter(config=cfg)
+    root = linter.parse_string(read_sql_fixture("ansi", "c108_nested_case")).tree
+    inner = root.segments[0]
+    ctx = RuleContext(
+        dialect=linter.dialect,
+        fix=False,
+        templated_file=None,
+        path=Path("m.sql"),
+        config=cfg,
+        segment=inner,
+        parent_stack=(root,),
+    )
+    file_root = file_segment_from_context(ctx)
+    analysis = analyze_segment_tree(file_root)
+    spec = MetricRuleSpec(
+        rule_id="CPX_C108",
+        metric_name="expression_depth",
+        config_key="max_nested_case_depth",
+        policy_key="max_nested_case_depth",
+        description_label="nested CASE depth",
+    )
+    policy = ComplexityPolicy(max_nested_case_depth=1)
+    result = metric_lint_result(
+        ctx,
+        analysis.metrics,
+        policy,
+        spec,
+        precomputed_analysis=analysis,
+        anchor_segment=file_root,
+    )
+    assert result is not None
+    assert result.anchor is file_root
+
+
+def test_eval_file_root_metric_threshold_returns_none_when_under_limit() -> None:
+    """File-root helper should not emit a lint result when depth is within policy."""
+    cfg = FluffConfig.from_kwargs(dialect="ansi")
+    linter = Linter(config=cfg)
+    root = linter.parse_string("select 1").tree
+    ctx = RuleContext(
+        dialect=linter.dialect,
+        fix=False,
+        templated_file=None,
+        path=Path("m.sql"),
+        config=cfg,
+        segment=root,
+        parent_stack=(),
+    )
+    spec = MetricRuleSpec(
+        rule_id="CPX_C108",
+        metric_name="expression_depth",
+        config_key="max_nested_case_depth",
+        policy_key="max_nested_case_depth",
+        description_label="nested CASE depth",
+    )
+    policy = ComplexityPolicy(max_nested_case_depth=10)
+    assert eval_file_root_metric_threshold(ctx, policy, spec) is None

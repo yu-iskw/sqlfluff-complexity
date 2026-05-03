@@ -79,6 +79,24 @@ class MetricRuleSpec:
     description_label: str
 
 
+def eval_file_root_metric_threshold(
+    context: RuleContext,
+    policy: ComplexityPolicy,
+    spec: MetricRuleSpec,
+) -> LintResult | None:
+    """Lint one metric threshold using file-level parse metrics (report parity)."""
+    root = file_segment_from_context(context)
+    analysis = analyze_segment_tree(root)
+    return metric_lint_result(
+        context,
+        analysis.metrics,
+        policy,
+        spec,
+        precomputed_analysis=analysis,
+        anchor_segment=root,
+    )
+
+
 def metric_lint_result_outer_select_only(
     context: RuleContext,
     metrics: ComplexityMetrics,
@@ -130,19 +148,23 @@ def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) 
     return resolve_policy(base_policy, raw_overrides, path)
 
 
-def metric_lint_result(
+def metric_lint_result(  # noqa: PLR0913
     context: RuleContext,
     metrics: ComplexityMetrics,
     policy: ComplexityPolicy,
     spec: MetricRuleSpec,
     *,
     precomputed_analysis: ComplexityAnalysis | None = None,
+    anchor_segment: BaseSegment | None = None,
 ) -> LintResult | None:
     """Build a lint result for one metric threshold, if violated.
 
     When ``precomputed_analysis`` is provided, use it for contributor lines instead
     of re-running :func:`sqlfluff_complexity.core.scan.segment_tree.analyze_segment_tree`
     on the same segment (avoids a second full tree walk on violations).
+
+    When ``anchor_segment`` is set, use it for the ``LintResult`` anchor (e.g. ``file``
+    root when metrics were computed from ``analyze_segment_tree(file)``).
     """
     if policy.mode == "report":
         return None
@@ -172,7 +194,8 @@ def metric_lint_result(
         ),
     )
 
+    anchor = anchor_segment if anchor_segment is not None else context.segment
     return LintResult(
-        anchor=context.segment,
+        anchor=anchor,
         description=description,
     )

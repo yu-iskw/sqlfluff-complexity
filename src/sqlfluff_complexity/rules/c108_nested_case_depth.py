@@ -8,11 +8,9 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import RootOnlyCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
-from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
-    file_segment_from_context,
-    metric_lint_result,
+    eval_file_root_metric_threshold,
     resolve_context_policy,
 )
 
@@ -44,12 +42,4 @@ class Rule_CPX_C108(BaseRule):  # noqa: N801
             context,
             ComplexityPolicy(max_nested_case_depth=int(self.max_nested_case_depth)),
         )
-        root = file_segment_from_context(context)
-        analysis = analyze_segment_tree(root)
-        return metric_lint_result(
-            context,
-            analysis.metrics,
-            policy,
-            self._spec,
-            precomputed_analysis=analysis,
-        )
+        return eval_file_root_metric_threshold(context, policy, self._spec)
