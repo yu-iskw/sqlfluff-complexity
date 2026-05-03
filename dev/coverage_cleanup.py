@@ -22,7 +22,9 @@ Shell ``make clean`` replicates this in ``dev/clean.sh``; keep that script align
 changing rules here.
 
 Nox and tests load this module via ``dev/coverage_bootstrap.py`` (``clear_coverage_at``) so
-importlib wiring stays in one place.
+importlib wiring stays in one place. Synthetic importlib names live in
+``dev/coverage_importlib_names.py``; meta and readers live in
+``dev/coverage_importlib_meta_access.py`` and ``dev/coverage_importlib_meta.json``.
 """
 
 from __future__ import annotations

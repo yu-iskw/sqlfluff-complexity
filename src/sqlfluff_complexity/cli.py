@@ -37,7 +37,11 @@ if TYPE_CHECKING:
 
 
 def _dispatch_cli(args: argparse.Namespace) -> int:
-    """Run the subcommand handler for parsed CLI args (also used from tests)."""
+    """Run the subcommand handler for parsed CLI args (also used from tests).
+
+    With no subcommand, ``args.command`` is ``None`` and this returns ``0`` without
+    consulting ``config_command``; hand-built ``Namespace`` values should mirror argparse.
+    """
     config_command = getattr(args, "config_command", None)
     handlers = {
         ("config", "preset"): _run_config_preset,

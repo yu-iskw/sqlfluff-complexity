@@ -16,10 +16,45 @@
 
 from __future__ import annotations
 
+import functools
 import importlib.util
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-_SQLFLUFF_COVERAGE_CLEANUP_IMPL = "_sqlfluff_coverage_cleanup_impl"
+if TYPE_CHECKING:
+    from types import ModuleType
+
+# Keep in sync: same literal in noxfile, test_coverage_cleanup_contract, and meta_access docstring.
+_META_ACCESS_IMPORTLIB_SPEC = "_sqlfluff_coverage_importlib_meta_access"
+
+
+@functools.lru_cache(maxsize=1)
+def _coverage_importlib_meta_access() -> ModuleType:
+    """Load ``dev/coverage_importlib_meta_access.py`` (sibling of this file)."""
+    path = Path(__file__).resolve().parent / "coverage_importlib_meta_access.py"
+    spec = importlib.util.spec_from_file_location(_META_ACCESS_IMPORTLIB_SPEC, path)
+    if spec is None or spec.loader is None:
+        message = f"Cannot load coverage importlib meta access from {path}"
+        raise RuntimeError(message)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# Cache the names module for the process lifetime (nox session / pytest worker).
+@functools.lru_cache(maxsize=1)
+def _coverage_importlib_names() -> ModuleType:
+    """Load ``dev/coverage_importlib_names.py`` (sibling of this file)."""
+    dev_root = Path(__file__).resolve().parent
+    path = dev_root / "coverage_importlib_names.py"
+    spec_name = _coverage_importlib_meta_access().read_names_module_spec(dev_root)
+    spec = importlib.util.spec_from_file_location(spec_name, path)
+    if spec is None or spec.loader is None:
+        message = f"Cannot load coverage importlib names from {path}"
+        raise RuntimeError(message)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def clear_coverage_at(repo_root: Path | str, data_root: Path | str | None = None) -> None:
@@ -32,7 +67,12 @@ def clear_coverage_at(repo_root: Path | str, data_root: Path | str | None = None
     root = Path(repo_root)
     target = Path(data_root) if data_root is not None else root
     impl_path = root / "dev" / "coverage_cleanup.py"
-    spec = importlib.util.spec_from_file_location(_SQLFLUFF_COVERAGE_CLEANUP_IMPL, impl_path)
+    if not impl_path.is_file():
+        message = f"Expected coverage cleanup at {impl_path}; is repo_root correct?"
+        raise RuntimeError(message)
+
+    names = _coverage_importlib_names()
+    spec = importlib.util.spec_from_file_location(names.CLEANUP_IMPL_SPEC, impl_path)
     if spec is None or spec.loader is None:
         message = f"Cannot load coverage cleanup from {impl_path}"
         raise RuntimeError(message)

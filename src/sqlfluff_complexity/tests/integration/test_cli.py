@@ -33,6 +33,12 @@ def test_main_exits_successfully() -> None:
     assert main([]) == 0
 
 
+def test_dispatch_no_subcommand_returns_zero() -> None:
+    """No subcommand: ``command`` is unset and dispatch returns idle success (see cli docstring)."""
+    args = argparse.Namespace(command=None, config_command=None)
+    assert _dispatch_cli(args) == 0
+
+
 def test_report_prints_console_metrics(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

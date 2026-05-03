@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import functools
 import importlib.util
 import os
 from pathlib import Path
@@ -25,6 +26,7 @@ import nox
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from types import ModuleType
 
 
 PYTHON_VERSIONS = ("3.10", "3.11", "3.12")
@@ -41,6 +43,38 @@ nox.options.sessions = ["tests"]
 nox.options.default_venv_backend = "uv"
 
 _REPO_ROOT = Path(__file__).resolve().parent
+# Keep in sync: same literal in coverage_bootstrap, test_coverage_cleanup_contract, meta_access docstring.
+_META_ACCESS_IMPORTLIB_SPEC = "_sqlfluff_coverage_importlib_meta_access"
+
+
+@functools.lru_cache(maxsize=1)
+def _load_coverage_importlib_meta_access() -> ModuleType:
+    """Load ``dev/coverage_importlib_meta_access.py`` (meta JSON reader for importlib names)."""
+    path = _REPO_ROOT / "dev" / "coverage_importlib_meta_access.py"
+    spec = importlib.util.spec_from_file_location(_META_ACCESS_IMPORTLIB_SPEC, path)
+    if spec is None or spec.loader is None:
+        message = f"Cannot load coverage importlib meta access from {path}"
+        raise RuntimeError(message)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@functools.lru_cache(maxsize=1)
+def _load_coverage_importlib_names() -> ModuleType:
+    """Load ``dev/coverage_importlib_names.py`` (synthetic importlib spec names)."""
+    dev = _REPO_ROOT / "dev"
+    path = dev / "coverage_importlib_names.py"
+    spec = importlib.util.spec_from_file_location(
+        _load_coverage_importlib_meta_access().read_names_module_spec(dev),
+        path,
+    )
+    if spec is None or spec.loader is None:
+        message = f"Cannot load coverage importlib names from {path}"
+        raise RuntimeError(message)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 
 def _clear_coverage_artifacts() -> None:
@@ -48,8 +82,9 @@ def _clear_coverage_artifacts() -> None:
 
     Delegates to ``clear_coverage_at`` in ``dev/coverage_bootstrap.py`` (not shipped).
     """
+    names = _load_coverage_importlib_names()
     path = _REPO_ROOT / "dev" / "coverage_bootstrap.py"
-    spec = importlib.util.spec_from_file_location("_sqlfluff_dev_coverage_bootstrap", path)
+    spec = importlib.util.spec_from_file_location(names.BOOTSTRAP_SPEC, path)
     if spec is None or spec.loader is None:
         message = f"Cannot load coverage bootstrap from {path}"
         raise RuntimeError(message)

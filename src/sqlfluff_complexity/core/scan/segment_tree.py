@@ -54,7 +54,11 @@ def is_nested_select_statement(segment: BaseSegment) -> bool:
 
 
 def _segment_has_ancestor_of_type(segment: BaseSegment, segment_type: str) -> bool:
-    """True when ``segment`` is of ``segment_type`` and an ancestor shares that type."""
+    """True when ``segment`` is of ``segment_type`` and an ancestor shares that type.
+
+    Parent walks are capped at 256 hops to avoid unbounded work if parent metadata is
+    cyclic or unexpectedly deep.
+    """
     if getattr(segment, "type", "") != segment_type:
         return False
 
