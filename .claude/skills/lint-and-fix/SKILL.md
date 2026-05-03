@@ -41,35 +41,35 @@ Use **`uv run <tool>`** or **`.venv/bin/<tool>`** so versions match `uv.lock`. P
 
 These map to **enabled** entries under `lint.enabled` in `.trunk/trunk.yaml` that apply to `src/sqlfluff_complexity`:
 
-| Trunk linter | Fallback command (adjust paths if needed) |
-| ------------ | ------------------------------------------ |
+| Trunk linter             | Fallback command (adjust paths if needed)                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | **ruff** (lint + format) | `uv run ruff format src/sqlfluff_complexity` then `uv run ruff check src/sqlfluff_complexity` — config: [`ruff.toml`](../../../ruff.toml) |
-| **pyright** | `uv run pyright src/sqlfluff_complexity` — config: [`pyproject.toml`](../../../pyproject.toml) `[tool.pyright]` |
-| **pylint** | `uv run pylint src/sqlfluff_complexity --score=no` — config: [`.pylintrc`](../../../.pylintrc) |
-| **bandit** | `uv run bandit -r src/sqlfluff_complexity -c pyproject.toml -q` — config: [`pyproject.toml`](../../../pyproject.toml) `[tool.bandit]` |
+| **pyright**              | `uv run pyright src/sqlfluff_complexity` — config: [`pyproject.toml`](../../../pyproject.toml) `[tool.pyright]`                           |
+| **pylint**               | `uv run pylint src/sqlfluff_complexity --score=no` — config: [`.pylintrc`](../../../.pylintrc)                                            |
+| **bandit**               | `uv run bandit -r src/sqlfluff_complexity -c pyproject.toml -q` — config: [`pyproject.toml`](../../../pyproject.toml) `[tool.bandit]`     |
 
 ### Tier 2 — Optional / repo-native tools (run if present)
 
-| Tool | When to run | Command hint |
-| ---- | ----------- | ------------- |
-| **semgrep** | If `uv run semgrep` works or Semgrep is on `PATH` | `uv run semgrep scan --config auto --quiet src/sqlfluff_complexity` (or project Semgrep config if added later) |
-| **vulture** | Dead code (Makefile target) | `make dead-code` or `uv run vulture` per [`pyproject.toml`](../../../pyproject.toml) `[tool.vulture]` |
-| **xenon** | Cyclomatic complexity (not Trunk; useful parity with AGENTS.md) | Run on package sources only, e.g. `find src/sqlfluff_complexity -name '*.py' -not -path '*/tests/*' \| xargs uv run xenon --max-absolute B --max-modules B --max-average A` |
+| Tool        | When to run                                                     | Command hint                                                                                                                                                                |
+| ----------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **semgrep** | If `uv run semgrep` works or Semgrep is on `PATH`               | `uv run semgrep scan --config auto --quiet src/sqlfluff_complexity` (or project Semgrep config if added later)                                                              |
+| **vulture** | Dead code (Makefile target)                                     | `make dead-code` or `uv run vulture` per [`pyproject.toml`](../../../pyproject.toml) `[tool.vulture]`                                                                       |
+| **xenon**   | Cyclomatic complexity (not Trunk; useful parity with AGENTS.md) | Run on package sources only, e.g. `find src/sqlfluff_complexity -name '*.py' -not -path '*/tests/*' \| xargs uv run xenon --max-absolute B --max-modules B --max-average A` |
 
 ### Tier 3 — Markdown, YAML, TOML, Shell, GitHub Actions
 
 Run **only if** the corresponding CLI is available (`command -v …`). Install via OS package manager or Trunk later if missing.
 
-| Trunk linter | Typical fallback |
-| ------------ | ---------------- |
-| **prettier** | `npx prettier@3.8.3 --check "**/*.{md,json,yml,yaml}"` or `--write` to fix — align globs with what you changed |
-| **markdownlint** | `npx markdownlint-cli2 "**/*.md"` or `markdownlint` |
-| **yamllint** | `yamllint .github .trunk` (or repo YAML dirs) |
-| **taplo** | `taplo fmt --check .` or format `*.toml` |
-| **shellcheck** | `shellcheck` on shell scripts under `dev/`, etc. |
-| **shfmt** | `shfmt -l -w` on shell scripts if installed |
-| **actionlint** | `actionlint` on `.github/workflows` if installed |
-| **markdown-link-check** | Run on docs if the CLI is installed |
+| Trunk linter            | Typical fallback                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **prettier**            | `npx prettier@3.8.3 --check "**/*.{md,json,yml,yaml}"` or `--write` to fix — align globs with what you changed |
+| **markdownlint**        | `npx markdownlint-cli2 "**/*.md"` or `markdownlint`                                                            |
+| **yamllint**            | `yamllint .github .trunk` (or repo YAML dirs)                                                                  |
+| **taplo**               | `taplo fmt --check .` or format `*.toml`                                                                       |
+| **shellcheck**          | `shellcheck` on shell scripts under `dev/`, etc.                                                               |
+| **shfmt**               | `shfmt -l -w` on shell scripts if installed                                                                    |
+| **actionlint**          | `actionlint` on `.github/workflows` if installed                                                               |
+| **markdown-link-check** | Run on docs if the CLI is installed                                                                            |
 
 ### Tier 4 — Security scanners (also in Trunk)
 
