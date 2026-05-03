@@ -9,9 +9,6 @@ import pytest
 from sqlfluff.core import FluffConfig, Linter
 from sqlfluff.core.rules.context import RuleContext
 
-if TYPE_CHECKING:
-    from sqlfluff.core.parser.segments.base import BaseSegment
-
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
 from sqlfluff_complexity.core.scan.segment_tree import (
     analyze_segment_tree,
@@ -24,6 +21,9 @@ from sqlfluff_complexity.rules.base import (
     metric_lint_result,
 )
 from sqlfluff_complexity.tests.fixture_loader import read_sql_fixture
+
+if TYPE_CHECKING:
+    from sqlfluff.core.parser.segments.base import BaseSegment
 
 
 def _all_segments_of_type(root: BaseSegment, segment_type: str) -> list[BaseSegment]:
