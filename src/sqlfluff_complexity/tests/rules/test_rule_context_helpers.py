@@ -147,6 +147,43 @@ def test_metric_lint_result_anchor_segment_overrides_context_segment() -> None:
     assert result.anchor is file_root
 
 
+def test_metric_lint_result_raises_when_anchor_without_precomputed() -> None:
+    """anchor_segment without precomputed_analysis must raise (anchor vs contributors invariant)."""
+    cfg = FluffConfig.from_kwargs(dialect="ansi")
+    linter = Linter(config=cfg)
+    root = linter.parse_string(read_sql_fixture("ansi", "c108_nested_case")).tree
+    assert getattr(root, "type", "") == "file"
+    selects = _all_segments_of_type(root, "select_statement")
+    inner = selects[0]
+    ctx = RuleContext(
+        dialect=linter.dialect,
+        fix=False,
+        templated_file=None,
+        path=Path("m.sql"),
+        config=cfg,
+        segment=inner,
+        parent_stack=(root,),
+    )
+    file_root = file_segment_from_context(ctx)
+    analysis = analyze_segment_tree(file_root)
+    spec = MetricRuleSpec(
+        rule_id="CPX_C108",
+        metric_name="expression_depth",
+        config_key="max_nested_case_depth",
+        policy_key="max_nested_case_depth",
+        description_label="nested CASE depth",
+    )
+    policy = ComplexityPolicy(max_nested_case_depth=1)
+    with pytest.raises(ValueError, match="anchor_segment requires precomputed_analysis"):
+        metric_lint_result(
+            ctx,
+            analysis.metrics,
+            policy,
+            spec,
+            anchor_segment=file_root,
+        )
+
+
 @pytest.mark.parametrize(
     ("spec", "policy"),
     [

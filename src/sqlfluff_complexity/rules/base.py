@@ -170,11 +170,13 @@ def metric_lint_result(  # noqa: PLR0913
     on the same segment (avoids a second full tree walk on violations).
 
     When ``anchor_segment`` is set, use it for the ``LintResult`` anchor (e.g. ``file``
-    root when metrics were computed from ``analyze_segment_tree(file)``). Callers
-    must pass ``metrics`` and ``precomputed_analysis`` from that same analysis root;
-    prefer :func:`eval_file_root_metric_threshold` for file-level rules so the trio
-    stays aligned. If ``anchor_segment`` is set with ``precomputed_analysis`` but
-    ``metrics`` disagrees on ``spec.metric_name``, raises ``ValueError``.
+    root when metrics were computed from ``analyze_segment_tree(file)``). ``anchor_segment``
+    requires ``precomputed_analysis`` so contributors and anchor share the same subtree;
+    otherwise raises ``ValueError``. Callers must pass ``metrics`` and ``precomputed_analysis``
+    from that same analysis root; prefer :func:`eval_file_root_metric_threshold` for
+    file-level rules so the trio stays aligned. If ``anchor_segment`` and
+    ``precomputed_analysis`` are set but ``metrics`` disagrees on ``spec.metric_name``,
+    raises ``ValueError``.
     """
     if policy.mode == "report":
         return None
@@ -183,6 +185,13 @@ def metric_lint_result(  # noqa: PLR0913
     limit = int(getattr(policy, spec.policy_key))
     if actual <= limit:
         return None
+
+    if anchor_segment is not None and precomputed_analysis is None:
+        message = (
+            "anchor_segment requires precomputed_analysis so violation anchors and "
+            "contributor analysis use the same parse subtree."
+        )
+        raise ValueError(message)
 
     analysis = precomputed_analysis or analyze_segment_tree(context.segment)
     if anchor_segment is not None and precomputed_analysis is not None:
