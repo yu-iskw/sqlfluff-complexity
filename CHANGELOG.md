@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## 0.4.1
+
+### Patch notes
+
+- Patch release (version bump only).
+
 ## 0.4.0
 
 ### Breaking

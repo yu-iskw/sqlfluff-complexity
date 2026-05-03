@@ -66,6 +66,11 @@ Dialect fixtures are development tests, not shipped package data.
 5. Ground new dialect syntax in official references where possible.
 6. Run `make test-dialect-extra`.
 
+- Discovery treats every subdirectory of `src/sqlfluff_complexity/tests/fixtures/sql/` that
+  contains at least one `metrics_*.sql` as a dialect tree: each such file needs a paired
+  `fixtures/expected/<dialect>/<stem>.metrics.json` (or remove stray SQL). Accidental folders
+  like `scratch/` with `metrics_*.sql` will fail CI until cleaned up.
+
 Spark fixtures use `sparksql`. Databricks-specific syntax should be added separately under `databricks` only when intentional.
 
 ## Adding dbt Templater Coverage

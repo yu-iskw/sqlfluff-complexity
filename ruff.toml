@@ -78,6 +78,15 @@ ignore = [
   "PLC0415",
 ]
 "src/sqlfluff_complexity/rules/base.py" = ["TC001"]
+# Fixture bootstrap: static SQL strings and high branching for dialect/stem matrix.
+"dev/bootstrap_exp_fixtures.py" = [
+  "C901",
+  "PLR0911",
+  "PLR0912",
+  "S608",
+  "SIM110",
+]
+"dev/emit_fixture_metrics.py" = ["PLR0911", "PLR0912"]
 
 # NOTE: Prefer narrow noqa comments over broad file-level bypasses.
 

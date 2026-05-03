@@ -1,0 +1,13 @@
+{
+  "boolean_operators": 2,
+  "case_expressions": 0,
+  "cte_dependency_depth": 0,
+  "ctes": 0,
+  "derived_tables": 0,
+  "expression_depth": 0,
+  "joins": 0,
+  "set_operation_count": 0,
+  "subqueries": 1,
+  "subquery_depth": 1,
+  "window_functions": 0
+}

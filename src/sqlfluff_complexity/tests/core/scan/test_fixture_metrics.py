@@ -8,7 +8,13 @@ import pytest
 from sqlfluff.core import Linter
 
 from sqlfluff_complexity.core.scan.segment_tree import collect_metrics
-from sqlfluff_complexity.tests.fixture_loader import load_expected_metrics, read_sql_fixture
+from sqlfluff_complexity.tests.fixture_loader import (
+    discover_metrics_fixture_cases,
+    load_expected_metrics,
+    read_sql_fixture,
+)
+
+METRICS_GOLDEN_TEST_NAME = "test_fixture_metrics_match_expected_json"
 
 
 def _parse_tree(sql: str, *, dialect: str) -> Any:
@@ -17,17 +23,22 @@ def _parse_tree(sql: str, *, dialect: str) -> Any:
     return parsed.tree
 
 
-@pytest.mark.parametrize(
-    ("dialect", "stem"),
-    [
-        ("ansi", "metrics_with_cte_join_case_window"),
-        ("ansi", "metrics_nested_subquery_depth_2"),
-        ("ansi", "metrics_derived_tables"),
-        ("ansi", "metrics_insert_derived_subquery"),
-    ],
-)
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    if metafunc.function.__name__ != METRICS_GOLDEN_TEST_NAME:
+        return
+    cases = discover_metrics_fixture_cases()
+    metafunc.parametrize(
+        ("dialect", "stem"),
+        cases,
+        ids=[f"{d}-{s}" for d, s in cases],
+    )
+
+
 def test_fixture_metrics_match_expected_json(dialect: str, stem: str) -> None:
-    """Golden metrics JSON should match collect_metrics for the paired SQL fixture."""
+    """Golden metrics JSON should match collect_metrics for the paired SQL fixture.
+
+    Keep this function name aligned with ``METRICS_GOLDEN_TEST_NAME`` (``pytest_generate_tests``).
+    """
     sql = read_sql_fixture(dialect, stem)
     expected = load_expected_metrics(dialect, stem)
     assert collect_metrics(_parse_tree(sql, dialect=dialect)) == expected
