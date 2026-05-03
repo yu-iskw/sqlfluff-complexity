@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed (internals only)
 
+- `ComplexityAnalysis` now includes a `root` field: the `BaseSegment` passed to `analyze_segment_tree`. Integrators who construct `ComplexityAnalysis` manually must supply `root`; prefer calling `analyze_segment_tree` only.
 - Reorganized `sqlfluff_complexity.core` into subpackages (`model`, `config`, `messages`, `analysis`, `scan`). **Plugin entry points and the public CLI are unchanged.**
 - If you import internal `core` modules, see [docs/migration-internal.md](docs/migration-internal.md) for the old → new import map.
 - `metric_threshold_violation_message` now takes `MetricThresholdViolationParams`. Report code that needs the contributor tuple and remediation without extra passes may use `metric_threshold_violation_message_and_picked` (same module), which returns `(message, picked, remediation)`.

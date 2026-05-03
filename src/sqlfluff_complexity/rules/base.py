@@ -48,15 +48,18 @@ def _file_segment_via_parent_pointers(segment: BaseSegment) -> BaseSegment | Non
     return None
 
 
-def file_segment_from_context(context: RuleContext) -> BaseSegment:  # noqa: PLR0911
+def file_segment_from_context(context: RuleContext) -> BaseSegment:
     """Return the ``file`` segment for the current rule context.
 
     Resolution order:
 
     1. If ``context.segment`` is already ``file``, return it.
     2. Else scan ``context.parent_stack`` for a ``file`` ancestor (SQLFluff crawlers).
-    3. Else walk ``get_parent()`` from ``context.segment`` (may be unset outside lint).
-    4. Else return ``context.segment`` (caller should treat as best-effort subtree root).
+    3. Else walk ``get_parent()`` from ``context.segment`` toward the root.
+
+    If no ``file`` segment can be resolved (broken parent links or an unusual crawler
+    context), raises ``RuntimeError`` so file-level rules do not silently analyze a
+    subtree while anchoring as if it were the full file.
     """
     seg = context.segment
     if getattr(seg, "type", "") == "file":
@@ -67,7 +70,11 @@ def file_segment_from_context(context: RuleContext) -> BaseSegment:  # noqa: PLR
     via_parents = _file_segment_via_parent_pointers(seg)
     if via_parents is not None:
         return via_parents
-    return seg
+    message = (
+        "Cannot resolve a `file` segment from the rule context (incomplete parent "
+        "links or unexpected crawler context)."
+    )
+    raise RuntimeError(message)
 
 
 @dataclass(frozen=True)

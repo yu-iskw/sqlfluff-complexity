@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from sqlfluff.core import FluffConfig, Linter
 from sqlfluff.core.rules.context import RuleContext
+
+if TYPE_CHECKING:
+    from sqlfluff.core.parser.segments.base import BaseSegment
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
 from sqlfluff_complexity.core.scan.segment_tree import (
@@ -21,9 +24,6 @@ from sqlfluff_complexity.rules.base import (
     metric_lint_result,
 )
 from sqlfluff_complexity.tests.fixture_loader import read_sql_fixture
-
-if TYPE_CHECKING:
-    from sqlfluff.core.parser.segments.base import BaseSegment
 
 
 def _all_segments_of_type(root: BaseSegment, segment_type: str) -> list[BaseSegment]:
@@ -78,6 +78,31 @@ def test_file_segment_from_context_finds_file_in_parent_stack_for_inner_select()
         parent_stack=parent_stack,
     )
     assert file_segment_from_context(ctx) is root
+
+
+def test_file_segment_from_context_raises_when_file_unresolvable() -> None:
+    """Without ``file`` on stack or parents, resolution must fail loud (no silent subtree)."""
+
+    class _StubSegment:
+        type = "select_statement"
+        segments: tuple[object, ...] = ()
+
+        def get_parent(self) -> None:
+            return None
+
+    cfg = FluffConfig.from_kwargs(dialect="ansi")
+    linter = Linter(config=cfg)
+    ctx = RuleContext(
+        dialect=linter.dialect,
+        fix=False,
+        templated_file=None,
+        path=Path("m.sql"),
+        config=cfg,
+        segment=cast("BaseSegment", _StubSegment()),
+        parent_stack=(),
+    )
+    with pytest.raises(RuntimeError, match="Cannot resolve a `file` segment"):
+        file_segment_from_context(ctx)
 
 
 def test_file_segment_from_context_finds_file_in_parent_stack() -> None:
