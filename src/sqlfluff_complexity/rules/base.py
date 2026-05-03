@@ -32,14 +32,40 @@ if TYPE_CHECKING:
     from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 
-def file_segment_from_context(context: RuleContext) -> BaseSegment:
-    """Return the ``file`` segment for the current rule context (lint uses parent_stack)."""
-    if getattr(context.segment, "type", "") == "file":
-        return context.segment
-    for seg in context.parent_stack:
-        if getattr(seg, "type", "") == "file":
-            return seg
-    return context.segment
+def _file_segment_via_parent_pointers(segment: BaseSegment) -> BaseSegment | None:
+    """Return nearest ``file`` ancestor using ``get_parent()``, or ``None``."""
+    current: BaseSegment | None = segment
+    for _ in range(512):
+        if current is None:
+            break
+        parent_info = current.get_parent()
+        if parent_info is None:
+            break
+        parent = parent_info[0]
+        if getattr(parent, "type", "") == "file":
+            return parent
+        current = parent
+    return None
+
+
+def file_segment_from_context(context: RuleContext) -> BaseSegment:  # noqa: PLR0911
+    """Return the ``file`` segment for the current rule context.
+
+    SQLFluff rule crawlers populate ``parent_stack`` with ancestors from the parse
+    root; prefer that over ``get_parent()`` pointers (which may be unset on
+    segments obtained outside a full lint crawl). Falls back to ``get_parent()``
+    when the stack is empty, then to ``context.segment``.
+    """
+    seg = context.segment
+    if getattr(seg, "type", "") == "file":
+        return seg
+    for anc in context.parent_stack:
+        if getattr(anc, "type", "") == "file":
+            return anc
+    via_parents = _file_segment_via_parent_pointers(seg)
+    if via_parents is not None:
+        return via_parents
+    return seg
 
 
 @dataclass(frozen=True)

@@ -140,6 +140,8 @@ Flags a statement when **`expression_depth`** exceeds `max_nested_case_depth`.
 
 This metric is the **maximum nesting depth of `case_expression` segments** in the parse tree (a `CASE` nested inside another `CASE` increases depth). It is **not** a generic expression-tree depth and it is **not** the same as **`CPX_C104`**, which counts how many `CASE` expressions appear (`case_expressions`).
 
+`CPX_C108` evaluates **`expression_depth` on the whole parse tree** (the same scope as `sqlfluff-complexity report`) and runs once per file via the parse root, matching report output for nested CASE depth.
+
 ```ini
 [sqlfluff:rules:CPX_C108]
 max_nested_case_depth = 10
