@@ -52,14 +52,25 @@ max_subquery_depth = 2
 The default weights keep mature high-signal metrics stable while adding modest nonzero weights for
 CTE dependency depth, set operations, expression depth, and derived tables.
 
-Default weights:
+Default weights (`complexity_weights` is a **JSON object** string: standard JSON with double-quoted keys and no trailing commas):
 
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:2,set_operation_count:2,expression_depth:1,derived_tables:2
+complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
 mode = enforce
 ```
+
+Omitted keys keep the packaged defaults above (you may set `complexity_weights = {}` to accept all defaults).
+
+Partial override example:
+
+```ini
+[sqlfluff:rules:CPX_C201]
+complexity_weights = {"joins": 5, "boolean_operators": 0}
+```
+
+Indented continuation lines are allowed so the JSON can span multiple lines in INI-style config.
 
 The aggregate score uses maximum nested subquery depth, not raw subquery count.
 

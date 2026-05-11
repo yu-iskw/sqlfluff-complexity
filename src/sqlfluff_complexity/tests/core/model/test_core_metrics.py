@@ -52,28 +52,63 @@ def test_complexity_metrics_reports_derived_tables() -> None:
 
 
 def test_parse_weights_overrides_defaults() -> None:
-    """Configured weight strings should override only supplied keys."""
-    custom_join_weight = 5
-    weights = parse_weights(f"joins:{custom_join_weight}, boolean_operators:0")
+    """JSON weight objects should override only supplied keys."""
+    weights = parse_weights('{"joins": 5, "boolean_operators": 0}')
 
-    assert weights["joins"] == custom_join_weight
+    assert weights["joins"] == 5
     assert weights["boolean_operators"] == 0
+    assert weights["ctes"] == DEFAULT_WEIGHTS["ctes"]
+
+
+def test_parse_weights_empty_object_is_defaults() -> None:
+    """An empty JSON object should yield default weights."""
+    assert parse_weights("{}") == DEFAULT_WEIGHTS
+
+
+def test_parse_weights_whitespace_stripped() -> None:
+    """Leading and trailing whitespace around JSON should be ignored."""
+    weights = parse_weights('  {"joins": 9}  ')
+    assert weights["joins"] == 9
     assert weights["ctes"] == DEFAULT_WEIGHTS["ctes"]
 
 
 @pytest.mark.parametrize(
     "raw",
     [
+        "joins:2",
         "joins",
-        "unknown:2",
-        "joins:-1",
-        "joins:not-an-int",
+        "ctes:2,joins:2",
     ],
 )
-def test_parse_weights_rejects_invalid_items(raw: str) -> None:
-    """Invalid weight config should fail clearly instead of silently mis-scoring."""
-    with pytest.raises(ValueError, match=r"weight|Unknown|Invalid"):
+def test_parse_weights_rejects_legacy_csv_style(raw: str) -> None:
+    """Comma-separated weights are no longer accepted."""
+    with pytest.raises(ValueError, match=r"JSON object string"):
         parse_weights(raw)
+
+
+@pytest.mark.parametrize(
+    ("raw", "match_pattern"),
+    [
+        ('{"joins": 2', r"Invalid JSON"),
+        ('{"joins": []}', r"integer"),
+        ('{"joins": null}', r"integer"),
+        ('{"unknown_metric": 1}', r"Unknown"),
+        ('{"joins": -1}', r"non-negative"),
+        ('{"joins": 2.0}', r"integer"),
+        ('{"joins": true}', r"integer"),
+    ],
+)
+def test_parse_weights_rejects_invalid_json_payload(raw: str, match_pattern: str) -> None:
+    """Invalid JSON payloads should fail with explicit ValueError messages."""
+    with pytest.raises(ValueError, match=match_pattern):
+        parse_weights(raw)
+
+
+def test_parse_weights_accepts_json_after_utf8_bom() -> None:
+    """Leading UTF-8 BOM should not block JSON object detection."""
+    weights = parse_weights('\ufeff{"joins": 9}')
+    assert weights["joins"] == 9
+    assert weights["ctes"] == DEFAULT_WEIGHTS["ctes"]
 
 
 def test_collect_metrics_from_sqlfluff_segment_tree() -> None:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from configparser import ConfigParser
 from pathlib import Path
 
-from sqlfluff_complexity.core.config.presets import WEIGHTS
+from sqlfluff_complexity.core.config.presets import WEIGHT_JSON
 from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS, parse_weights
 
 
@@ -16,7 +16,7 @@ def test_default_weight_surfaces_stay_aligned() -> None:
     parser.read(plugin_config)
 
     packaged_weights = parser["sqlfluff:rules:CPX_C201"]["complexity_weights"]
-    preset_weights = ",".join(WEIGHTS)
 
     assert parse_weights(packaged_weights) == DEFAULT_WEIGHTS
-    assert parse_weights(preset_weights) == DEFAULT_WEIGHTS
+    assert parse_weights(WEIGHT_JSON) == DEFAULT_WEIGHTS
+    assert parse_weights("{}") == DEFAULT_WEIGHTS

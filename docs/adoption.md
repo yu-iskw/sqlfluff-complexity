@@ -15,7 +15,7 @@ This page complements [Reporting](reporting.md) and [Configuration](configuratio
 4. **Set generous thresholds** in `[sqlfluff:rules:CPX_C108]`, `CPX_C109`, and `CPX_C110` (and existing CPX sections) so the first CI run is informative, not blocking.
 5. **Tighten with `path_overrides`** on `[sqlfluff:rules:CPX_C201]` so staging vs marts get different budgets (see [Configuration](configuration.md)).
 6. **Tune `complexity_weights` after baseline runs** if a metric is too noisy or too quiet for your
-   project. The defaults already include modest nonzero weights for `set_operation_count`,
+   project. Set weights as a **JSON object** string under `[sqlfluff:rules:CPX_C201]` (see [Aggregate score](configuration.md#aggregate-score)); omit keys to keep defaults. The defaults already include modest nonzero weights for `set_operation_count`,
    `expression_depth`, and `derived_tables`; teams can still lower them to `0` for an opt-in rollout.
 
 ## CI: SARIF artifact

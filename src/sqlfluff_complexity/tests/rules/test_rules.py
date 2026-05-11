@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from sqlfluff_complexity.tests.cpx_config_fragments import CPX_C201_SAMPLE_COMPLEXITY_WEIGHTS_JSON
 from sqlfluff_complexity.tests.fixture_loader import read_sql_fixture
 from sqlfluff_complexity.tests.sqlfluff_helpers import (
     lint_sql,
@@ -55,16 +56,14 @@ def test_c201_reports_aggregate_score_violation() -> None:
     """CPX_C201 should fail when aggregate score exceeds the configured limit."""
     linted = lint_sql(
         read_sql_fixture("ansi", "c201_aggregate_sample"),
-        """
+        f"""
         [sqlfluff]
         dialect = ansi
         rules = CPX_C201
 
         [sqlfluff:rules:CPX_C201]
         max_complexity_score = 4
-        complexity_weights =
-            ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,
-            window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0,derived_tables:0
+        complexity_weights = {CPX_C201_SAMPLE_COMPLEXITY_WEIGHTS_JSON}
         """,
     )
 

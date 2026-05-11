@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from sqlfluff_complexity import get_rules
+from sqlfluff_complexity.core.config.presets import WEIGHT_JSON
 from sqlfluff_complexity.tests.sqlfluff_helpers import join_sql, lint_sql, rule_violations
 
 ALL_CPX_RULE_CODES = {
@@ -21,6 +24,12 @@ ALL_CPX_RULE_CODES = {
     "CPX_C201",
 }
 ALL_CPX_RULE_LIST = ",".join(sorted(ALL_CPX_RULE_CODES))
+
+_C201_WEIGHTS_PARTIAL_MULTILINE_INI = (
+    "complexity_weights =\n"
+    '            {\n              "joins": 2,\n              "derived_tables": 0\n            }\n'
+    "        mode = enforce"
+)
 
 
 def test_sqlfluff_discovers_cpx_rule_by_code() -> None:
@@ -74,11 +83,25 @@ def test_sqlfluff_accepts_all_cpx_rule_codes() -> None:
     assert [violation.rule_code() for violation in linted.violations] == []
 
 
-def test_sqlfluff_applies_plugin_config_keywords() -> None:
-    """SQLFluff should apply CPX config keywords through regular config loading."""
+@pytest.mark.parametrize(
+    "c201_weights_tail",
+    [
+        pytest.param(
+            f"complexity_weights = {WEIGHT_JSON}\n        mode = enforce",
+            id="preset_default_json",
+        ),
+        pytest.param(
+            'complexity_weights = {"joins": 2, "derived_tables": 0}\n        mode = enforce',
+            id="partial_inline_json",
+        ),
+        pytest.param(_C201_WEIGHTS_PARTIAL_MULTILINE_INI, id="partial_multiline_ini"),
+    ],
+)
+def test_sqlfluff_applies_plugin_config_keywords_json_weights(c201_weights_tail: str) -> None:
+    """CPX_C201 ``complexity_weights`` JSON (inline or multiline INI) loads with path_overrides."""
     linted = lint_sql(
         join_sql(join_count=2),
-        """
+        f"""
         [sqlfluff]
         dialect = ansi
         rules = CPX_C102
@@ -88,10 +111,7 @@ def test_sqlfluff_applies_plugin_config_keywords() -> None:
 
         [sqlfluff:rules:CPX_C201]
         max_complexity_score = 60
-        complexity_weights =
-            ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,
-            window_functions:2,cte_dependency_depth:2,set_operation_count:2,expression_depth:1,derived_tables:2
-        mode = enforce
+        {c201_weights_tail}
         path_overrides =
             models/*.sql:max_joins=2
             models/staging/*.sql:max_joins=1
@@ -103,6 +123,25 @@ def test_sqlfluff_applies_plugin_config_keywords() -> None:
 
     assert len(violations) == 1
     assert "join count 2 exceeds max_joins=1" in violations[0].desc()
+
+
+def test_sqlfluff_surfaces_invalid_complexity_weights_json_value() -> None:
+    """Non-integer JSON weight values should surface during lint (not silent mis-scoring)."""
+    linted = lint_sql(
+        "select 1",
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C201
+
+        [sqlfluff:rules:CPX_C201]
+        complexity_weights = {"joins":"not-an-int"}
+        """,
+    )
+
+    descriptions = " ".join(v.desc() for v in linted.violations)
+    assert len(linted.violations) >= 1
+    assert "Complexity weight" in descriptions or "integer" in descriptions.lower()
 
 
 def test_cpx_c201_reports_templated_select_when_ignoring_templated_areas() -> None:

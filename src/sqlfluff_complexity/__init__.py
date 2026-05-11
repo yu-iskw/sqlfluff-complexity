@@ -134,7 +134,7 @@ def get_configs_info() -> dict[str, dict[str, Any]]:
             "definition": "Maximum aggregate complexity score allowed in one statement.",
         },
         "complexity_weights": {
-            "definition": ("Comma-separated key:value weights for aggregate complexity scoring."),
+            "definition": ("Aggregate complexity weights as a JSON object string; omit keys to keep defaults."),
         },
         "mode": {
             "definition": "Complexity enforcement mode: enforce or report.",

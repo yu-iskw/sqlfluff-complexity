@@ -29,6 +29,7 @@ exclude = [
   "dev",
   "src/sqlfluff_complexity/tests",
   "dist",
+  "tmp",
   ".python-version",
   "Makefile",
   "requirements.setup.txt",
