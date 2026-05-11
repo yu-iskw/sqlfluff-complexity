@@ -27,6 +27,7 @@ class Rule_CPX_C104(BaseRule):  # noqa: N801
     ]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
+    targets_templated = True
     max_case_expressions: int
 
     _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(

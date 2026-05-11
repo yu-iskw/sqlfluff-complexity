@@ -26,6 +26,7 @@ class Rule_CPX_C108(BaseRule):  # noqa: N801
     ]
     crawl_behaviour = RootOnlyCrawler()
     is_fix_compatible = False
+    targets_templated = True
     max_nested_case_depth: int
 
     _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(

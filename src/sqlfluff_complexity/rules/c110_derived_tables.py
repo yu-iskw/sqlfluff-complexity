@@ -31,6 +31,7 @@ class Rule_CPX_C110(BaseRule):  # noqa: N801
     ]
     crawl_behaviour = RootOnlyCrawler()
     is_fix_compatible = False
+    targets_templated = True
     max_derived_tables: int
 
     _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(

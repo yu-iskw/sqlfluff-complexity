@@ -46,6 +46,7 @@ class Rule_CPX_C102(BaseRule):  # noqa: N801
     config_keywords: ClassVar[list[str]] = ["max_joins", "show_contributors", "max_contributors"]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
+    targets_templated = True
     max_joins: int
     _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(
         rule_id="CPX_C102",
