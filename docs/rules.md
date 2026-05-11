@@ -188,7 +188,7 @@ Violation messages include the computed score, the configured `max_complexity_sc
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0,derived_tables:0
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:2,set_operation_count:2,expression_depth:1,derived_tables:2
 mode = enforce
 ```
 

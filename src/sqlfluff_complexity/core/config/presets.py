@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS
+
 RULE_CODES = (
     "CPX_C101",
     "CPX_C102",
@@ -18,18 +20,7 @@ RULE_CODES = (
     "CPX_C201",
 )
 
-WEIGHTS = (
-    "ctes:2",
-    "joins:2",
-    "subquery_depth:4",
-    "case_expressions:2",
-    "boolean_operators:1",
-    "window_functions:2",
-    "cte_dependency_depth:0",
-    "set_operation_count:0",
-    "expression_depth:0",
-    "derived_tables:0",
-)
+WEIGHTS = tuple(f"{key}:{value}" for key, value in DEFAULT_WEIGHTS.items())
 RULE_LIST = ",".join(RULE_CODES)
 WEIGHT_LIST = ",".join(WEIGHTS)
 

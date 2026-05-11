@@ -18,7 +18,9 @@ def test_report_c201_findings_empty_contributors_when_disabled(tmp_path: Path) -
         [sqlfluff:rules:CPX_C201]
         max_complexity_score = 4
         show_contributors = false
-        complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+        complexity_weights =
+            ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,
+            window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0,derived_tables:0
 
         [sqlfluff:rules:CPX_C102]
         max_joins = 99
@@ -51,7 +53,9 @@ def test_report_c201_findings_empty_contributors_when_max_zero(tmp_path: Path) -
         max_complexity_score = 4
         show_contributors = true
         max_contributors = 0
-        complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+        complexity_weights =
+            ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,
+            window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0,derived_tables:0
 
         [sqlfluff:rules:CPX_C102]
         max_joins = 99

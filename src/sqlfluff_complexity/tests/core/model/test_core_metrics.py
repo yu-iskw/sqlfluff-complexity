@@ -12,7 +12,11 @@ from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 from sqlfluff_complexity.core.scan.segment_tree import collect_metrics
 from sqlfluff_complexity.tests.fixture_loader import load_expected_metrics, read_sql_fixture
 
-_EXPECTED_DEFAULT_WEIGHT_SCORE = 24
+_EXPECTED_NON_DERIVED_WEIGHT_SCORE = 24
+_DERIVED_TABLE_COUNT = 99
+_EXPECTED_DEFAULT_WEIGHT_SCORE = (
+    _EXPECTED_NON_DERIVED_WEIGHT_SCORE + _DERIVED_TABLE_COUNT * DEFAULT_WEIGHTS["derived_tables"]
+)
 
 
 def _parse_sql(sql: str, *, dialect: str = "ansi") -> Any:
@@ -30,11 +34,13 @@ def test_complexity_metrics_score_uses_default_weights() -> None:
         case_expressions=2,
         boolean_operators=4,
         window_functions=1,
-        derived_tables=99,
+        derived_tables=_DERIVED_TABLE_COUNT,
     )
 
     assert metrics.score(DEFAULT_WEIGHTS) == _EXPECTED_DEFAULT_WEIGHT_SCORE
-    assert metrics.score(DEFAULT_WEIGHTS | {"derived_tables": 1}) == (_EXPECTED_DEFAULT_WEIGHT_SCORE + 99)
+    assert metrics.score(DEFAULT_WEIGHTS | {"derived_tables": 1}) == (
+        _EXPECTED_NON_DERIVED_WEIGHT_SCORE + _DERIVED_TABLE_COUNT
+    )
 
 
 def test_complexity_metrics_reports_derived_tables() -> None:

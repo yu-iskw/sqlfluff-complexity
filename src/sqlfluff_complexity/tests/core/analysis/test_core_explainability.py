@@ -135,6 +135,15 @@ def test_explain_score_contributors_respects_max_items() -> None:
     assert explain_score_contributors(metrics, weights, max_items=0) == ""
 
 
+def test_ranked_contributions_includes_derived_tables() -> None:
+    """Derived table weight should be explainable when it contributes to the score."""
+    metrics = ComplexityMetrics(derived_tables=3)
+    weights = {"derived_tables": 2}
+
+    assert ranked_weighted_contributions(metrics, weights) == [("derived_tables", 6)]
+    assert explain_score_contributors(metrics, weights, max_items=1) == "derived_tables=6"
+
+
 def test_refactoring_hint_single_contributor() -> None:
     """One contributor should produce a single focused phrase."""
     hint = refactoring_hint_for_contributors(["joins"])
@@ -164,6 +173,13 @@ def test_refactoring_hint_expression_depth_mentions_nested_case() -> None:
     """expression_depth contributor hint should reflect nested CASE semantics."""
     hint = refactoring_hint_for_contributors(["expression_depth"])
     assert "nested CASE" in hint
+
+
+def test_refactoring_hint_for_derived_tables() -> None:
+    """Derived table contributors should suggest naming intermediate logic."""
+    hint = refactoring_hint_for_contributors(["derived_tables"])
+    assert "derived tables" in hint
+    assert "intermediate models" in hint
 
 
 def test_refactoring_hint_empty_falls_back() -> None:

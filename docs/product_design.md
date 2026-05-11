@@ -299,18 +299,26 @@ score =
 + 2 * case_expression_count
 + 1 * boolean_operator_count
 + 2 * window_function_count
++ 2 * max_cte_dependency_depth
++ 2 * set_operation_count
++ 1 * max_expression_depth
++ 2 * derived_table_count
 ```
 
 Default weights:
 
-| Metric              | Weight |
-| ------------------- | -----: |
-| `ctes`              |      2 |
-| `joins`             |      2 |
-| `subquery_depth`    |      4 |
-| `case_expressions`  |      2 |
-| `boolean_operators` |      1 |
-| `window_functions`  |      2 |
+| Metric                 | Weight |
+| ---------------------- | -----: |
+| `ctes`                 |      2 |
+| `joins`                |      2 |
+| `subquery_depth`       |      4 |
+| `case_expressions`     |      2 |
+| `boolean_operators`    |      1 |
+| `window_functions`     |      2 |
+| `cte_dependency_depth` |      2 |
+| `set_operation_count`  |      2 |
+| `expression_depth`     |      1 |
+| `derived_tables`       |      2 |
 
 ### 8.4 Why individual rules plus aggregate rule
 
@@ -904,7 +912,7 @@ Mitigation:
 Configuration string:
 
 ```ini
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:2,set_operation_count:2,expression_depth:1,derived_tables:2
 ```
 
 Parser behavior:
@@ -915,7 +923,7 @@ Parser behavior:
 - reject unknown metric names
 - reject negative weights
 - reject non-integer weights
-- use defaults for missing weights only if explicitly allowed
+- use defaults for omitted weights
 
 Example:
 
@@ -929,6 +937,10 @@ VALID_WEIGHT_KEYS = {
     "case_expressions",
     "boolean_operators",
     "window_functions",
+    "cte_dependency_depth",
+    "set_operation_count",
+    "expression_depth",
+    "derived_tables",
 }
 
 
@@ -996,7 +1008,7 @@ max_window_functions = 10
 
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:2,set_operation_count:2,expression_depth:1,derived_tables:2
 mode = enforce
 path_overrides =
 ```
@@ -1037,7 +1049,7 @@ max_window_functions = 10
 
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:2,set_operation_count:2,expression_depth:1,derived_tables:2
 mode = enforce
 path_overrides =
     models/staging/*:max_complexity_score=45,max_joins=4,max_ctes=4
@@ -2065,7 +2077,7 @@ max_window_functions = 10
 
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:2,set_operation_count:2,expression_depth:1,derived_tables:2
 mode = enforce
 path_overrides =
     models/staging/*:max_complexity_score=45,max_joins=4,max_ctes=4

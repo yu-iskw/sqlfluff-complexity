@@ -62,7 +62,9 @@ def test_c201_reports_aggregate_score_violation() -> None:
 
         [sqlfluff:rules:CPX_C201]
         max_complexity_score = 4
-        complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+        complexity_weights =
+            ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,
+            window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0,derived_tables:0
         """,
     )
 
@@ -79,6 +81,35 @@ def test_c201_reports_aggregate_score_violation() -> None:
     assert "case_expressions=1" in desc
     assert "Examples:" in desc
     assert "Reduce the largest" in desc or "inspect the metric breakdown" in desc
+
+
+def test_c201_counts_derived_tables_in_default_score() -> None:
+    """Default aggregate scoring should include derived tables."""
+    linted = lint_sql(
+        """
+        select *
+        from (
+            select id
+            from orders
+        ) as derived_orders
+        """,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C201
+
+        [sqlfluff:rules:CPX_C201]
+        max_complexity_score = 1
+        """,
+    )
+
+    violations = rule_violations(linted, "CPX_C201")
+
+    assert len(violations) == 1
+    desc = violations[0].desc()
+    assert "aggregate complexity score" in desc
+    assert "derived_tables=1" in desc
+    assert "derived_tables=2" in desc
 
 
 def test_c101_reports_cte_count_violation() -> None:

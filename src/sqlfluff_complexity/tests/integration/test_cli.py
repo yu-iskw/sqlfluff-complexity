@@ -203,7 +203,10 @@ def test_config_preset_prints_recommended_config(capsys: pytest.CaptureFixture[s
     assert rules_line in output
     assert "[sqlfluff:rules:CPX_C110]" in output
     assert "max_derived_tables = 4" in output
-    assert "derived_tables:0" in output
+    assert "cte_dependency_depth:2" in output
+    assert "set_operation_count:2" in output
+    assert "expression_depth:1" in output
+    assert "derived_tables:2" in output
 
 
 def test_config_preset_report_only_uses_report_mode(capsys: pytest.CaptureFixture[str]) -> None:

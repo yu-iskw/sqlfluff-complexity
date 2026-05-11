@@ -49,13 +49,15 @@ max_subquery_depth = 2
 ## Aggregate Score
 
 `CPX_C201` computes a weighted aggregate score from the same metrics used by the individual rules.
+The default weights keep mature high-signal metrics stable while adding modest nonzero weights for
+CTE dependency depth, set operations, expression depth, and derived tables.
 
 Default weights:
 
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:0,set_operation_count:0,expression_depth:0,derived_tables:0
+complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2,cte_dependency_depth:2,set_operation_count:2,expression_depth:1,derived_tables:2
 mode = enforce
 ```
 
