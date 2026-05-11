@@ -108,12 +108,7 @@ def test_report_json_roundtrip(tmp_path: Path) -> None:
     sql_file = tmp_path / "m.sql"
     sql_file.write_text("select 1", encoding="utf-8")
     out = tmp_path / "out.json"
-    assert (
-        main(
-            ["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]
-        )
-        == 0
-    )
+    assert main(["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]) == 0
     data = json.loads(out.read_text(encoding="utf-8"))
     assert data["schema_version"] in {"1.0", "1.1"}
     assert data["tool"] == "sqlfluff-complexity"
@@ -129,12 +124,7 @@ def test_report_json_parse_error_has_null_metrics(tmp_path: Path) -> None:
     sql_file = tmp_path / "bad.sql"
     sql_file.write_text("select from", encoding="utf-8")
     out = tmp_path / "out.json"
-    assert (
-        main(
-            ["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]
-        )
-        == 0
-    )
+    assert main(["report", "--dialect", "ansi", "--format", "json", "--output", str(out), str(sql_file)]) == 0
     data = json.loads(out.read_text(encoding="utf-8"))
     entry = data["entries"][0]
     assert entry["score"] is None
@@ -200,8 +190,7 @@ def test_config_preset_prints_recommended_config(capsys: pytest.CaptureFixture[s
 
     output = capsys.readouterr().out
     rules_line = (
-        "rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,"
-        "CPX_C108,CPX_C109,CPX_C110,CPX_C201"
+        "rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C201"
     )
     assert "[sqlfluff]" in output
     assert "dialect = postgres" in output
@@ -220,9 +209,7 @@ def test_config_preset_report_only_uses_report_mode(capsys: pytest.CaptureFixtur
     assert "mode = report" in output
 
 
-def test_config_check_invalid_weights_nonzero(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_config_check_invalid_weights_nonzero(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     cfg = tmp_path / ".sqlfluff"
     cfg.write_text(
         """
@@ -286,6 +273,133 @@ def test_report_fail_on_error_returns_nonzero_for_parse_error(tmp_path: Path) ->
     assert main(["report", "--dialect", "ansi", "--fail-on-error", str(sql_file)]) == 1
 
 
+def test_report_directory_without_recursive_returns_two(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Passing a directory without ``--recursive`` should exit 2 with a hint on stderr."""
+    assert main(["report", "--dialect", "ansi", str(tmp_path)]) == 2
+    err = capsys.readouterr().err
+    assert "--recursive" in err
+    assert str(tmp_path) in err
+
+
+def test_report_recursive_nested_sql_files_json(tmp_path: Path) -> None:
+    """``-r`` should analyze all nested ``.sql`` files under a directory argument."""
+    a = tmp_path / "a"
+    b = a / "b"
+    b.mkdir(parents=True)
+    x = tmp_path / "x.sql"
+    y = b / "y.sql"
+    x.write_text("select 1", encoding="utf-8")
+    y.write_text("select 2", encoding="utf-8")
+    out = tmp_path / "out.json"
+    assert (
+        main(
+            [
+                "report",
+                "-r",
+                "--dialect",
+                "ansi",
+                "--format",
+                "json",
+                "--output",
+                str(out),
+                str(tmp_path),
+            ]
+        )
+        == 0
+    )
+    data = json.loads(out.read_text(encoding="utf-8"))
+    paths = {entry["path"] for entry in data["entries"]}
+    assert paths == {str(x), str(y)}
+    assert len(data["entries"]) == 2
+
+
+def test_report_recursive_empty_directory_json(tmp_path: Path) -> None:
+    """``-r`` on an empty directory yields a valid JSON report with no entries."""
+    out = tmp_path / "out.json"
+    assert (
+        main(
+            [
+                "report",
+                "-r",
+                "--dialect",
+                "ansi",
+                "--format",
+                "json",
+                "--output",
+                str(out),
+                str(tmp_path),
+            ]
+        )
+        == 0
+    )
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert data["entries"] == []
+
+
+def test_report_recursive_mix_file_and_directory(tmp_path: Path) -> None:
+    """``-r`` keeps explicit files and expands directories."""
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    root_sql = tmp_path / "root.sql"
+    nested_sql = sub / "nested.sql"
+    root_sql.write_text("select 1", encoding="utf-8")
+    nested_sql.write_text("select 2", encoding="utf-8")
+    out = tmp_path / "out.json"
+    assert (
+        main(
+            [
+                "report",
+                "-r",
+                "--dialect",
+                "ansi",
+                "--format",
+                "json",
+                "--output",
+                str(out),
+                str(root_sql),
+                str(tmp_path),
+            ]
+        )
+        == 0
+    )
+    data = json.loads(out.read_text(encoding="utf-8"))
+    paths = {entry["path"] for entry in data["entries"]}
+    assert paths == {str(root_sql), str(nested_sql)}
+    assert len(data["entries"]) == 2
+
+
+def test_report_recursive_duplicate_path_arguments_dedupe_json(tmp_path: Path) -> None:
+    """Two directory arguments that yield the same file should produce one entry."""
+    inner = tmp_path / "inner"
+    inner.mkdir()
+    sql_file = inner / "m.sql"
+    sql_file.write_text("select 1", encoding="utf-8")
+    out = tmp_path / "out.json"
+    assert (
+        main(
+            [
+                "report",
+                "-r",
+                "--dialect",
+                "ansi",
+                "--format",
+                "json",
+                "--output",
+                str(out),
+                str(tmp_path),
+                str(inner),
+            ]
+        )
+        == 0
+    )
+    data = json.loads(out.read_text(encoding="utf-8"))
+    assert len(data["entries"]) == 1
+    assert data["entries"][0]["path"] == str(sql_file)
+
+
 def test_report_uses_path_override_thresholds(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -322,7 +436,5 @@ def test_report_uses_path_override_thresholds(
 
 def _join_heavy_sql(join_count: int) -> str:
     select_clause = "select * from base"
-    joins = "\n".join(
-        f"join table_{index} on base.id = table_{index}.id" for index in range(1, join_count + 1)
-    )
+    joins = "\n".join(f"join table_{index} on base.id = table_{index}.id" for index in range(1, join_count + 1))
     return "\n".join([select_clause, joins])

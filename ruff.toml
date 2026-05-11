@@ -3,7 +3,7 @@
 # RUF100 (unused noqa) is included via the RUF group — keep noqa clean.
 
 target-version = "py311"
-line-length = 100
+line-length = 120
 
 [lint]
 # Rule sets (grouped by purpose):

@@ -25,6 +25,7 @@ from sqlfluff_complexity.core.config.presets import preset_names, render_preset_
 from sqlfluff_complexity.report import (
     ComplexityReport,
     analyze_paths,
+    expand_report_paths,
     format_console_report,
     format_json_report,
     format_sarif_report,
@@ -54,15 +55,9 @@ def _dispatch_cli(args: argparse.Namespace) -> int:
 
     err: str | None = None
     if args.command == "config":
-        err = (
-            "sqlfluff-complexity: unknown or missing `config` subcommand "
-            f"(got config_command={config_command!r})."
-        )
+        err = f"sqlfluff-complexity: unknown or missing `config` subcommand (got config_command={config_command!r})."
     elif args.command is not None:
-        err = (
-            "sqlfluff-complexity: no handler for command "
-            f"{args.command!r} (config_command={config_command!r})."
-        )
+        err = f"sqlfluff-complexity: no handler for command {args.command!r} (config_command={config_command!r})."
     if err is not None:
         print(err, file=sys.stderr)
         return 2
@@ -88,6 +83,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Report SQL complexity metrics for one or more files.",
     )
     report_parser.add_argument("paths", nargs="+", type=Path, help="SQL file paths to analyze.")
+    report_parser.add_argument(
+        "-r",
+        "--recursive",
+        action="store_true",
+        help=("Expand each directory argument to all nested .sql files (suffix matched case-insensitively)."),
+    )
     report_parser.add_argument("--dialect", default="ansi", help="SQLFluff dialect to parse with.")
     report_parser.add_argument("--config", type=Path, help="SQLFluff config file to apply.")
     report_parser.add_argument(
@@ -126,8 +127,26 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _first_directory_arg(paths: Sequence[Path]) -> Path | None:
+    """Return the first path that is an existing directory, if any."""
+    for path in paths:
+        if path.is_dir():
+            return path
+    return None
+
+
 def _run_report(args: argparse.Namespace) -> int:
-    report = analyze_paths(args.paths, dialect=args.dialect, config_path=args.config)
+    if not args.recursive:
+        dir_path = _first_directory_arg(args.paths)
+        if dir_path is not None:
+            print(
+                f"sqlfluff-complexity: {dir_path} is a directory; use --recursive to analyze nested .sql files.",
+                file=sys.stderr,
+            )
+            return 2
+
+    paths = expand_report_paths(args.paths, recursive=args.recursive)
+    report = analyze_paths(paths, dialect=args.dialect, config_path=args.config)
     output = _format_report(report, args.output_format)
 
     if args.output is None:
