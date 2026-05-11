@@ -118,19 +118,14 @@ def get_configs_info() -> dict[str, dict[str, Any]]:
         },
         "max_cte_dependency_depth": {
             "definition": (
-                "Maximum longest CTE reference chain within one WITH clause "
-                "(parsed-tree dependency depth)."
+                "Maximum longest CTE reference chain within one WITH clause (parsed-tree dependency depth)."
             ),
         },
         "max_nested_case_depth": {
-            "definition": (
-                "Maximum nesting depth of case_expression segments (inner CASE inside outer CASE)."
-            ),
+            "definition": ("Maximum nesting depth of case_expression segments (inner CASE inside outer CASE)."),
         },
         "max_set_operations": {
-            "definition": (
-                "Maximum set_operator segments (UNION / INTERSECT / EXCEPT arms) in one statement."
-            ),
+            "definition": ("Maximum set_operator segments (UNION / INTERSECT / EXCEPT arms) in one statement."),
         },
         "max_derived_tables": {
             "definition": "Maximum inline derived tables allowed in one parsed SQL file.",

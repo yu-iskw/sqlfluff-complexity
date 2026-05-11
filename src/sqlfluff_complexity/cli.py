@@ -37,6 +37,69 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
+def _first_directory_arg(paths: Sequence[Path]) -> Path | None:
+    """Return the first path that is an existing directory, if any."""
+    for path in paths:
+        if path.is_dir():
+            return path
+    return None
+
+
+def _format_report(report: ComplexityReport, output_format: str) -> str:
+    if output_format == "console":
+        return format_console_report(report)
+    if output_format == "json":
+        return format_json_report(report)
+    if output_format == "sarif":
+        return format_sarif_report(report)
+
+    message = f"Unsupported report format: {output_format}"
+    raise ValueError(message)
+
+
+def _run_report(args: argparse.Namespace) -> int:
+    if not args.recursive:
+        dir_path = _first_directory_arg(args.paths)
+        if dir_path is not None:
+            print(
+                f"sqlfluff-complexity: {dir_path} is a directory; use --recursive to analyze nested .sql files.",
+                file=sys.stderr,
+            )
+            return 2
+
+    paths = expand_report_paths(args.paths, recursive=args.recursive)
+    report = analyze_paths(paths, dialect=args.dialect, config_path=args.config)
+    output = _format_report(report, args.output_format)
+
+    if args.output is None:
+        print(output)
+    else:
+        args.output.write_text(f"{output}\n", encoding="utf-8")
+
+    if args.fail_on_error and report.has_errors:
+        return 1
+    return 0
+
+
+def _run_config_check(args: argparse.Namespace) -> int:
+    try:
+        config = load_fluff_config(dialect=args.dialect, config_path=args.config)
+        validate_cpx_plugin_config(config)
+    except ValueError as exc:
+        print(f"config-check failed: {exc}", flush=True)
+        return 1
+    except OSError as exc:
+        print(f"config-check failed: could not load config: {exc}", flush=True)
+        return 1
+    print("CPX configuration is valid.", flush=True)
+    return 0
+
+
+def _run_config_preset(args: argparse.Namespace) -> int:
+    print(render_preset_config(args.name, dialect=args.dialect), flush=True)
+    return 0
+
+
 def _dispatch_cli(args: argparse.Namespace) -> int:
     """Run the subcommand handler for parsed CLI args (also used from tests).
 
@@ -62,13 +125,6 @@ def _dispatch_cli(args: argparse.Namespace) -> int:
         print(err, file=sys.stderr)
         return 2
     return 0
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    """Run the sqlfluff-complexity command line interface."""
-    parser = _build_parser()
-    args = parser.parse_args(argv)
-    return _dispatch_cli(args)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -127,64 +183,8 @@ def _build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _first_directory_arg(paths: Sequence[Path]) -> Path | None:
-    """Return the first path that is an existing directory, if any."""
-    for path in paths:
-        if path.is_dir():
-            return path
-    return None
-
-
-def _run_report(args: argparse.Namespace) -> int:
-    if not args.recursive:
-        dir_path = _first_directory_arg(args.paths)
-        if dir_path is not None:
-            print(
-                f"sqlfluff-complexity: {dir_path} is a directory; use --recursive to analyze nested .sql files.",
-                file=sys.stderr,
-            )
-            return 2
-
-    paths = expand_report_paths(args.paths, recursive=args.recursive)
-    report = analyze_paths(paths, dialect=args.dialect, config_path=args.config)
-    output = _format_report(report, args.output_format)
-
-    if args.output is None:
-        print(output)
-    else:
-        args.output.write_text(f"{output}\n", encoding="utf-8")
-
-    if args.fail_on_error and report.has_errors:
-        return 1
-    return 0
-
-
-def _format_report(report: ComplexityReport, output_format: str) -> str:
-    if output_format == "console":
-        return format_console_report(report)
-    if output_format == "json":
-        return format_json_report(report)
-    if output_format == "sarif":
-        return format_sarif_report(report)
-
-    message = f"Unsupported report format: {output_format}"
-    raise ValueError(message)
-
-
-def _run_config_check(args: argparse.Namespace) -> int:
-    try:
-        config = load_fluff_config(dialect=args.dialect, config_path=args.config)
-        validate_cpx_plugin_config(config)
-    except ValueError as exc:
-        print(f"config-check failed: {exc}", flush=True)
-        return 1
-    except OSError as exc:
-        print(f"config-check failed: could not load config: {exc}", flush=True)
-        return 1
-    print("CPX configuration is valid.", flush=True)
-    return 0
-
-
-def _run_config_preset(args: argparse.Namespace) -> int:
-    print(render_preset_config(args.name, dialect=args.dialect), flush=True)
-    return 0
+def main(argv: Sequence[str] | None = None) -> int:
+    """Run the sqlfluff-complexity command line interface."""
+    parser = _build_parser()
+    args = parser.parse_args(argv)
+    return _dispatch_cli(args)

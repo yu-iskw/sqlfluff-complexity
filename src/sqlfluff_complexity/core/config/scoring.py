@@ -18,21 +18,6 @@ DEFAULT_WEIGHTS: dict[str, int] = {
 VALID_WEIGHT_KEYS = frozenset(DEFAULT_WEIGHTS)
 
 
-def parse_weights(raw: str | None) -> dict[str, int]:
-    """Parse a comma-separated complexity weight configuration string."""
-    weights = DEFAULT_WEIGHTS.copy()
-    if raw is None:
-        return weights
-
-    for raw_item in raw.split(","):
-        item = raw_item.strip()
-        if item:
-            key, value = _parse_weight_item(item)
-            weights[key] = value
-
-    return weights
-
-
 def _parse_weight_item(item: str) -> tuple[str, int]:
     key, separator, value = item.partition(":")
     if separator != ":":
@@ -55,3 +40,18 @@ def _parse_weight_item(item: str) -> tuple[str, int]:
         raise ValueError(message)
 
     return key, parsed_value
+
+
+def parse_weights(raw: str | None) -> dict[str, int]:
+    """Parse a comma-separated complexity weight configuration string."""
+    weights = DEFAULT_WEIGHTS.copy()
+    if raw is None:
+        return weights
+
+    for raw_item in raw.split(","):
+        item = raw_item.strip()
+        if item:
+            key, value = _parse_weight_item(item)
+            weights[key] = value
+
+    return weights

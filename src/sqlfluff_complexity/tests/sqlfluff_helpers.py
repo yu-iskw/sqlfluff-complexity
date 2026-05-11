@@ -14,9 +14,7 @@ if TYPE_CHECKING:
 
 def join_sql(join_count: int) -> str:
     """Return simple ANSI SQL with a configurable number of joins."""
-    join_lines: list[str] = [
-        f"join table_{index} on base.id = table_{index}.id" for index in range(1, join_count + 1)
-    ]
+    join_lines: list[str] = [f"join table_{index} on base.id = table_{index}.id" for index in range(1, join_count + 1)]
     return "select *\nfrom base\n" + "\n".join(join_lines)
 
 

@@ -34,9 +34,7 @@ def test_complexity_metrics_score_uses_default_weights() -> None:
     )
 
     assert metrics.score(DEFAULT_WEIGHTS) == _EXPECTED_DEFAULT_WEIGHT_SCORE
-    assert metrics.score(DEFAULT_WEIGHTS | {"derived_tables": 1}) == (
-        _EXPECTED_DEFAULT_WEIGHT_SCORE + 99
-    )
+    assert metrics.score(DEFAULT_WEIGHTS | {"derived_tables": 1}) == (_EXPECTED_DEFAULT_WEIGHT_SCORE + 99)
 
 
 def test_complexity_metrics_reports_derived_tables() -> None:
@@ -87,6 +85,4 @@ def test_collect_metrics_tracks_nested_subquery_depth() -> None:
     stem = "metrics_nested_subquery_depth_2"
     sql = read_sql_fixture(dialect, stem)
     expected = load_expected_metrics(dialect, stem)
-    assert (
-        collect_metrics(_parse_sql(sql, dialect=dialect)).subquery_depth == expected.subquery_depth
-    )
+    assert collect_metrics(_parse_sql(sql, dialect=dialect)).subquery_depth == expected.subquery_depth

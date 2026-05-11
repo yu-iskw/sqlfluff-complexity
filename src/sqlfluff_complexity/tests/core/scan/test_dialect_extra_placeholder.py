@@ -65,8 +65,7 @@ def test_dbt_adapter_mapping_uses_sqlfluff_dialect_labels() -> None:
 def test_dialect_extra_manifest_uses_readable_fixture_ids() -> None:
     """Manifest IDs should make dialect fixture failures easy to identify."""
     assert [case.fixture_id for case in dialect_extra_fixtures()] == [
-        f"{case.dbt_adapter}->{case.sqlfluff_dialect}:{case.stem}"
-        for case in dialect_extra_fixtures()
+        f"{case.dbt_adapter}->{case.sqlfluff_dialect}:{case.stem}" for case in dialect_extra_fixtures()
     ]
 
 

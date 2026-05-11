@@ -96,6 +96,14 @@ def test_compute_structural_metrics_caches_by_root() -> None:
     assert first is second
 
 
+def _iter_with_nodes(root: BaseSegment) -> Iterator[BaseSegment]:
+    stack = [root]
+    while stack:
+        seg = stack.pop()
+        yield seg
+        stack.extend(reversed(getattr(seg, "segments", ()) or ()))
+
+
 def test_cte_depth_for_clause_matches_after_collect_metrics_walk() -> None:
     """After ``collect_metrics``, per-WITH depth matches ``cte_dependency_depth_for_with_clause``."""
     clear_structural_caches()
@@ -109,20 +117,10 @@ def test_cte_depth_for_clause_matches_after_collect_metrics_walk() -> None:
     ).strip()
     root = _parse_tree(sql)
     _ = collect_metrics(root)
-    with_nodes = [
-        s for s in _iter_with_nodes(root) if getattr(s, "type", "") == "with_compound_statement"
-    ]
+    with_nodes = [s for s in _iter_with_nodes(root) if getattr(s, "type", "") == "with_compound_statement"]
     assert len(with_nodes) == 1
     w = with_nodes[0]
     assert cte_dependency_depth_for_with_clause(w) == 2
-
-
-def _iter_with_nodes(root: BaseSegment) -> Iterator[BaseSegment]:
-    stack = [root]
-    while stack:
-        seg = stack.pop()
-        yield seg
-        stack.extend(reversed(getattr(seg, "segments", ()) or ()))
 
 
 def test_nested_case_expression_depth() -> None:

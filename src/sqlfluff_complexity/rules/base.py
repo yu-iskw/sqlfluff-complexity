@@ -71,8 +71,7 @@ def file_segment_from_context(context: RuleContext) -> BaseSegment:
     if via_parents is not None:
         return via_parents
     message = (
-        "Cannot resolve a `file` segment from the rule context (incomplete parent "
-        "links or unexpected crawler context)."
+        "Cannot resolve a `file` segment from the rule context (incomplete parent links or unexpected crawler context)."
     )
     raise RuntimeError(message)
 
@@ -86,82 +85,6 @@ class MetricRuleSpec:
     config_key: str
     policy_key: str
     description_label: str
-
-
-def eval_file_root_metric_threshold(
-    context: RuleContext,
-    policy: ComplexityPolicy,
-    spec: MetricRuleSpec,
-) -> LintResult | None:
-    """Lint one metric threshold using file-level parse metrics (report parity).
-
-    Resolves the parse ``file`` root via :func:`file_segment_from_context`, which raises
-    ``RuntimeError`` when no ``file`` segment can be found (broken parent links or an
-    unusual crawler context). Delegates to :func:`metric_lint_result` with
-    ``anchor_segment`` set to that root; see that function for ``ValueError`` from
-    inconsistent anchor/precomputed/metrics inputs.
-    """
-    root = file_segment_from_context(context)
-    analysis = analyze_segment_tree(root)
-    return metric_lint_result(
-        context,
-        analysis.metrics,
-        policy,
-        spec,
-        precomputed_analysis=analysis,
-        anchor_segment=root,
-    )
-
-
-def metric_lint_result_outer_select_only(
-    context: RuleContext,
-    metrics: ComplexityMetrics,
-    policy: ComplexityPolicy,
-    spec: MetricRuleSpec,
-    *,
-    precomputed_analysis: ComplexityAnalysis | None = None,
-) -> LintResult | None:
-    """Like ``metric_lint_result`` but skip nested ``select_statement`` crawl hits."""
-    return _metric_lint_result_skip_when(
-        context,
-        metrics,
-        policy,
-        spec,
-        is_nested_select_statement,
-        precomputed_analysis=precomputed_analysis,
-    )
-
-
-def _metric_lint_result_skip_when(  # noqa: PLR0913
-    context: RuleContext,
-    metrics: ComplexityMetrics,
-    policy: ComplexityPolicy,
-    spec: MetricRuleSpec,
-    skip_when: Callable[[BaseSegment], bool],
-    *,
-    precomputed_analysis: ComplexityAnalysis | None = None,
-) -> LintResult | None:
-    if skip_when(context.segment):
-        return None
-    return metric_lint_result(
-        context,
-        metrics,
-        policy,
-        spec,
-        precomputed_analysis=precomputed_analysis,
-    )
-
-
-def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:
-    """Resolve path-specific policy for a SQLFluff rule context."""
-    mode = context.config.get("mode", section=("rules", "CPX_C201"), default=base_policy.mode)
-    if mode not in POLICY_MODES:
-        message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
-        raise ValueError(message)
-    base_policy = replace(base_policy, mode=mode)
-    raw_overrides = context.config.get("path_overrides", section=("rules", "CPX_C201"), default="")
-    path = str(context.path) if context.path is not None else None
-    return resolve_policy(base_policy, raw_overrides, path)
 
 
 def _validate_metric_lint_anchor_and_precomputed(
@@ -254,3 +177,79 @@ def metric_lint_result(  # noqa: PLR0913
         anchor=anchor,
         description=description,
     )
+
+
+def eval_file_root_metric_threshold(
+    context: RuleContext,
+    policy: ComplexityPolicy,
+    spec: MetricRuleSpec,
+) -> LintResult | None:
+    """Lint one metric threshold using file-level parse metrics (report parity).
+
+    Resolves the parse ``file`` root via :func:`file_segment_from_context`, which raises
+    ``RuntimeError`` when no ``file`` segment can be found (broken parent links or an
+    unusual crawler context). Delegates to :func:`metric_lint_result` with
+    ``anchor_segment`` set to that root; see that function for ``ValueError`` from
+    inconsistent anchor/precomputed/metrics inputs.
+    """
+    root = file_segment_from_context(context)
+    analysis = analyze_segment_tree(root)
+    return metric_lint_result(
+        context,
+        analysis.metrics,
+        policy,
+        spec,
+        precomputed_analysis=analysis,
+        anchor_segment=root,
+    )
+
+
+def _metric_lint_result_skip_when(  # noqa: PLR0913
+    context: RuleContext,
+    metrics: ComplexityMetrics,
+    policy: ComplexityPolicy,
+    spec: MetricRuleSpec,
+    skip_when: Callable[[BaseSegment], bool],
+    *,
+    precomputed_analysis: ComplexityAnalysis | None = None,
+) -> LintResult | None:
+    if skip_when(context.segment):
+        return None
+    return metric_lint_result(
+        context,
+        metrics,
+        policy,
+        spec,
+        precomputed_analysis=precomputed_analysis,
+    )
+
+
+def metric_lint_result_outer_select_only(
+    context: RuleContext,
+    metrics: ComplexityMetrics,
+    policy: ComplexityPolicy,
+    spec: MetricRuleSpec,
+    *,
+    precomputed_analysis: ComplexityAnalysis | None = None,
+) -> LintResult | None:
+    """Like ``metric_lint_result`` but skip nested ``select_statement`` crawl hits."""
+    return _metric_lint_result_skip_when(
+        context,
+        metrics,
+        policy,
+        spec,
+        is_nested_select_statement,
+        precomputed_analysis=precomputed_analysis,
+    )
+
+
+def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:
+    """Resolve path-specific policy for a SQLFluff rule context."""
+    mode = context.config.get("mode", section=("rules", "CPX_C201"), default=base_policy.mode)
+    if mode not in POLICY_MODES:
+        message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
+        raise ValueError(message)
+    base_policy = replace(base_policy, mode=mode)
+    raw_overrides = context.config.get("path_overrides", section=("rules", "CPX_C201"), default="")
+    path = str(context.path) if context.path is not None else None
+    return resolve_policy(base_policy, raw_overrides, path)

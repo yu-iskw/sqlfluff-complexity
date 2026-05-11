@@ -63,6 +63,12 @@ def test_report_prints_console_metrics(
     assert " 1 " in output
 
 
+def _join_heavy_sql(join_count: int) -> str:
+    select_clause = "select * from base"
+    joins = "\n".join(f"join table_{index} on base.id = table_{index}.id" for index in range(1, join_count + 1))
+    return "\n".join([select_clause, joins])
+
+
 def test_report_writes_sarif_without_sql_text(tmp_path: Path) -> None:
     """SARIF output should include complexity rule IDs without embedding SQL text."""
     sql_file = tmp_path / "wide_join.sql"
@@ -432,9 +438,3 @@ def test_report_uses_path_override_thresholds(
     output = capsys.readouterr().out
     assert exit_code == 0
     assert "CPX_C102: join count 2 exceeds max_joins=1" in output
-
-
-def _join_heavy_sql(join_count: int) -> str:
-    select_clause = "select * from base"
-    joins = "\n".join(f"join table_{index} on base.id = table_{index}.id" for index in range(1, join_count + 1))
-    return "\n".join([select_clause, joins])

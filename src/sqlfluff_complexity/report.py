@@ -209,134 +209,6 @@ def expand_report_paths(paths: Sequence[Path], *, recursive: bool) -> list[Path]
     return _dedupe_paths_stable(collected)
 
 
-def analyze_paths(paths: Sequence[Path], *, dialect: str, config_path: Path | None = None) -> ComplexityReport:
-    """Analyze SQL file paths with SQLFluff and collect complexity metrics."""
-    config = _build_config(dialect=dialect, config_path=config_path)
-    linter = Linter(config=config)
-    return ComplexityReport(entries=[_analyze_path(path, linter, config) for path in paths])
-
-
-def format_console_report(report: ComplexityReport) -> str:
-    """Format a complexity report for terminal output."""
-    column_headers = (
-        "path score ctes joins subquery_depth case_expressions boolean_operators window_functions "
-        "cte_dependency_depth set_operation_count expression_depth derived_tables"
-    )
-    lines = [
-        "sqlfluff-complexity report",
-        column_headers,
-    ]
-    for entry in report.entries:
-        lines.extend(_format_console_entry(entry))
-    return "\n".join(lines)
-
-
-def format_sarif_report(report: ComplexityReport) -> str:
-    """Format a complexity report as SARIF 2.1.0 JSON."""
-    all_findings = [f for e in report.entries for f in e.findings]
-    sarif = findings_to_sarif_payload(all_findings)
-    return json.dumps(sarif, indent=2, sort_keys=True)
-
-
-def format_json_report(report: ComplexityReport) -> str:
-    """Format a complexity report as stable JSON for automation."""
-    all_findings = [f for e in report.entries for f in e.findings]
-    payload = {
-        "entries": [_json_entry(entry) for entry in report.entries],
-        "findings": [_finding_to_canonical_dict(f) for f in all_findings],
-        "schema_version": "1.1",
-        "tool": "sqlfluff-complexity",
-        "version": __version__,
-    }
-    return json.dumps(payload, indent=2, sort_keys=True)
-
-
-def _finding_to_canonical_dict(finding: ComplexityFinding) -> dict[str, object]:
-    return findings_to_json_payload((finding,))["findings"][0]
-
-
-def _console_message_line(rule_id: str, message: str) -> str:
-    """Avoid ``RULE: RULE: ...`` when ``message`` already includes the rule prefix."""
-    prefix = f"{rule_id}: "
-    if message.startswith(prefix):
-        return message
-    return f"{prefix}{message}"
-
-
-def analyze_paths_findings(
-    paths: Sequence[Path], *, dialect: str, config_path: Path | None = None
-) -> list[ComplexityFinding]:
-    """Return flat ComplexityFinding list for all paths (canonical API)."""
-    report = analyze_paths(paths, dialect=dialect, config_path=config_path)
-    return [f for e in report.entries for f in e.findings]
-
-
-def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntry:
-    try:
-        sql = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        return ReportEntry(
-            path=path,
-            errors=[f"Could not read file: {exc}"],
-            findings=[
-                _parse_error_finding(str(path), f"Could not read file: {exc}"),
-            ],
-        )
-
-    parsed = linter.parse_string(sql, fname=str(path))
-    parse_errors = [violation.desc() for violation in parsed.violations]
-    if parse_errors or parsed.tree is None:
-        fallback = "SQLFluff did not return a parse tree."
-        messages = parse_errors or [fallback]
-        return ReportEntry(
-            path=path,
-            errors=messages,
-            findings=[_parse_error_finding(str(path), msg) for msg in messages],
-        )
-
-    analysis = analyze_segment_tree(parsed.tree)
-    metrics = analysis.metrics
-    policy = _policy_for_path(config, path)
-    score = metrics.score(_weights_from_config(config))
-    findings = _findings_for_file(
-        path=path,
-        segment=parsed.tree,
-        metrics=metrics,
-        score=score,
-        policy=policy,
-        contributors=analysis.contributors,
-        config=config,
-    )
-    return ReportEntry(path=path, metrics=metrics, score=score, findings=findings)
-
-
-def load_fluff_config(*, dialect: str, config_path: Path | None = None) -> FluffConfig:
-    """Load a FluffConfig the same way as the report command."""
-    return _build_config(dialect=dialect, config_path=config_path)
-
-
-def validate_cpx_plugin_config(config: FluffConfig) -> None:
-    """Validate CPX-related config keys using existing parsers.
-
-    Raises ValueError with a clear message on invalid weights or path overrides.
-    """
-    parse_weights(config.get("complexity_weights", section=("rules", "CPX_C201"), default=None))
-    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
-    mode = str(config.get("mode", section=("rules", "CPX_C201"), default="enforce"))
-    if mode not in POLICY_MODES:
-        message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
-        raise ValueError(message)
-    base_policy = replace(_threshold_policy_from_config(config), mode=mode)
-    resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
-
-
-def _build_config(dialect: str, config_path: Path | None) -> FluffConfig:
-    overrides: ConfigMappingType = {"dialect": dialect}
-    if config_path is None:
-        return FluffConfig.from_kwargs(dialect=dialect)
-    return FluffConfig.from_root(extra_config_path=str(config_path), overrides=overrides)
-
-
 def _parse_error_finding(path_str: str, message: str) -> ComplexityFinding:
     return ComplexityFinding(
         rule_id="CPX_PARSE_ERROR",
@@ -371,57 +243,6 @@ def _anchored_location(
             col = contributor.column if contributor.column is not None else 1
             return SourceLocation(path=path_s, line=contributor.line, column=col)
     return SourceLocation(path=path_s, line=root_line, column=root_col)
-
-
-def _findings_for_file(
-    *,
-    path: Path,
-    segment: BaseSegment,
-    metrics: ComplexityMetrics,
-    score: int,
-    policy: ComplexityPolicy,
-    contributors: tuple[MetricContributor, ...],
-    config: FluffConfig,
-) -> list[ComplexityFinding]:
-    line, col = segment_position(segment)
-    line_i = line if line is not None else 1
-    col_i = col if col is not None else 1
-    path_s = str(path)
-
-    findings: list[ComplexityFinding] = []
-
-    for limit in REPORT_LIMITS:
-        show_contributors, max_c = contributor_display_settings(config, limit.rule_id)
-        f = _metric_finding(
-            path_s=path_s,
-            line=line_i,
-            col=col_i,
-            metrics=metrics,
-            policy=policy,
-            limit_spec=limit,
-            contributors=contributors,
-            show_contributors=show_contributors,
-            max_contributors=max_c,
-            aggregate_score=score,
-        )
-        if f is not None:
-            findings.append(f)
-
-    if score > policy.max_complexity_score:
-        findings.append(
-            _c201_finding(
-                path_s=path_s,
-                line=line_i,
-                col=col_i,
-                metrics=metrics,
-                score=score,
-                threshold=policy.max_complexity_score,
-                contributors=contributors,
-                weights=_weights_from_config(config),
-                config=config,
-            ),
-        )
-    return findings
 
 
 def _metric_finding(
@@ -555,15 +376,60 @@ def _c201_finding(
     )
 
 
-def _policy_for_path(config: FluffConfig, path: Path) -> ComplexityPolicy:
-    base_policy = _threshold_policy_from_config(config)
-    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
-    return resolve_policy(base_policy, raw_overrides, str(path))
-
-
 def _weights_from_config(config: FluffConfig) -> dict[str, int]:
     raw_weights = config.get("complexity_weights", section=("rules", "CPX_C201"), default=None)
     return parse_weights(raw_weights)
+
+
+def _findings_for_file(
+    *,
+    path: Path,
+    segment: BaseSegment,
+    metrics: ComplexityMetrics,
+    score: int,
+    policy: ComplexityPolicy,
+    contributors: tuple[MetricContributor, ...],
+    config: FluffConfig,
+) -> list[ComplexityFinding]:
+    line, col = segment_position(segment)
+    line_i = line if line is not None else 1
+    col_i = col if col is not None else 1
+    path_s = str(path)
+
+    findings: list[ComplexityFinding] = []
+
+    for limit in REPORT_LIMITS:
+        show_contributors, max_c = contributor_display_settings(config, limit.rule_id)
+        f = _metric_finding(
+            path_s=path_s,
+            line=line_i,
+            col=col_i,
+            metrics=metrics,
+            policy=policy,
+            limit_spec=limit,
+            contributors=contributors,
+            show_contributors=show_contributors,
+            max_contributors=max_c,
+            aggregate_score=score,
+        )
+        if f is not None:
+            findings.append(f)
+
+    if score > policy.max_complexity_score:
+        findings.append(
+            _c201_finding(
+                path_s=path_s,
+                line=line_i,
+                col=col_i,
+                metrics=metrics,
+                score=score,
+                threshold=policy.max_complexity_score,
+                contributors=contributors,
+                weights=_weights_from_config(config),
+                config=config,
+            ),
+        )
+    return findings
 
 
 def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> int:
@@ -593,27 +459,71 @@ def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
     )
 
 
-def _json_entry(entry: ReportEntry) -> dict[str, object]:
-    legacy: list[dict[str, object]] = []
-    detail: list[dict[str, object]] = []
-    for finding in entry.findings:
-        legacy.append(
-            {"level": finding.level, "message": finding.message, "rule_id": finding.rule_id},
+def _policy_for_path(config: FluffConfig, path: Path) -> ComplexityPolicy:
+    base_policy = _threshold_policy_from_config(config)
+    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
+    return resolve_policy(base_policy, raw_overrides, str(path))
+
+
+def _analyze_path(path: Path, linter: Linter, config: FluffConfig) -> ReportEntry:
+    try:
+        sql = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return ReportEntry(
+            path=path,
+            errors=[f"Could not read file: {exc}"],
+            findings=[
+                _parse_error_finding(str(path), f"Could not read file: {exc}"),
+            ],
         )
-        detail.append(_finding_to_canonical_dict(finding))
-    base: dict[str, object] = {
-        "errors": list(entry.errors),
-        "findings": legacy,
-        "findings_detail": detail,
-        "path": str(entry.path),
-    }
-    if entry.metrics is None or entry.score is None:
-        base["metrics"] = None
-        base["score"] = None
-        return base
-    base["metrics"] = entry.metrics.to_report_counters()
-    base["score"] = entry.score
-    return base
+
+    parsed = linter.parse_string(sql, fname=str(path))
+    parse_errors = [violation.desc() for violation in parsed.violations]
+    if parse_errors or parsed.tree is None:
+        fallback = "SQLFluff did not return a parse tree."
+        messages = parse_errors or [fallback]
+        return ReportEntry(
+            path=path,
+            errors=messages,
+            findings=[_parse_error_finding(str(path), msg) for msg in messages],
+        )
+
+    analysis = analyze_segment_tree(parsed.tree)
+    metrics = analysis.metrics
+    policy = _policy_for_path(config, path)
+    score = metrics.score(_weights_from_config(config))
+    findings = _findings_for_file(
+        path=path,
+        segment=parsed.tree,
+        metrics=metrics,
+        score=score,
+        policy=policy,
+        contributors=analysis.contributors,
+        config=config,
+    )
+    return ReportEntry(path=path, metrics=metrics, score=score, findings=findings)
+
+
+def _build_config(dialect: str, config_path: Path | None) -> FluffConfig:
+    overrides: ConfigMappingType = {"dialect": dialect}
+    if config_path is None:
+        return FluffConfig.from_kwargs(dialect=dialect)
+    return FluffConfig.from_root(extra_config_path=str(config_path), overrides=overrides)
+
+
+def analyze_paths(paths: Sequence[Path], *, dialect: str, config_path: Path | None = None) -> ComplexityReport:
+    """Analyze SQL file paths with SQLFluff and collect complexity metrics."""
+    config = _build_config(dialect=dialect, config_path=config_path)
+    linter = Linter(config=config)
+    return ComplexityReport(entries=[_analyze_path(path, linter, config) for path in paths])
+
+
+def _console_message_line(rule_id: str, message: str) -> str:
+    """Avoid ``RULE: RULE: ...`` when ``message`` already includes the rule prefix."""
+    prefix = f"{rule_id}: "
+    if message.startswith(prefix):
+        return message
+    return f"{prefix}{message}"
 
 
 def _format_console_entry(entry: ReportEntry) -> list[str]:
@@ -641,3 +551,93 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
             extra = f" [{summ}]" if summ else ""
             lines.append(f"  {_console_message_line(finding.rule_id, finding.message)}{extra}")
     return lines
+
+
+def format_console_report(report: ComplexityReport) -> str:
+    """Format a complexity report for terminal output."""
+    column_headers = (
+        "path score ctes joins subquery_depth case_expressions boolean_operators window_functions "
+        "cte_dependency_depth set_operation_count expression_depth derived_tables"
+    )
+    lines = [
+        "sqlfluff-complexity report",
+        column_headers,
+    ]
+    for entry in report.entries:
+        lines.extend(_format_console_entry(entry))
+    return "\n".join(lines)
+
+
+def format_sarif_report(report: ComplexityReport) -> str:
+    """Format a complexity report as SARIF 2.1.0 JSON."""
+    all_findings = [f for e in report.entries for f in e.findings]
+    sarif = findings_to_sarif_payload(all_findings)
+    return json.dumps(sarif, indent=2, sort_keys=True)
+
+
+def _finding_to_canonical_dict(finding: ComplexityFinding) -> dict[str, object]:
+    return findings_to_json_payload((finding,))["findings"][0]
+
+
+def _json_entry(entry: ReportEntry) -> dict[str, object]:
+    legacy: list[dict[str, object]] = []
+    detail: list[dict[str, object]] = []
+    for finding in entry.findings:
+        legacy.append(
+            {"level": finding.level, "message": finding.message, "rule_id": finding.rule_id},
+        )
+        detail.append(_finding_to_canonical_dict(finding))
+    base: dict[str, object] = {
+        "errors": list(entry.errors),
+        "findings": legacy,
+        "findings_detail": detail,
+        "path": str(entry.path),
+    }
+    if entry.metrics is None or entry.score is None:
+        base["metrics"] = None
+        base["score"] = None
+        return base
+    base["metrics"] = entry.metrics.to_report_counters()
+    base["score"] = entry.score
+    return base
+
+
+def format_json_report(report: ComplexityReport) -> str:
+    """Format a complexity report as stable JSON for automation."""
+    all_findings = [f for e in report.entries for f in e.findings]
+    payload = {
+        "entries": [_json_entry(entry) for entry in report.entries],
+        "findings": [_finding_to_canonical_dict(f) for f in all_findings],
+        "schema_version": "1.1",
+        "tool": "sqlfluff-complexity",
+        "version": __version__,
+    }
+    return json.dumps(payload, indent=2, sort_keys=True)
+
+
+def analyze_paths_findings(
+    paths: Sequence[Path], *, dialect: str, config_path: Path | None = None
+) -> list[ComplexityFinding]:
+    """Return flat ComplexityFinding list for all paths (canonical API)."""
+    report = analyze_paths(paths, dialect=dialect, config_path=config_path)
+    return [f for e in report.entries for f in e.findings]
+
+
+def load_fluff_config(*, dialect: str, config_path: Path | None = None) -> FluffConfig:
+    """Load a FluffConfig the same way as the report command."""
+    return _build_config(dialect=dialect, config_path=config_path)
+
+
+def validate_cpx_plugin_config(config: FluffConfig) -> None:
+    """Validate CPX-related config keys using existing parsers.
+
+    Raises ValueError with a clear message on invalid weights or path overrides.
+    """
+    parse_weights(config.get("complexity_weights", section=("rules", "CPX_C201"), default=None))
+    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
+    mode = str(config.get("mode", section=("rules", "CPX_C201"), default="enforce"))
+    if mode not in POLICY_MODES:
+        message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
+        raise ValueError(message)
+    base_policy = replace(_threshold_policy_from_config(config), mode=mode)
+    resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
