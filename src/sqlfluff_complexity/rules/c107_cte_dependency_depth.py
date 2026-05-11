@@ -40,6 +40,7 @@ class Rule_CPX_C107(BaseRule):  # noqa: N801
     config_keywords: ClassVar[list[str]] = ["max_cte_dependency_depth"]
     crawl_behaviour = SegmentSeekerCrawler({"with_compound_statement"})
     is_fix_compatible = False
+    targets_templated = True
     max_cte_dependency_depth: int
 
     def _eval(self, context: RuleContext) -> LintResult | None:

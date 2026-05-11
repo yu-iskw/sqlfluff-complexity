@@ -49,6 +49,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
     ]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
+    targets_templated = True
     max_complexity_score: int
     complexity_weights: str
     mode: str
