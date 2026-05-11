@@ -12,18 +12,14 @@ from sqlfluff_complexity.tests.fixture_loader import (
 
 def test_golden_metrics_parametrize_hook_matches_function_name() -> None:
     """``pytest_generate_tests`` must stay aligned with the golden test's ``__name__``."""
-    assert (
-        golden_metrics.test_fixture_metrics_match_expected_json.__name__
-        == golden_metrics.METRICS_GOLDEN_TEST_NAME
-    )
+    assert golden_metrics.test_fixture_metrics_match_expected_json.__name__ == golden_metrics.METRICS_GOLDEN_TEST_NAME
 
 
 def test_iter_metrics_bootstrap_targets_cardinality() -> None:
     """Bootstrap emits one row per dialect in discovery times each bootstrap stem."""
     targets = iter_metrics_bootstrap_targets()
     assert targets, (
-        "expected iter_metrics_bootstrap_targets to be non-empty "
-        "(fixtures/sql dialect dirs with metrics_*.sql)"
+        "expected iter_metrics_bootstrap_targets to be non-empty (fixtures/sql dialect dirs with metrics_*.sql)"
     )
     dialects = {d for d, _ in targets}
     # Same dialect universe as loader discovery (Cartesian product contract).

@@ -81,16 +81,6 @@ def segment_position(segment: BaseSegment | None) -> tuple[int | None, int | Non
     return line_int, col_int
 
 
-def _pick_contributor_examples(
-    contributors: Sequence[MetricContributor],
-    weights: Mapping[str, int],
-    max_items: int,
-) -> list[MetricContributor]:
-    indexed = _contributors_sorted_by_weight(contributors, weights)
-    chosen = _unique_metrics_from_sorted(indexed, max_items)
-    return _backfill_contributors(chosen, contributors, max_items)
-
-
 def _contributors_sorted_by_weight(
     contributors: Sequence[MetricContributor],
     weights: Mapping[str, int],
@@ -135,6 +125,16 @@ def _backfill_contributors(
         if contributor not in chosen:
             chosen.append(contributor)
     return chosen[:max_items]
+
+
+def _pick_contributor_examples(
+    contributors: Sequence[MetricContributor],
+    weights: Mapping[str, int],
+    max_items: int,
+) -> list[MetricContributor]:
+    indexed = _contributors_sorted_by_weight(contributors, weights)
+    chosen = _unique_metrics_from_sorted(indexed, max_items)
+    return _backfill_contributors(chosen, contributors, max_items)
 
 
 def top_contributors(

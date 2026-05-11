@@ -36,6 +36,7 @@ lint:
 .PHONY: format
 format:
 	trunk fmt -a
+	uv run ssort .
 
 # Find unused code (Vulture; reads [tool.vulture] in pyproject.toml).
 .PHONY: dead-code vulture

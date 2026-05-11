@@ -24,13 +24,7 @@ def _repo_root_containing_dev() -> pathlib.Path:
         names = parent / "dev" / "coverage_importlib_names.py"
         meta = parent / "dev" / "coverage_importlib_meta.json"
         meta_access = parent / "dev" / "coverage_importlib_meta_access.py"
-        if (
-            bootstrap.is_file()
-            and cleanup.is_file()
-            and names.is_file()
-            and meta.is_file()
-            and meta_access.is_file()
-        ):
+        if bootstrap.is_file() and cleanup.is_file() and names.is_file() and meta.is_file() and meta_access.is_file():
             return parent
     message = (
         "Could not locate repo root: no ancestor contains dev/coverage_bootstrap.py, "

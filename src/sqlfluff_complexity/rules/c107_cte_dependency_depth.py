@@ -56,9 +56,6 @@ class Rule_CPX_C107(BaseRule):  # noqa: N801
             return None
 
         rem = remediation_for_rule("CPX_C107")
-        description = (
-            f"CPX_C107: CTE dependency depth is {actual}, exceeding max_cte_dependency_depth={limit}. "
-            f"{rem}"
-        )
+        description = f"CPX_C107: CTE dependency depth is {actual}, exceeding max_cte_dependency_depth={limit}. {rem}"
         anchor = _anchor_cte_dependency_violation(context.segment)
         return LintResult(anchor=anchor, description=description)

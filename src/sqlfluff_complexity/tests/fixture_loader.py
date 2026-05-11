@@ -48,9 +48,7 @@ def _dialect_names_with_metric_sql() -> tuple[str, ...]:
     if not _SQL_ROOT.is_dir():
         return ()
     return tuple(
-        child.name
-        for child in sorted(_SQL_ROOT.iterdir())
-        if child.is_dir() and any(child.glob(_METRICS_FIXTURE_GLOB))
+        child.name for child in sorted(_SQL_ROOT.iterdir()) if child.is_dir() and any(child.glob(_METRICS_FIXTURE_GLOB))
     )
 
 
@@ -69,11 +67,7 @@ def iter_metrics_bootstrap_targets() -> tuple[tuple[str, str], ...]:
     This Cartesian product is a **subset** of ``discover_metrics_fixture_cases()`` (which
     includes every ``metrics_*.sql`` with golden JSON, not only bootstrap stems).
     """
-    return tuple(
-        (dialect, stem)
-        for dialect in _dialect_names_with_metric_sql()
-        for stem in METRICS_BOOTSTRAP_STEMS
-    )
+    return tuple((dialect, stem) for dialect in _dialect_names_with_metric_sql() for stem in METRICS_BOOTSTRAP_STEMS)
 
 
 @dataclass(frozen=True)
@@ -147,9 +141,7 @@ def discover_metrics_fixture_cases() -> tuple[tuple[str, str], ...]:
 
 def load_expected_metrics(dialect: str, stem: str) -> ComplexityMetrics:
     """Load expected metrics from JSON next to the SQL fixture stem."""
-    data: dict[str, Any] = json.loads(
-        expected_metrics_path(dialect, stem).read_text(encoding="utf-8")
-    )
+    data: dict[str, Any] = json.loads(expected_metrics_path(dialect, stem).read_text(encoding="utf-8"))
     merged: dict[str, Any] = {}
     for field_info in fields(ComplexityMetrics):
         name = field_info.name

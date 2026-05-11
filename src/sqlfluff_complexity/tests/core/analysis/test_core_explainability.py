@@ -130,10 +130,7 @@ def test_explain_score_contributors_respects_max_items() -> None:
         "boolean_operators": 1,
         "window_functions": 2,
     }
-    assert (
-        explain_score_contributors(metrics, weights, max_items=3)
-        == "joins=20, ctes=8, subquery_depth=8"
-    )
+    assert explain_score_contributors(metrics, weights, max_items=3) == "joins=20, ctes=8, subquery_depth=8"
     assert explain_score_contributors(metrics, weights, max_items=1) == "joins=20"
     assert explain_score_contributors(metrics, weights, max_items=0) == ""
 
