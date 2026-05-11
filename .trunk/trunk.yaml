@@ -7,14 +7,14 @@ cli:
 plugins:
   sources:
     - id: trunk
-      ref: v1.7.6
+      ref: v1.9.0
       uri: https://github.com/trunk-io/plugins
 # Many linters and tools depend on runtimes - configure them here. (https://docs.trunk.io/runtimes)
 runtimes:
   enabled:
     - go@1.26.0
     - node@24.14.0
-    - python@3.12.2
+    - python@3.14.4
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   # dev/bootstrap_exp_fixtures.py builds static SQL literals; Bandit B608 is noise there only.
@@ -34,10 +34,10 @@ lint:
     - ruff@0.15.12:
         commands: [lint, format]
     - pylint@4.0.5
-    - semgrep@1.161.0
+    - semgrep@1.162.0
     - pre-commit-hooks@5.0.0
-    - trivy@0.69.3
-    - osv-scanner@2.3.5
+    - trivy@0.70.0
+    - osv-scanner@2.3.8
     - bandit@1.9.4
     - shellcheck@0.11.0
     - shfmt@3.6.0

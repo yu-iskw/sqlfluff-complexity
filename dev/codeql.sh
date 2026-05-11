@@ -15,10 +15,23 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
 # Directory for the CodeQL database
 DB_DIR=".codeql_db"
 # Results file
 RESULTS_SARIF="codeql-results.sarif"
+
+# Ignore vendored / fixture trees (for example dbt packages under tmp/) so analysis
+# matches maintainable project sources. See .claude/skills/codeql-fix/scripts/render-code-scanning-config.sh
+RENDER_SCRIPT="${REPO_ROOT}/.claude/skills/codeql-fix/scripts/render-code-scanning-config.sh"
+CODEQL_CONFIG=""
+cleanup_codeql_config() {
+	if [[ -n ${CODEQL_CONFIG} && -f ${CODEQL_CONFIG} ]]; then
+		rm -f "${CODEQL_CONFIG}"
+	fi
+}
 
 # Check if codeql is installed
 if ! command -v codeql &>/dev/null; then
@@ -38,7 +51,16 @@ fi
 # Create CodeQL database
 # Note: For Python, we don't need a build command.
 echo "Creating CodeQL database..."
-codeql database create "${DB_DIR}" --language=python --source-root .
+CODEQL_CREATE_ARGS=(--language=python --source-root "${REPO_ROOT}")
+if [[ -f ${RENDER_SCRIPT} ]]; then
+	CODEQL_CONFIG="$(mktemp)"
+	trap cleanup_codeql_config EXIT
+	bash "${RENDER_SCRIPT}" "${REPO_ROOT}" "${CODEQL_CONFIG}" tmp
+	CODEQL_CREATE_ARGS+=(--codescanning-config="${CODEQL_CONFIG}")
+else
+	echo "Warning: Code scanning config renderer not found at ${RENDER_SCRIPT}; scanning full tree."
+fi
+codeql database create "${DB_DIR}" "${CODEQL_CREATE_ARGS[@]}"
 
 # Run Analysis
 # We use the same 'security-and-quality' suite as defined in CI.
