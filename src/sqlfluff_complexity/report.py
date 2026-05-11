@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -40,8 +41,6 @@ from sqlfluff_complexity.reporting.json import findings_to_json_payload
 from sqlfluff_complexity.reporting.sarif import findings_to_sarif_payload
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     from sqlfluff.core.types import ConfigMappingType
 
 
@@ -168,9 +167,49 @@ class ComplexityReport:
         return any(entry.errors for entry in self.entries)
 
 
-def analyze_paths(
-    paths: Sequence[Path], *, dialect: str, config_path: Path | None = None
-) -> ComplexityReport:
+def _sql_files_under(root: Path) -> list[Path]:
+    """Return regular files under ``root`` whose suffix is ``.sql`` (case-insensitive)."""
+    if not root.is_dir():
+        return []
+    return [candidate for candidate in root.rglob("*") if candidate.is_file() and candidate.suffix.lower() == ".sql"]
+
+
+def _dedupe_paths_stable(paths: Sequence[Path]) -> list[Path]:
+    """Deduplicate paths by resolved location and return sorted by ``str(path)``."""
+    seen: dict[str, Path] = {}
+    for path in paths:
+        try:
+            key = str(path.resolve(strict=False))
+        except OSError:
+            key = str(path)
+        if key not in seen:
+            seen[key] = path
+    return sorted(seen.values(), key=str)
+
+
+def expand_report_paths(paths: Sequence[Path], *, recursive: bool) -> list[Path]:
+    """Return concrete paths to pass to :func:`analyze_paths`.
+
+    When ``recursive`` is false, returns ``paths`` unchanged (caller may validate).
+
+    When ``recursive`` is true, each file argument is kept as-is; each directory is
+    expanded to all nested ``*.sql`` files (suffix matched case-insensitively). The
+    result is deduplicated and sorted for deterministic output.
+    """
+    if not recursive:
+        return list(paths)
+
+    collected: list[Path] = []
+    for path in paths:
+        if path.is_dir():
+            collected.extend(_sql_files_under(path))
+        else:
+            collected.append(path)
+
+    return _dedupe_paths_stable(collected)
+
+
+def analyze_paths(paths: Sequence[Path], *, dialect: str, config_path: Path | None = None) -> ComplexityReport:
     """Analyze SQL file paths with SQLFluff and collect complexity metrics."""
     config = _build_config(dialect=dialect, config_path=config_path)
     linter = Linter(config=config)
@@ -598,11 +637,7 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
         if finding.rule_id == "CPX_PARSE_ERROR":
             lines.append(f"  {finding.rule_id}: {finding.message}")
         else:
-            summ = (
-                format_contributor_summary(finding.contributors, limit=3)
-                if finding.contributors
-                else ""
-            )
+            summ = format_contributor_summary(finding.contributors, limit=3) if finding.contributors else ""
             extra = f" [{summ}]" if summ else ""
             lines.append(f"  {_console_message_line(finding.rule_id, finding.message)}{extra}")
     return lines

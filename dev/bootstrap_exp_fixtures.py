@@ -43,12 +43,7 @@ _EXPECTED = _REPO / "src/sqlfluff_complexity/tests/fixtures/expected"
 
 def hdr(url: str, section: str, license_note: str, verbatim: str) -> str:
     return (
-        "/*\n"
-        f"source_url: {url}\n"
-        f"source_section: {section}\n"
-        f"license_note: {license_note}\n"
-        f"verbatim: {verbatim}\n"
-        "*/\n\n"
+        f"/*\nsource_url: {url}\nsource_section: {section}\nlicense_note: {license_note}\nverbatim: {verbatim}\n*/\n\n"
     )
 
 
@@ -116,9 +111,7 @@ def sql_for(dialect: str, stem: str) -> str:
                 derived,
                 "no",
             )
-            return (
-                h + "SELECT ARRAY(SELECT v FROM UNNEST([10, 20, 30]) AS v WHERE v > 15) AS arr;\n"
-            )
+            return h + "SELECT ARRAY(SELECT v FROM UNNEST([10, 20, 30]) AS v WHERE v > 15) AS arr;\n"
         if dialect == "snowflake":
             h = hdr(
                 "https://docs.snowflake.com/en/sql-reference/functions/object_construct",
@@ -191,11 +184,7 @@ def sql_for(dialect: str, stem: str) -> str:
 
     if stem == "metrics_wave1_insert_archive":
         h = hdr(n, "INSERT SELECT", derived, "no")
-        return (
-            h
-            + "INSERT INTO arch_cpx_w1\n"
-            + "SELECT s.a FROM (SELECT CAST(1 AS INT) AS a) AS s WHERE 1 = 1;\n"
-        )
+        return h + "INSERT INTO arch_cpx_w1\n" + "SELECT s.a FROM (SELECT CAST(1 AS INT) AS a) AS s WHERE 1 = 1;\n"
 
     raise KeyError(stem)
 
