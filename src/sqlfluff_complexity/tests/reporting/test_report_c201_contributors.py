@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from sqlfluff_complexity.report import analyze_paths
+from sqlfluff_complexity.tests.cpx_config_fragments import CPX_C201_SAMPLE_COMPLEXITY_WEIGHTS_JSON
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -14,11 +15,11 @@ def test_report_c201_findings_empty_contributors_when_disabled(tmp_path: Path) -
     """JSON/contributors omit segments when CPX_C201 show_contributors is false."""
     cfg = tmp_path / ".sqlfluff"
     cfg.write_text(
-        """
+        f"""
         [sqlfluff:rules:CPX_C201]
         max_complexity_score = 4
         show_contributors = false
-        complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+        complexity_weights = {CPX_C201_SAMPLE_COMPLEXITY_WEIGHTS_JSON}
 
         [sqlfluff:rules:CPX_C102]
         max_joins = 99
@@ -46,12 +47,12 @@ def test_report_c201_findings_empty_contributors_when_max_zero(tmp_path: Path) -
     """max_contributors=0 suppresses contributor lists while show_contributors is true."""
     cfg = tmp_path / ".sqlfluff"
     cfg.write_text(
-        """
+        f"""
         [sqlfluff:rules:CPX_C201]
         max_complexity_score = 4
         show_contributors = true
         max_contributors = 0
-        complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+        complexity_weights = {CPX_C201_SAMPLE_COMPLEXITY_WEIGHTS_JSON}
 
         [sqlfluff:rules:CPX_C102]
         max_joins = 99

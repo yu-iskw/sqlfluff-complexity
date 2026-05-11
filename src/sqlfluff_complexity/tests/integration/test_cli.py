@@ -21,6 +21,7 @@ import json
 from typing import TYPE_CHECKING
 
 from sqlfluff_complexity.cli import _dispatch_cli, main
+from sqlfluff_complexity.core.config.presets import WEIGHT_JSON
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -144,7 +145,7 @@ def test_config_check_valid_returns_zero(tmp_path: Path) -> None:
     cfg.write_text(
         """
         [sqlfluff:rules:CPX_C201]
-        complexity_weights = joins:2,derived_tables:0
+        complexity_weights = {"joins":2,"derived_tables":0}
         path_overrides =
             models/*.sql:max_joins=4,max_derived_tables=2
         """,
@@ -203,7 +204,7 @@ def test_config_preset_prints_recommended_config(capsys: pytest.CaptureFixture[s
     assert rules_line in output
     assert "[sqlfluff:rules:CPX_C110]" in output
     assert "max_derived_tables = 4" in output
-    assert "derived_tables:0" in output
+    assert f"complexity_weights = {WEIGHT_JSON}" in output
 
 
 def test_config_preset_report_only_uses_report_mode(capsys: pytest.CaptureFixture[str]) -> None:
@@ -220,7 +221,7 @@ def test_config_check_invalid_weights_nonzero(tmp_path: Path, capsys: pytest.Cap
     cfg.write_text(
         """
         [sqlfluff:rules:CPX_C201]
-        complexity_weights = joins:not-an-int
+        complexity_weights = {"joins":"not-an-int"}
         """,
         encoding="utf-8",
     )

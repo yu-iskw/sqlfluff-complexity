@@ -44,6 +44,8 @@ sqlfluff lint models/
 
 For a complete walkthrough, see [docs/quickstart.md](docs/quickstart.md).
 
+**Migrating `complexity_weights`:** Use a JSON object in `[sqlfluff:rules:CPX_C201]` (not comma-separated `key:value` lists). See [Configuration: aggregate score](docs/configuration.md#aggregate-score) and [CHANGELOG](CHANGELOG.md).
+
 ## Documentation
 
 - [Quick start](docs/quickstart.md): install, configure, and run the first lint.

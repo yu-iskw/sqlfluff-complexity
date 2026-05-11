@@ -1,9 +1,9 @@
 # Product Design: sqlfluff-complexity
 
-**Document status:** Draft v0.1  
-**Target repository:** `https://github.com/yu-iskw/sqlfluff-complexity`  
-**Product name:** `sqlfluff-complexity`  
-**Primary audience:** dbt analytics engineering teams, data platform teams, SQLFluff users, maintainers  
+**Document status:** Draft v0.1
+**Target repository:** `https://github.com/yu-iskw/sqlfluff-complexity`
+**Product name:** `sqlfluff-complexity`
+**Primary audience:** dbt analytics engineering teams, data platform teams, SQLFluff users, maintainers
 **Primary goal:** Implement a maintainable custom SQLFluff plugin for SQL/dbt complexity enforcement and reporting.
 
 ---
@@ -299,18 +299,26 @@ score =
 + 2 * case_expression_count
 + 1 * boolean_operator_count
 + 2 * window_function_count
++ 2 * max_cte_dependency_depth
++ 2 * set_operation_count
++ 1 * max_expression_depth
++ 2 * derived_table_count
 ```
 
 Default weights:
 
-| Metric              | Weight |
-| ------------------- | -----: |
-| `ctes`              |      2 |
-| `joins`             |      2 |
-| `subquery_depth`    |      4 |
-| `case_expressions`  |      2 |
-| `boolean_operators` |      1 |
-| `window_functions`  |      2 |
+| Metric                 | Weight |
+| ---------------------- | -----: |
+| `ctes`                 |      2 |
+| `joins`                |      2 |
+| `subquery_depth`       |      4 |
+| `case_expressions`     |      2 |
+| `boolean_operators`    |      1 |
+| `window_functions`     |      2 |
+| `cte_dependency_depth` |      2 |
+| `set_operation_count`  |      2 |
+| `expression_depth`     |      1 |
+| `derived_tables`       |      2 |
 
 ### 8.4 Why individual rules plus aggregate rule
 
@@ -608,7 +616,7 @@ def get_configs_info() -> dict[str, dict[str, ConfigInfo]]:
         "max_boolean_operators": {"definition": "Maximum AND/OR operators allowed."},
         "max_window_functions": {"definition": "Maximum window functions allowed."},
         "max_complexity_score": {"definition": "Maximum aggregate complexity score."},
-        "complexity_weights": {"definition": "Comma-separated complexity weights."},
+        "complexity_weights": {"definition": "JSON object string of aggregate complexity weights."},
         "mode": {"definition": "Rule mode: enforce or report."},
         "path_overrides": {"definition": "Path-specific complexity policy overrides."},
     }
@@ -904,56 +912,62 @@ Mitigation:
 Configuration string:
 
 ```ini
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
 ```
 
 Parser behavior:
 
-- split by comma
-- split entries by colon
-- trim whitespace
-- reject unknown metric names
-- reject negative weights
-- reject non-integer weights
-- use defaults for missing weights only if explicitly allowed
+- Trim surrounding whitespace; strip an optional UTF-8 BOM (`\ufeff`). Whitespace-only input yields defaults.
+- Non-empty values must be JSON text that parses as an **object** (`{...}`). Legacy comma-separated `key:value` lists are rejected.
+- Parse with `json.loads`; invalid JSON is surfaced as `ValueError`. Non-object roots and non-string keys use internal validation and are raised as `ValueError` from the public `parse_weights` API (see sketch below).
+- Each key must be a known metric name; each value a non-negative integer (booleans, floats, and strings are rejected).
+- Start from `DEFAULT_WEIGHTS` and override keys present in the object; omitted keys keep defaults.
 
-Example:
+Example (illustrative; see `src/sqlfluff_complexity/core/config/scoring.py` for the full implementation):
 
 ```python
 from __future__ import annotations
 
-VALID_WEIGHT_KEYS = {
-    "ctes",
-    "joins",
-    "subquery_depth",
-    "case_expressions",
-    "boolean_operators",
-    "window_functions",
-}
+import json
+
+VALID_WEIGHT_KEYS = frozenset(DEFAULT_WEIGHTS)
 
 
-def parse_weights(raw: str) -> dict[str, int]:
-    """Parse complexity weight configuration."""
-    weights: dict[str, int] = {}
-    for item in raw.split(","):
-        item = item.strip()
-        if not item:
-            continue
-        key, sep, value = item.partition(":")
-        if sep != ":":
-            msg = f"Invalid weight item {item!r}; expected key:value."
-            raise ValueError(msg)
-        key = key.strip()
-        value = value.strip()
+def parse_weights(raw: str | None) -> dict[str, int]:
+    """Parse complexity_weights from a JSON object string (partial overrides)."""
+    weights = DEFAULT_WEIGHTS.copy()
+    if raw is None:
+        return weights
+    stripped = raw.strip().removeprefix("\ufeff").strip()
+    if not stripped:
+        return weights
+    if not stripped.startswith("{"):
+        raise ValueError("complexity_weights must be a JSON object string.")
+    try:
+        return _parse_weights_from_json_object(stripped, weights)
+    except TypeError as exc:
+        raise ValueError(str(exc)) from exc
+
+
+def _parse_weights_from_json_object(stripped: str, weights: dict[str, int]) -> dict[str, int]:
+    try:
+        obj = json.loads(stripped)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON for complexity_weights: {exc}") from exc
+    if not isinstance(obj, dict):
+        raise TypeError("complexity_weights JSON must be an object {...}, not an array or scalar.")
+    for key, value in obj.items():
+        if not isinstance(key, str):
+            raise TypeError("complexity_weights JSON keys must be strings.")
         if key not in VALID_WEIGHT_KEYS:
-            msg = f"Unknown complexity weight key {key!r}."
-            raise ValueError(msg)
-        parsed_value = int(value)
-        if parsed_value < 0:
-            msg = f"Complexity weight for {key!r} must be non-negative."
-            raise ValueError(msg)
-        weights[key] = parsed_value
+            raise ValueError(f"Unknown complexity weight key {key!r}.")
+        weights[key] = _coerce_json_weight_value(key, value)
     return weights
+
+
+def _coerce_json_weight_value(key: str, value: object) -> int:
+    """Non-negative int only; bool/float/str raise TypeError for wrapping by parse_weights."""
+    ...
 ```
 
 ### 15.2 Score interpretation
@@ -996,7 +1010,7 @@ max_window_functions = 10
 
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
 mode = enforce
 path_overrides =
 ```
@@ -1037,7 +1051,7 @@ max_window_functions = 10
 
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
 mode = enforce
 path_overrides =
     models/staging/*:max_complexity_score=45,max_joins=4,max_ctes=4
@@ -2065,7 +2079,7 @@ max_window_functions = 10
 
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = ctes:2,joins:2,subquery_depth:4,case_expressions:2,boolean_operators:1,window_functions:2
+complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
 mode = enforce
 path_overrides =
     models/staging/*:max_complexity_score=45,max_joins=4,max_ctes=4

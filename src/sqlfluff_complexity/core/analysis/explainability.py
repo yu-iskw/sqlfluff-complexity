@@ -4,23 +4,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS
+
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 # Keys that participate in weighted aggregate scoring (order not used for sorting).
-_SCORE_METRIC_KEYS: tuple[str, ...] = (
-    "ctes",
-    "joins",
-    "subquery_depth",
-    "case_expressions",
-    "boolean_operators",
-    "window_functions",
-    "cte_dependency_depth",
-    "set_operation_count",
-    "expression_depth",
-)
+_SCORE_METRIC_KEYS: tuple[str, ...] = tuple(DEFAULT_WEIGHTS)
 
 _REFACTORING_PHRASES: dict[str, str] = {
     "joins": "splitting high-fan-in joins",
@@ -32,6 +24,7 @@ _REFACTORING_PHRASES: dict[str, str] = {
     "cte_dependency_depth": "reducing chained CTE dependencies",
     "set_operation_count": "simplifying stacked set operations",
     "expression_depth": "flattening nested CASE expressions",
+    "derived_tables": "extracting inline derived tables into named intermediate models",
 }
 
 

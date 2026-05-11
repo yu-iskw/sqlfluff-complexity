@@ -14,7 +14,9 @@ This page complements [Reporting](reporting.md) and [Configuration](configuratio
 3. **Inspect columns** in console output or JSON: `set_operation_count` counts `set_operator` parse segments (stacked `UNION` / `INTERSECT` / `EXCEPT`). `expression_depth` is **not** general expression-tree depth; it is the **maximum nesting depth of `case_expression` segments** (nested `CASE` inside `CASE`). `derived_tables` counts inline `from (select ...)` / `join (select ...)` relations **outside CTE query bodies** (inside a `WITH` CTE definition those are skipped so they are not double-counted with `ctes`).
 4. **Set generous thresholds** in `[sqlfluff:rules:CPX_C108]`, `CPX_C109`, and `CPX_C110` (and existing CPX sections) so the first CI run is informative, not blocking.
 5. **Tighten with `path_overrides`** on `[sqlfluff:rules:CPX_C201]` so staging vs marts get different budgets (see [Configuration](configuration.md)).
-6. **Optionally raise `complexity_weights`** for `set_operation_count`, `expression_depth`, and `derived_tables` in `CPX_C201` after baseline runs—default weights are often `0` until teams opt in.
+6. **Tune `complexity_weights` after baseline runs** if a metric is too noisy or too quiet for your
+   project. Set weights as a **JSON object** string under `[sqlfluff:rules:CPX_C201]` (see [Aggregate score](configuration.md#aggregate-score)); omit keys to keep defaults. The defaults already include modest nonzero weights for `set_operation_count`,
+   `expression_depth`, and `derived_tables`; teams can still lower them to `0` for an opt-in rollout.
 
 ## CI: SARIF artifact
 
@@ -81,7 +83,7 @@ from customers where region = 'AMER';
 
 A report might show elevated `set_operation_count` and `expression_depth`, and findings for `CPX_C109` / `CPX_C108` when thresholds are tight.
 
-**After:** split regions into a staging model or seed, union once in a thin mart, and replace nested `CASE` with a mapping join or intermediate classification model. Re-run `sqlfluff-complexity report`: union arms and nested `CASE` depth should drop along with aggregate score if those metrics are weighted in `CPX_C201`.
+**After:** split regions into a staging model or seed, union once in a thin mart, and replace nested `CASE` with a mapping join or intermediate classification model. Re-run `sqlfluff-complexity report`: union arms and nested `CASE` depth should drop along with aggregate score because those metrics are weighted in `CPX_C201`.
 
 ## Positioning: agent harness
 

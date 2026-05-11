@@ -29,6 +29,7 @@ exclude = [
   "dev",
   "src/sqlfluff_complexity/tests",
   "dist",
+  "tmp",
   ".python-version",
   "Makefile",
   "requirements.setup.txt",
@@ -45,7 +46,7 @@ packages = ["src/sqlfluff_complexity"]
 
 [project]
 name = "sqlfluff-complexity"
-version = "0.4.3"
+version = "0.4.4"
 authors = [{ name = "yu-iskw" }]
 readme = "README.md"
 license = { file = "LICENSE" }

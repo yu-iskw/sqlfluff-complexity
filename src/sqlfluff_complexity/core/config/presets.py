@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+
+from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS
 
 RULE_CODES = (
     "CPX_C101",
@@ -18,20 +21,8 @@ RULE_CODES = (
     "CPX_C201",
 )
 
-WEIGHTS = (
-    "ctes:2",
-    "joins:2",
-    "subquery_depth:4",
-    "case_expressions:2",
-    "boolean_operators:1",
-    "window_functions:2",
-    "cte_dependency_depth:0",
-    "set_operation_count:0",
-    "expression_depth:0",
-    "derived_tables:0",
-)
 RULE_LIST = ",".join(RULE_CODES)
-WEIGHT_LIST = ",".join(WEIGHTS)
+WEIGHT_JSON = json.dumps(DEFAULT_WEIGHTS, separators=(",", ":"), sort_keys=True)
 
 
 @dataclass(frozen=True)
@@ -83,7 +74,7 @@ def _aggregate_section(preset: CpxPreset) -> str:
         [
             "[sqlfluff:rules:CPX_C201]",
             f"max_complexity_score = {preset.max_complexity_score}",
-            f"complexity_weights = {WEIGHT_LIST}",
+            f"complexity_weights = {WEIGHT_JSON}",
             f"mode = {preset.mode}",
             "path_overrides =",
             "show_contributors = true",
