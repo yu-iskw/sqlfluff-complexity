@@ -18,6 +18,41 @@ This page complements [Reporting](reporting.md) and [Configuration](configuratio
    project. Set weights as a **JSON object** string under `[sqlfluff:rules:CPX_C201]` (see [Aggregate score](configuration.md#aggregate-score)); omit keys to keep defaults. The defaults already include modest nonzero weights for `set_operation_count`,
    `expression_depth`, and `derived_tables`; teams can still lower them to `0` for an opt-in rollout.
 
+## CI: HTML dashboard artifact
+
+Upload a standalone HTML dashboard when reviewers need an interactive, browser-openable
+view of complexity hotspots:
+
+```yaml
+# .github/workflows/complexity-report.yml (example)
+name: complexity-report
+on: [push, pull_request]
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install sqlfluff sqlfluff-complexity
+      - name: Generate HTML dashboard
+        run: |
+          sqlfluff-complexity report \
+            --dialect postgres \
+            --config .sqlfluff \
+            --format html \
+            --output complexity.html \
+            models/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: complexity-html
+          path: complexity.html
+```
+
+The uploaded `complexity.html` is self-contained. It can be opened without a server,
+external assets, or network access, and it does not embed full SQL source by default.
+
 ## CI: SARIF artifact
 
 Upload SARIF as a workflow artifact (and optionally feed GitHub code scanning if your org enables it for third-party tools):

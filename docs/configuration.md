@@ -151,7 +151,9 @@ Presets are emitted to stdout only. They do not create hidden runtime behavior; 
 
 ## Enforcement Versus Reporting
 
-Native CPX rules run through `sqlfluff lint` and can fail lint. The companion [report command](reporting.md) uses the same metric and threshold semantics, but emits console or SARIF output for non-blocking analysis.
+Native CPX rules run through `sqlfluff lint` and can fail lint. The companion
+[report command](reporting.md) uses the same metric and threshold semantics, but emits
+console, JSON, SARIF, or standalone HTML output for non-blocking analysis.
 
 Recommended rollout:
 

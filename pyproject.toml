@@ -43,6 +43,8 @@ packages = ["src/sqlfluff_complexity"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "src/sqlfluff_complexity/plugin_default_config.cfg" = "sqlfluff_complexity/plugin_default_config.cfg"
+"src/sqlfluff_complexity/reporting/assets/html_report.css" = "sqlfluff_complexity/reporting/assets/html_report.css"
+"src/sqlfluff_complexity/reporting/assets/html_report.js" = "sqlfluff_complexity/reporting/assets/html_report.js"
 
 [project]
 name = "sqlfluff-complexity"
