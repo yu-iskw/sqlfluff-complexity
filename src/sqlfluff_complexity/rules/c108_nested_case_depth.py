@@ -21,6 +21,8 @@ class Rule_CPX_C108(BaseRule):  # noqa: N801
     groups: tuple[str, ...] = ("all", "complexity")
     config_keywords: ClassVar[list[str]] = [
         "max_nested_case_depth",
+        "severity",
+        "severity_bands",
         "show_contributors",
         "max_contributors",
     ]

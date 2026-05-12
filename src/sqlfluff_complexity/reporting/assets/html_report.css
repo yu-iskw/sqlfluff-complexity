@@ -6,6 +6,8 @@
   --border: #d6dbe1;
   --accent: #0f62fe;
   --accent-soft: #e0e8ff;
+  --info: #0762c8;
+  --info-soft: #deeeff;
   --warning: #b76e00;
   --warning-soft: #fff1d6;
   --error: #c52b1a;
@@ -23,6 +25,8 @@
     --border: #2a3140;
     --accent: #6c8fff;
     --accent-soft: #1c2540;
+    --info: #6cb4ff;
+    --info-soft: #0d2040;
     --warning: #f1c473;
     --warning-soft: #2c2412;
     --error: #ff8b7d;
@@ -488,4 +492,9 @@ table.entries .toggle-btn {
 .tag.warning {
   background: var(--warning-soft);
   color: var(--warning);
+}
+
+.tag.info {
+  background: var(--info-soft);
+  color: var(--info);
 }

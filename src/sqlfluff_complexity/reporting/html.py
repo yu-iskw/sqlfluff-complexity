@@ -30,6 +30,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from sqlfluff_complexity import __version__
+from sqlfluff_complexity.core.config.severity import SeverityLevel
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -82,6 +83,23 @@ def _directory_key(path: Path) -> str:
     return parent or "."
 
 
+_SEVERITY_RANK: dict[SeverityLevel, int] = {
+    SeverityLevel.info: 0,
+    SeverityLevel.warning: 1,
+    SeverityLevel.error: 2,
+}
+
+
+def _max_finding_level(entry: ReportEntryLike) -> str | None:
+    """Return the string of the highest severity finding level, or None."""
+    best: SeverityLevel | None = None
+    for finding in entry.findings:
+        level = finding.level
+        if best is None or _SEVERITY_RANK.get(level, 0) > _SEVERITY_RANK.get(best, 0):
+            best = level
+    return str(best) if best is not None else None
+
+
 def _entry_payload(index: int, entry: ReportEntryLike) -> dict[str, Any]:
     metrics = entry.metrics.to_report_counters() if entry.metrics is not None else None
     return {
@@ -94,6 +112,7 @@ def _entry_payload(index: int, entry: ReportEntryLike) -> dict[str, Any]:
         "finding_count": len(entry.findings),
         "error_count": len(entry.errors),
         "has_errors": bool(entry.errors),
+        "max_finding_level": _max_finding_level(entry),
     }
 
 

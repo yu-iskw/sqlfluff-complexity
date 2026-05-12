@@ -4,19 +4,21 @@
 
 ## Metric Summary
 
-| Rule       | Metric                                            | Default | Config key                 |
-| ---------- | ------------------------------------------------- | ------: | -------------------------- |
-| `CPX_C101` | Common table expressions                          |       8 | `max_ctes`                 |
-| `CPX_C102` | Join clauses                                      |       8 | `max_joins`                |
-| `CPX_C103` | Nested subquery depth                             |       3 | `max_subquery_depth`       |
-| `CPX_C104` | `CASE` expressions                                |      10 | `max_case_expressions`     |
-| `CPX_C105` | Boolean `AND` / `OR` operators                    |      20 | `max_boolean_operators`    |
-| `CPX_C106` | Window functions                                  |      10 | `max_window_functions`     |
-| `CPX_C107` | Longest CTE dependency chain                      |       5 | `max_cte_dependency_depth` |
-| `CPX_C108` | Nested `CASE` depth (`case_expression` nesting)   |      10 | `max_nested_case_depth`    |
-| `CPX_C109` | Set operations (`UNION` / `INTERSECT` / `EXCEPT`) |      12 | `max_set_operations`       |
-| `CPX_C110` | Inline derived tables                             |       4 | `max_derived_tables`       |
-| `CPX_C201` | Aggregate weighted complexity score               |      60 | `max_complexity_score`     |
+| Rule       | Metric                                            | Default | Config key                 | Default severity |
+| ---------- | ------------------------------------------------- | ------: | -------------------------- | ---------------- |
+| `CPX_C101` | Common table expressions                          |       8 | `max_ctes`                 | `warning`        |
+| `CPX_C102` | Join clauses                                      |       8 | `max_joins`                | `warning`        |
+| `CPX_C103` | Nested subquery depth                             |       3 | `max_subquery_depth`       | `warning`        |
+| `CPX_C104` | `CASE` expressions                                |      10 | `max_case_expressions`     | `warning`        |
+| `CPX_C105` | Boolean `AND` / `OR` operators                    |      20 | `max_boolean_operators`    | `warning`        |
+| `CPX_C106` | Window functions                                  |      10 | `max_window_functions`     | `warning`        |
+| `CPX_C107` | Longest CTE dependency chain                      |       5 | `max_cte_dependency_depth` | `warning`        |
+| `CPX_C108` | Nested `CASE` depth (`case_expression` nesting)   |      10 | `max_nested_case_depth`    | `warning`        |
+| `CPX_C109` | Set operations (`UNION` / `INTERSECT` / `EXCEPT`) |      12 | `max_set_operations`       | `warning`        |
+| `CPX_C110` | Inline derived tables                             |       4 | `max_derived_tables`       | `warning`        |
+| `CPX_C201` | Aggregate weighted complexity score               |      60 | `max_complexity_score`     | `warning`        |
+
+The "Default severity" column shows the `level` field value in report output when no `severity` config is set. Severity is a report-mode concept only — it does not affect `sqlfluff lint` pass/fail. See [configuration: severity](configuration.md#severity) and [SQLFluff lint behavior](sqlfluff-lint-behavior.md).
 
 ## CPX_C101: Too Many CTEs
 

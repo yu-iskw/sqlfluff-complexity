@@ -41,6 +41,8 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
     groups: tuple[str, ...] = ("all", "complexity")
     config_keywords: ClassVar[list[str]] = [
         "max_complexity_score",
+        "severity",
+        "severity_bands",
         "complexity_weights",
         "mode",
         "path_overrides",

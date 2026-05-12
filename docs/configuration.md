@@ -120,6 +120,53 @@ Supported override keys:
 
 `mode` can be `enforce` or `report`. A matching `mode=report` override suppresses SQLFluff rule enforcement for the affected CPX rule path while keeping the policy useful for report mode.
 
+## Severity
+
+Each CPX rule accepts an optional `severity` key and `severity_bands` key. These control the `level` field in report output (`sqlfluff-complexity report`). They have **no effect on `sqlfluff lint`** pass/fail behavior — lint is controlled by threshold keys (`max_joins`, etc.).
+
+### `severity`
+
+Sets the baseline severity level for findings produced by a rule in report mode.
+
+Accepted values: `info`, `warning`, `error`. Default: `warning`.
+
+```ini
+[sqlfluff:rules:CPX_C102]
+max_joins = 6
+severity = error
+```
+
+All findings from CPX_C102 will have `level = "error"` in report output.
+
+### `severity_bands`
+
+Defines threshold-based severity escalation. The value is a JSON array of objects with `threshold` (non-negative integer) and `severity` fields.
+
+```ini
+[sqlfluff:rules:CPX_C102]
+max_joins = 4
+severity = warning
+severity_bands = [{"threshold": 10, "severity": "error"}]
+```
+
+When the metric value is at or above a band's threshold, that band's severity applies. The highest severity among all matching bands wins. If no band matches, the base `severity` applies.
+
+For long arrays, you may use INI continuation lines:
+
+```ini
+severity_bands =
+    [
+      {"threshold": 8, "severity": "warning"},
+      {"threshold": 15, "severity": "error"}
+    ]
+```
+
+**Format requirements:** Valid JSON — double-quoted keys, no trailing commas. Each object must have `threshold` (non-negative integer) and `severity` (`"info"`, `"warning"`, or `"error"`).
+
+Invalid `severity` or `severity_bands` values are caught by `config-check` and raise `ConfigValidationError` at runtime.
+
+See [SQLFluff lint behavior](sqlfluff-lint-behavior.md) for how severity interacts with lint vs report mode.
+
 ## Config Check
 
 Before running lint or report in CI, validate CPX-related settings (aggregate weights, `path_overrides`, and `mode`) with:

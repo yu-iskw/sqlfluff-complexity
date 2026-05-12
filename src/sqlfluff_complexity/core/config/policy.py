@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import fnmatch
+import json
 from dataclasses import dataclass, replace
+from typing import Any
+
+from sqlfluff_complexity.core.config.validation import ConfigValidationError
 
 POLICY_INTEGER_KEYS = frozenset(
     {
@@ -40,6 +44,99 @@ class ComplexityPolicy:
     max_derived_tables: int = 4
     max_complexity_score: int = 60
     mode: str = "enforce"
+
+
+def _validate_single_band_object(obj: Any, context: str, index: int) -> tuple[int, str]:
+    """Validate one band dict from severity_bands JSON array.
+
+    Returns ``(threshold, severity_str)`` or raises :class:`ConfigValidationError`.
+    """
+    if not isinstance(obj, dict):
+        raise ConfigValidationError(
+            config_key=context,
+            invalid_value=obj,
+            expected=f'each band must be an object with "threshold" and "severity" keys (band {index})',
+        )
+    if "threshold" not in obj:
+        raise ConfigValidationError(
+            config_key=context,
+            invalid_value=obj,
+            expected=f'band {index} is missing required key "threshold"',
+        )
+    if "severity" not in obj:
+        raise ConfigValidationError(
+            config_key=context,
+            invalid_value=obj,
+            expected=f'band {index} is missing required key "severity"',
+        )
+    raw_threshold = obj["threshold"]
+    if not isinstance(raw_threshold, int):
+        raise ConfigValidationError(
+            config_key=context,
+            invalid_value=raw_threshold,
+            expected=f'band {index} "threshold" must be a non-negative integer',
+        )
+    if raw_threshold < 0:
+        raise ConfigValidationError(
+            config_key=context,
+            invalid_value=raw_threshold,
+            expected=f'band {index} "threshold" must be non-negative',
+        )
+    raw_severity = obj["severity"]
+    if not isinstance(raw_severity, str):
+        raise ConfigValidationError(
+            config_key=context,
+            invalid_value=raw_severity,
+            expected=f'band {index} "severity" must be a string ("info", "warning", or "error")',
+        )
+    return raw_threshold, raw_severity
+
+
+def parse_severity_bands(
+    raw: str | None,
+    *,
+    context: str = "severity_bands",
+) -> tuple[Any, ...]:
+    """Parse a ``severity_bands`` INI value into a tuple of :class:`SeverityBand`.
+
+    Accepts a JSON array of ``{"threshold": int, "severity": str}`` objects.
+    Returns ``()`` when *raw* is ``None`` or empty.  Raises
+    :class:`ConfigValidationError` on any structural or value error.
+
+    Import :class:`~sqlfluff_complexity.core.config.severity.SeverityBand` and
+    :class:`~sqlfluff_complexity.core.config.severity.SeverityLevel` at call time
+    to avoid a circular import at module load.
+    """
+    from sqlfluff_complexity.core.config.severity import SeverityBand, SeverityLevel  # noqa: PLC0415
+
+    if not raw or not str(raw).strip():
+        return ()
+
+    raw_str = str(raw).strip()
+    try:
+        data = json.loads(raw_str)
+    except json.JSONDecodeError as exc:
+        raise ConfigValidationError(
+            config_key=context,
+            invalid_value=raw_str,
+            expected='a JSON array of {"threshold": int, "severity": str} objects',
+        ) from exc
+
+    if not isinstance(data, list):
+        raise ConfigValidationError(
+            config_key=context,
+            invalid_value=raw_str,
+            expected='a JSON array of {"threshold": int, "severity": str} objects',
+        )
+
+    bands: list[SeverityBand] = []
+    for index, obj in enumerate(data):
+        threshold, severity_str = _validate_single_band_object(obj, context, index)
+        severity = SeverityLevel.from_str(severity_str, config_key=f"{context}[{index}].severity")
+        bands.append(SeverityBand(threshold=threshold, severity=severity))
+
+    bands.sort(key=lambda b: b.threshold)
+    return tuple(bands)
 
 
 def normalize_policy_path(path: str) -> str:

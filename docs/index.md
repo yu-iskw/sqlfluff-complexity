@@ -5,12 +5,15 @@ Start with [README](../README.md) for the project overview. These pages provide 
 ## End-User Guides
 
 - [Quick start](quickstart.md): install, configure, and run the first CPX lint.
-- [Configuration](configuration.md): thresholds, aggregate weights, and path overrides.
-- [Rules reference](rules.md): CPX rule codes and metrics.
-- [Reporting](reporting.md): console, JSON, SARIF, and HTML report mode.
+- [Configuration](configuration.md): thresholds, aggregate weights, path overrides, and severity.
+- [Rules reference](rules.md): CPX rule codes, metrics, and default severity.
+- [Reporting](reporting.md): console, JSON, SARIF, and HTML report mode with severity output.
+- [Metric semantics](metric-semantics.md): precise counting rules for all 11 CPX metrics, dialect caveats, and false-positive guidance.
+- [Dialects](dialects.md): official support matrix, best-effort dialects, and dialect-specific caveats.
+- [SQLFluff lint behavior](sqlfluff-lint-behavior.md): how severity interacts with lint vs report mode.
+- [Migration guide](migration.md): breaking changes in this release and how to update configs.
 - [Adoption](adoption.md): calibration playbook, CI recipes, before/after examples.
 - [dbt usage](dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
-- [Dialects](dialects.md): tested dialects and SQLFluff/dbt mapping caveats.
 
 ## Contributor Docs
 
@@ -27,6 +30,12 @@ New users:
 1. [Quick start](quickstart.md)
 2. [Rules reference](rules.md)
 3. [Configuration](configuration.md)
+
+Upgrading from a prior release:
+
+1. [Migration guide](migration.md)
+2. [Configuration: severity](configuration.md#severity)
+3. [SQLFluff lint behavior](sqlfluff-lint-behavior.md)
 
 dbt users:
 

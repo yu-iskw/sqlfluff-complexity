@@ -148,4 +148,17 @@ def get_configs_info() -> dict[str, dict[str, Any]]:
         "max_contributors": {
             "definition": "Maximum contributor locations to show per violation (lint and report).",
         },
+        "severity": {
+            "definition": (
+                "Baseline severity level for report-mode findings: info, warning, or error. "
+                "Does not affect sqlfluff lint pass/fail."
+            ),
+        },
+        "severity_bands": {
+            "definition": (
+                "JSON array of threshold-based severity escalation rules. "
+                'Each element: {"threshold": <int>, "severity": "<info|warning|error>"}. '
+                "Highest matching band wins. Does not affect sqlfluff lint pass/fail."
+            ),
+        },
     }

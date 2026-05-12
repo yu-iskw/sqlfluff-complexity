@@ -22,13 +22,19 @@ from sqlfluff_complexity.core.analysis import (
     segment_position,
     weighted_contributor_samples,
 )
-from sqlfluff_complexity.core.config.cpx_config import contributor_display_settings
+from sqlfluff_complexity.core.config.cpx_config import (
+    contributor_display_settings,
+    read_rule_severity,
+    read_severity_bands,
+    resolve_rule_severity,
+)
 from sqlfluff_complexity.core.config.policy import (
     POLICY_MODES,
     ComplexityPolicy,
     resolve_policy,
 )
 from sqlfluff_complexity.core.config.scoring import parse_weights
+from sqlfluff_complexity.core.config.severity import SeverityLevel
 from sqlfluff_complexity.core.messages.findings import ComplexityFinding, SourceLocation
 from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
 from sqlfluff_complexity.core.messages.violation_messages import (
@@ -221,7 +227,7 @@ def _parse_error_finding(path_str: str, message: str) -> ComplexityFinding:
         score=None,
         threshold=None,
         contributors=(),
-        level="error",
+        level=SeverityLevel.error,
     )
 
 
@@ -258,6 +264,7 @@ def _metric_finding(
     show_contributors: bool,
     max_contributors: int,
     aggregate_score: int,
+    severity: SeverityLevel,
 ) -> ComplexityFinding | None:
     actual = int(getattr(metrics, limit_spec.metric_name))
     max_allowed = int(getattr(policy, limit_spec.policy_key))
@@ -295,7 +302,7 @@ def _metric_finding(
         score=actual,
         threshold=max_allowed,
         contributors=picked,
-        level="warning",
+        level=severity,
         aggregate_score=aggregate_score,
     )
 
@@ -311,6 +318,7 @@ def _c201_finding(
     contributors: tuple[MetricContributor, ...],
     weights: dict[str, int],
     config: FluffConfig,
+    severity: SeverityLevel,
 ) -> ComplexityFinding:
     rem = remediation_for_rule("CPX_C201")
     show_c201, max_c201 = contributor_display_settings(config, "CPX_C201")
@@ -337,7 +345,7 @@ def _c201_finding(
             score=score,
             threshold=threshold,
             contributors=(),
-            level="warning",
+            level=severity,
             aggregate_score=score,
         )
 
@@ -372,7 +380,7 @@ def _c201_finding(
         score=score,
         threshold=threshold,
         contributors=picked,
-        level="warning",
+        level=severity,
         aggregate_score=score,
     )
 
@@ -401,6 +409,8 @@ def _findings_for_file(
 
     for limit in REPORT_LIMITS:
         show_contributors, max_c = contributor_display_settings(config, limit.rule_id)
+        actual = int(getattr(metrics, limit.metric_name))
+        rule_severity = resolve_rule_severity(config, limit.rule_id, actual)
         f = _metric_finding(
             path_s=path_s,
             line=line_i,
@@ -412,11 +422,13 @@ def _findings_for_file(
             show_contributors=show_contributors,
             max_contributors=max_c,
             aggregate_score=score,
+            severity=rule_severity,
         )
         if f is not None:
             findings.append(f)
 
     if score > policy.max_complexity_score:
+        c201_severity = resolve_rule_severity(config, "CPX_C201", score)
         findings.append(
             _c201_finding(
                 path_s=path_s,
@@ -428,6 +440,7 @@ def _findings_for_file(
                 contributors=contributors,
                 weights=_weights_from_config(config),
                 config=config,
+                severity=c201_severity,
             ),
         )
     return findings
@@ -546,11 +559,11 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
     lines = [header_line]
     for finding in entry.findings:
         if finding.rule_id == "CPX_PARSE_ERROR":
-            lines.append(f"  {finding.rule_id}: {finding.message}")
+            lines.append(f"  [{finding.level}] {finding.rule_id}: {finding.message}")
         else:
             summ = format_contributor_summary(finding.contributors, limit=3) if finding.contributors else ""
             extra = f" [{summ}]" if summ else ""
-            lines.append(f"  {_console_message_line(finding.rule_id, finding.message)}{extra}")
+            lines.append(f"  [{finding.level}] {_console_message_line(finding.rule_id, finding.message)}{extra}")
     return lines
 
 
@@ -634,10 +647,33 @@ def load_fluff_config(*, dialect: str, config_path: Path | None = None) -> Fluff
     return _build_config(dialect=dialect, config_path=config_path)
 
 
+_ALL_CPX_RULE_IDS: tuple[str, ...] = (
+    "CPX_C101",
+    "CPX_C102",
+    "CPX_C103",
+    "CPX_C104",
+    "CPX_C105",
+    "CPX_C106",
+    "CPX_C107",
+    "CPX_C108",
+    "CPX_C109",
+    "CPX_C110",
+    "CPX_C201",
+)
+
+
+def _validate_severity_config(config: FluffConfig) -> None:
+    """Validate severity and severity_bands for every CPX rule."""
+    for rule_id in _ALL_CPX_RULE_IDS:
+        read_rule_severity(config, rule_id)
+        read_severity_bands(config, rule_id)
+
+
 def validate_cpx_plugin_config(config: FluffConfig) -> None:
     """Validate CPX-related config keys using existing parsers.
 
-    Raises ValueError with a clear message on invalid weights or path overrides.
+    Raises :class:`~sqlfluff_complexity.core.config.validation.ConfigValidationError`
+    (a ``ValueError`` subclass) with a clear message on invalid keys.
     """
     parse_weights(config.get("complexity_weights", section=("rules", "CPX_C201"), default=None))
     raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
@@ -647,3 +683,4 @@ def validate_cpx_plugin_config(config: FluffConfig) -> None:
         raise ValueError(message)
     base_policy = replace(_threshold_policy_from_config(config), mode=mode)
     resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
+    _validate_severity_config(config)

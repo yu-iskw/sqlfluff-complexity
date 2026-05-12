@@ -631,9 +631,10 @@
       tag.textContent = "error";
       cell.appendChild(tag);
     } else if (entry.finding_count > 0) {
+      const lvl = entry.max_finding_level || "warning";
       const tag = document.createElement("span");
-      tag.className = "tag warning";
-      tag.textContent = "findings";
+      tag.className = "tag " + lvl;
+      tag.textContent = lvl === "info" ? "info" : "findings";
       cell.appendChild(tag);
     }
     const path = document.createElement("span");

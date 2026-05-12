@@ -43,7 +43,13 @@ class Rule_CPX_C102(BaseRule):  # noqa: N801
     """
 
     groups: tuple[str, ...] = ("all", "complexity")
-    config_keywords: ClassVar[list[str]] = ["max_joins", "show_contributors", "max_contributors"]
+    config_keywords: ClassVar[list[str]] = [
+        "max_joins",
+        "severity",
+        "severity_bands",
+        "show_contributors",
+        "max_contributors",
+    ]
     crawl_behaviour = SegmentSeekerCrawler({"select_statement"})
     is_fix_compatible = False
     targets_templated = True

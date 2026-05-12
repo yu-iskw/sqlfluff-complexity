@@ -84,6 +84,7 @@ testpaths = ["src/sqlfluff_complexity/tests"]
 markers = [
   "dialect_extra: optional dialect-specific fixture tests (not default PR suite).",
   "dbt_templater: optional SQLFluff dbt templater integration tests.",
+  "false_positive: P0 false-positive regression tests for SQL patterns that should not trigger violations.",
 ]
 
 [dependency-groups]

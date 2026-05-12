@@ -37,7 +37,7 @@ class Rule_CPX_C107(BaseRule):  # noqa: N801
     """
 
     groups: tuple[str, ...] = ("all", "complexity")
-    config_keywords: ClassVar[list[str]] = ["max_cte_dependency_depth"]
+    config_keywords: ClassVar[list[str]] = ["max_cte_dependency_depth", "severity", "severity_bands"]
     crawl_behaviour = SegmentSeekerCrawler({"with_compound_statement"})
     is_fix_compatible = False
     targets_templated = True

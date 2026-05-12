@@ -8,8 +8,21 @@ from pathlib import Path
 from typing import Any, TextIO
 from urllib.parse import quote
 
+from sqlfluff_complexity.core.config.severity import SeverityLevel
 from sqlfluff_complexity.core.messages.findings import ComplexityFinding
 from sqlfluff_complexity.core.messages.remediation import REMEDIATIONS
+
+
+def _sarif_level(level: SeverityLevel) -> str:
+    """Map a CPX :class:`SeverityLevel` to a SARIF-valid level string.
+
+    SARIF 2.1.0 accepts ``"none"``, ``"note"``, ``"warning"``, and ``"error"``.
+    CPX ``info`` maps to SARIF ``note`` (SARIF has no ``"info"`` level).
+    """
+    if level == SeverityLevel.info:
+        return "note"
+    return level.value
+
 
 SARIF_SCHEMA_URL = "https://json.schemastore.org/sarif-2.1.0.json"
 
@@ -88,7 +101,7 @@ def findings_to_sarif_payload(findings: Sequence[ComplexityFinding]) -> dict[str
     results: list[dict[str, Any]] = []
     for finding in findings:
         body: dict[str, Any] = {
-            "level": finding.level,
+            "level": _sarif_level(finding.level),
             "locations": [_physical_location(finding)],
             "message": {"text": finding.message},
             "ruleId": finding.rule_id,

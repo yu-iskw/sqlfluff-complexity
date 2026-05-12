@@ -20,7 +20,13 @@ class Rule_CPX_C101(BaseRule):  # noqa: N801
     """Query contains too many common table expressions."""
 
     groups: tuple[str, ...] = ("all", "complexity")
-    config_keywords: ClassVar[list[str]] = ["max_ctes", "show_contributors", "max_contributors"]
+    config_keywords: ClassVar[list[str]] = [
+        "max_ctes",
+        "severity",
+        "severity_bands",
+        "show_contributors",
+        "max_contributors",
+    ]
     crawl_behaviour = SegmentSeekerCrawler({"with_compound_statement"})
     is_fix_compatible = False
     targets_templated = True
