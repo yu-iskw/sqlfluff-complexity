@@ -26,6 +26,7 @@ def test_console_report_no_double_rule_prefix_on_c102(tmp_path: Path) -> None:
     report = analyze_paths([sql_file], dialect="ansi", config_path=cfg)
     text = format_console_report(report)
     assert "CPX_C102: CPX_C102:" not in text
+    assert "[warning] CPX_C102:" in text
     assert "CPX_C102: join count" in text
 
 

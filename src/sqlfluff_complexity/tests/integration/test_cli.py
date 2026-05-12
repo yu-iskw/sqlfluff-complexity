@@ -20,13 +20,13 @@ import argparse
 import json
 from typing import TYPE_CHECKING
 
+import pytest
+
 from sqlfluff_complexity.cli import _dispatch_cli, main
 from sqlfluff_complexity.core.config.presets import WEIGHT_JSON
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    import pytest
 
 
 def test_main_exits_successfully() -> None:
@@ -273,6 +273,56 @@ def test_config_check_invalid_path_override(
     )
     assert main(["config-check", "--dialect", "ansi", "--config", str(cfg)]) == 1
     assert "config-check failed" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "config_body",
+    [
+        """
+        [sqlfluff:rules:CPX_C102]
+        severity = urgent
+        """,
+        """
+        [sqlfluff:rules:CPX_C102]
+        severity_bands = {not-json
+        """,
+        """
+        [sqlfluff:rules:CPX_C102]
+        severity_bands = {"min": 1, "severity": "warning"}
+        """,
+        """
+        [sqlfluff:rules:CPX_C102]
+        severity_bands = [{"severity": "warning"}]
+        """,
+        """
+        [sqlfluff:rules:CPX_C102]
+        severity_bands = [{"min": 1}]
+        """,
+        """
+        [sqlfluff:rules:CPX_C102]
+        severity_bands = [{"min": -1, "severity": "warning"}]
+        """,
+        """
+        [sqlfluff:rules:CPX_C102]
+        severity_bands = [{"min": 1, "severity": "warning"}, {"min": 1, "severity": "error"}]
+        """,
+        """
+        [sqlfluff:rules:CPX_C102]
+        severity_bands = [{"min": 1, "severity": "urgent"}]
+        """,
+    ],
+)
+def test_config_check_rejects_invalid_severity_settings(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    config_body: str,
+) -> None:
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(config_body, encoding="utf-8")
+    assert main(["config-check", "--dialect", "ansi", "--config", str(cfg)]) == 1
+    output = capsys.readouterr().out
+    assert "config-check failed" in output
+    assert "severity" in output
 
 
 def test_report_sarif_parse_error_has_no_metric_properties(tmp_path: Path) -> None:

@@ -13,6 +13,10 @@ from sqlfluff_complexity.core.config.policy import (
     ComplexityPolicy,
     resolve_policy,
 )
+from sqlfluff_complexity.core.config.severity import (
+    resolve_severity,
+    rule_severity_policy_from_config,
+)
 from sqlfluff_complexity.core.messages.violation_messages import (
     MetricThresholdViolationParams,
     metric_threshold_violation_message,
@@ -171,6 +175,8 @@ def metric_lint_result(  # noqa: PLR0913
             show_contributors=show_contributors,
         ),
     )
+    severity = resolve_severity(rule_severity_policy_from_config(context.config, spec.rule_id), actual)
+    description = f"{description} [severity={severity}]"
 
     anchor = anchor_segment if anchor_segment is not None else context.segment
     return LintResult(

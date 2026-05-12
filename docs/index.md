@@ -7,6 +7,7 @@ Start with [README](../README.md) for the project overview. These pages provide 
 - [Quick start](quickstart.md): install, configure, and run the first CPX lint.
 - [Configuration](configuration.md): thresholds, aggregate weights, and path overrides.
 - [Rules reference](rules.md): CPX rule codes and metrics.
+- [Metric semantics](metric-semantics.md): source-of-truth counting semantics and scope.
 - [Reporting](reporting.md): console, JSON, SARIF, and HTML report mode.
 - [Adoption](adoption.md): calibration playbook, CI recipes, before/after examples.
 - [dbt usage](dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
@@ -17,6 +18,7 @@ Start with [README](../README.md) for the project overview. These pages provide 
 - [Test layout](tests-layout.md): how `tests/core/`, `reporting/`, `integration/`, and `rules/` are organized.
 - [Contributing](../CONTRIBUTING.md): setup, tests, fixture authoring, ADRs, and verifier workflow.
 - [Internal import migration](migration-internal.md): mapping old `core` module paths after layout changes (forks and tooling).
+- [Severity policy migration](migration/severity-policy-config.md): breaking config migration for severity and bands.
 - [Product design](product_design.md): product background and long-form design notes.
 - [Architecture decisions](adr/): accepted architectural decisions and trade-offs.
 

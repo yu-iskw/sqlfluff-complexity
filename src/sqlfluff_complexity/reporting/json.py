@@ -28,6 +28,7 @@ def _finding_dict(finding: ComplexityFinding) -> dict[str, Any]:
         "column": finding.location.column,
         "contributors": [_contributor_dict(c) for c in finding.contributors],
         "level": finding.level,
+        "severity": finding.severity,
         "line": finding.location.line,
         "message": finding.message,
         "metric": finding.metric,

@@ -65,6 +65,7 @@ def test_html_payload_includes_summary_entries_and_findings(tmp_path: Path) -> N
     assert payload["summary"]["finding_count"] >= 1
     assert payload["entries"][0]["path"] == str(sql_file)
     assert payload["findings"][0]["rule_id"] == "CPX_C102"
+    assert payload["findings"][0]["severity"] == "warning"
     rule_ids = {rule["rule_id"] for rule in payload["rules"]}
     assert "CPX_C102" in rule_ids
 

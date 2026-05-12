@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, TextIO
 from urllib.parse import quote
 
+from sqlfluff_complexity.core.config.severity import severity_to_level
 from sqlfluff_complexity.core.messages.findings import ComplexityFinding
 from sqlfluff_complexity.core.messages.remediation import REMEDIATIONS
 
@@ -88,7 +89,7 @@ def findings_to_sarif_payload(findings: Sequence[ComplexityFinding]) -> dict[str
     results: list[dict[str, Any]] = []
     for finding in findings:
         body: dict[str, Any] = {
-            "level": finding.level,
+            "level": severity_to_level(finding.severity),
             "locations": [_physical_location(finding)],
             "message": {"text": finding.message},
             "ruleId": finding.rule_id,
@@ -112,6 +113,7 @@ def findings_to_sarif_payload(findings: Sequence[ComplexityFinding]) -> dict[str
                 "window_functions": finding.metrics.window_functions,
             }
             prop["remediation"] = finding.remediation
+            prop["severity"] = finding.severity
             body["properties"] = prop
         results.append(body)
 

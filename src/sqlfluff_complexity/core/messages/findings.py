@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from sqlfluff_complexity.core.analysis import MetricContributor
+    from sqlfluff_complexity.core.config.severity import Severity
     from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
 
@@ -32,5 +33,6 @@ class ComplexityFinding:
     score: int | None
     threshold: int | None
     contributors: tuple[MetricContributor, ...]
+    severity: Severity
     level: str  # "note", "warning", or "error"
     aggregate_score: int | None = None

@@ -41,6 +41,7 @@ def test_json_findings_shape_join_fixture(tmp_path: Path) -> None:
         "column",
         "contributors",
         "level",
+        "severity",
         "line",
         "message",
         "metric",
@@ -125,6 +126,30 @@ def test_contributor_segment_types_on_complex_fixture(tmp_path: Path) -> None:
     segment_types = {c.segment_type for c in all_contribs}
     assert entry.metrics.joins >= 1
     assert "join_clause" in segment_types
+
+
+def test_json_and_sarif_include_configured_severity(tmp_path: Path) -> None:
+    """Severity policy should flow to JSON findings and SARIF level mapping."""
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text(
+        """
+        [sqlfluff:rules:CPX_C102]
+        max_joins = 0
+        severity = info
+        severity_bands = [{"min": 1, "severity": "warning"}, {"min": 2, "severity": "error"}]
+        """,
+        encoding="utf-8",
+    )
+    sql_path = tmp_path / "t.sql"
+    sql_path.write_text(_fixture_sql("c102_joins_two.sql").read_text(encoding="utf-8"), encoding="utf-8")
+    report = analyze_paths([sql_path], dialect="ansi", config_path=cfg)
+    findings = [f for e in report.entries for f in e.findings if f.rule_id == "CPX_C102"]
+    payload = findings_to_json_payload(findings)
+    assert payload["findings"][0]["severity"] == "error"
+
+    sarif = findings_to_sarif_payload(findings)
+    c102 = next(result for result in sarif["runs"][0]["results"] if result["ruleId"] == "CPX_C102")
+    assert c102["level"] == "error"
 
 
 def test_c109_report_location_prefers_set_operator_contributor(tmp_path: Path) -> None:

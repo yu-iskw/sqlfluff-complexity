@@ -2,21 +2,33 @@
 
 `sqlfluff-complexity` relies on SQLFluff's parser and dialect labels. Configure the SQLFluff dialect that matches your SQL, and the CPX rules collect metrics from the parsed segment tree.
 
-## Tested Dialect Fixtures
+## Officially Tested Dialects (P0)
 
-The repository keeps parser-focused fixtures for these SQLFluff dialect labels:
+The official fixture-backed subset for accuracy/reliability is:
 
-| SQLFluff dialect | Typical users                        |
-| ---------------- | ------------------------------------ |
-| `ansi`           | portable SQL baseline                |
-| `athena`         | AWS Athena projects                  |
-| `bigquery`       | BigQuery GoogleSQL projects          |
-| `postgres`       | PostgreSQL and dbt-postgres projects |
-| `redshift`       | Amazon Redshift projects             |
-| `snowflake`      | Snowflake projects                   |
-| `sparksql`       | Apache Spark SQL projects            |
+- `bigquery`
+- `snowflake`
+- `sparksql` (Databricks/Spark SQL workloads)
+- `postgres`
 
-These fixtures validate parser and metric behavior. They do not execute SQL against warehouses.
+These dialects have dedicated fixture-matrix assertions and regression coverage for CPX metrics.
+
+## Best-Effort Dialects
+
+Other SQLFluff dialects may work but are best-effort unless explicit fixture coverage is added.
+Current repository fixtures also include `ansi`, `athena`, and `redshift` for compatibility checks, but they are not part of the official P0 support contract.
+
+## Fixture Coverage Model
+
+Support confidence is determined by fixture coverage and deterministic metric assertions, not by adapter naming alone.
+
+For each official dialect, fixtures are expected to cover:
+
+- pass/boundary/fail threshold behavior for representative metrics
+- dialect-specific syntax cases
+- negative/noise-resistant false-positive scenarios
+
+Fixtures validate parser and metric behavior only. They do not execute SQL against warehouses.
 
 ## SQLFluff Dialects Versus dbt Adapters
 

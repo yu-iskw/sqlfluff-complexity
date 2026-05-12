@@ -113,6 +113,7 @@ def _finding_payload(entry_id: int, finding: ComplexityFinding) -> dict[str, Any
         "entry_id": entry_id,
         "rule_id": finding.rule_id,
         "metric": finding.metric,
+        "severity": finding.severity,
         "level": finding.level,
         "line": finding.location.line,
         "column": finding.location.column,

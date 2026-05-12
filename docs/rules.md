@@ -2,6 +2,8 @@
 
 `sqlfluff-complexity` rule codes use the `CPX_` prefix. The individual rules flag one metric at a time, and `CPX_C201` flags an aggregate weighted score.
 
+For exact metric counting semantics (what counts / what does not / scope / caveats), see [Metric semantics](metric-semantics.md).
+
 ## Metric Summary
 
 | Rule       | Metric                                            | Default | Config key                 |
@@ -27,6 +29,8 @@ This is useful when a single SQL model becomes a long chain of transformation la
 ```ini
 [sqlfluff:rules:CPX_C101]
 max_ctes = 8
+severity = warning
+severity_bands = [{"min": 9, "severity": "warning"}, {"min": 13, "severity": "error"}]
 ```
 
 ## CPX_C102: Too Many Joins
@@ -188,6 +192,8 @@ Violation messages include the computed score, the configured `max_complexity_sc
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
+severity = warning
+severity_bands = [{"min": 61, "severity": "warning"}, {"min": 90, "severity": "error"}]
 complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
 mode = enforce
 ```

@@ -16,6 +16,10 @@ from sqlfluff_complexity.core.analysis import (
 from sqlfluff_complexity.core.config.cpx_config import contributor_display_settings
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
 from sqlfluff_complexity.core.config.scoring import parse_weights
+from sqlfluff_complexity.core.config.severity import (
+    resolve_severity,
+    rule_severity_policy_from_config,
+)
 from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
 from sqlfluff_complexity.core.scan.segment_tree import (
     analyze_segment_tree,
@@ -73,6 +77,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
 
         if policy.mode == "report" or score <= limit:
             return None
+        severity = resolve_severity(rule_severity_policy_from_config(context.config, "CPX_C201"), score)
 
         show_c201, cap = contributor_display_settings(context.config, "CPX_C201")
         remediation = remediation_for_rule("CPX_C201")
@@ -80,7 +85,8 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
         if not show_c201 or cap < 1:
             description = (
                 f"CPX_C201: aggregate complexity score {score} exceeds "
-                f"max_complexity_score={limit}. {remediation} Metrics: {metrics.format_breakdown()}."
+                f"max_complexity_score={limit}. {remediation} Metrics: {metrics.format_breakdown()}. "
+                f"[severity={severity}]"
             )
         else:
             top_n = cap
@@ -97,7 +103,7 @@ class Rule_CPX_C201(BaseRule):  # noqa: N801
             description = (
                 f"CPX_C201: aggregate complexity score {score} exceeds "
                 f"max_complexity_score={limit}. {remediation} Metrics: {metrics.format_breakdown()}. "
-                f"{tail}"
+                f"{tail} [severity={severity}]"
             )
 
         return LintResult(

@@ -29,6 +29,11 @@ from sqlfluff_complexity.core.config.policy import (
     resolve_policy,
 )
 from sqlfluff_complexity.core.config.scoring import parse_weights
+from sqlfluff_complexity.core.config.severity import (
+    resolve_severity,
+    rule_severity_policy_from_config,
+    severity_to_level,
+)
 from sqlfluff_complexity.core.messages.findings import ComplexityFinding, SourceLocation
 from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
 from sqlfluff_complexity.core.messages.violation_messages import (
@@ -221,6 +226,7 @@ def _parse_error_finding(path_str: str, message: str) -> ComplexityFinding:
         score=None,
         threshold=None,
         contributors=(),
+        severity="error",
         level="error",
     )
 
@@ -258,11 +264,13 @@ def _metric_finding(
     show_contributors: bool,
     max_contributors: int,
     aggregate_score: int,
+    config: FluffConfig,
 ) -> ComplexityFinding | None:
     actual = int(getattr(metrics, limit_spec.metric_name))
     max_allowed = int(getattr(policy, limit_spec.policy_key))
     if actual <= max_allowed:
         return None
+    severity = resolve_severity(rule_severity_policy_from_config(config, limit_spec.rule_id), actual)
 
     message, picked, rem = metric_threshold_violation_message_and_picked(
         MetricThresholdViolationParams(
@@ -295,7 +303,8 @@ def _metric_finding(
         score=actual,
         threshold=max_allowed,
         contributors=picked,
-        level="warning",
+        severity=severity,
+        level=severity_to_level(severity),
         aggregate_score=aggregate_score,
     )
 
@@ -313,6 +322,8 @@ def _c201_finding(
     config: FluffConfig,
 ) -> ComplexityFinding:
     rem = remediation_for_rule("CPX_C201")
+    severity = resolve_severity(rule_severity_policy_from_config(config, "CPX_C201"), score)
+    level = severity_to_level(severity)
     show_c201, max_c201 = contributor_display_settings(config, "CPX_C201")
     loc = _anchored_location(
         path_s=path_s,
@@ -337,7 +348,8 @@ def _c201_finding(
             score=score,
             threshold=threshold,
             contributors=(),
-            level="warning",
+            severity=severity,
+            level=level,
             aggregate_score=score,
         )
 
@@ -372,7 +384,8 @@ def _c201_finding(
         score=score,
         threshold=threshold,
         contributors=picked,
-        level="warning",
+        severity=severity,
+        level=level,
         aggregate_score=score,
     )
 
@@ -412,6 +425,7 @@ def _findings_for_file(
             show_contributors=show_contributors,
             max_contributors=max_c,
             aggregate_score=score,
+            config=config,
         )
         if f is not None:
             findings.append(f)
@@ -550,7 +564,9 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
         else:
             summ = format_contributor_summary(finding.contributors, limit=3) if finding.contributors else ""
             extra = f" [{summ}]" if summ else ""
-            lines.append(f"  {_console_message_line(finding.rule_id, finding.message)}{extra}")
+            lines.append(
+                f"  [{finding.severity}] {_console_message_line(finding.rule_id, finding.message)}{extra}",
+            )
     return lines
 
 
@@ -590,7 +606,12 @@ def _json_entry(entry: ReportEntry) -> dict[str, object]:
     detail: list[dict[str, object]] = []
     for finding in entry.findings:
         legacy.append(
-            {"level": finding.level, "message": finding.message, "rule_id": finding.rule_id},
+            {
+                "level": finding.level,
+                "severity": finding.severity,
+                "message": finding.message,
+                "rule_id": finding.rule_id,
+            },
         )
         detail.append(_finding_to_canonical_dict(finding))
     base: dict[str, object] = {
@@ -647,3 +668,17 @@ def validate_cpx_plugin_config(config: FluffConfig) -> None:
         raise ValueError(message)
     base_policy = replace(_threshold_policy_from_config(config), mode=mode)
     resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
+    for rule_code in (
+        "CPX_C101",
+        "CPX_C102",
+        "CPX_C103",
+        "CPX_C104",
+        "CPX_C105",
+        "CPX_C106",
+        "CPX_C107",
+        "CPX_C108",
+        "CPX_C109",
+        "CPX_C110",
+        "CPX_C201",
+    ):
+        rule_severity_policy_from_config(config, rule_code)

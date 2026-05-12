@@ -46,6 +46,25 @@ max_joins = 6
 max_subquery_depth = 2
 ```
 
+## Severity Policy
+
+Each rule can define default severity and escalation bands:
+
+```ini
+[sqlfluff:rules:CPX_C102]
+max_joins = 8
+severity = warning
+severity_bands = [{"min": 9, "severity": "warning"}, {"min": 13, "severity": "error"}]
+```
+
+Rules:
+
+- `severity` must be one of `info`, `warning`, `error`
+- `severity_bands` must be a JSON list of objects with `min` (integer >= 0) and `severity`
+- when multiple bands match, the highest matching `min` wins
+
+Use `sqlfluff-complexity config-check` to validate invalid severity values/bands early.
+
 ## Aggregate Score
 
 `CPX_C201` computes a weighted aggregate score from the same metrics used by the individual rules.
@@ -57,6 +76,8 @@ Default weights (`complexity_weights` is a **JSON object** string: standard JSON
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
+severity = warning
+severity_bands = [{"min": 61, "severity": "warning"}, {"min": 90, "severity": "error"}]
 complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
 mode = enforce
 ```

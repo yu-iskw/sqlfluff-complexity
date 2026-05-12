@@ -63,6 +63,8 @@ def _rule_section(rule_id: str, key: str, value: int) -> str:
         [
             f"[sqlfluff:rules:{rule_id}]",
             f"{key} = {value}",
+            "severity = warning",
+            "severity_bands =",
             "show_contributors = true",
             "max_contributors = 3",
         ],
@@ -74,6 +76,8 @@ def _aggregate_section(preset: CpxPreset) -> str:
         [
             "[sqlfluff:rules:CPX_C201]",
             f"max_complexity_score = {preset.max_complexity_score}",
+            "severity = warning",
+            "severity_bands =",
             f"complexity_weights = {WEIGHT_JSON}",
             f"mode = {preset.mode}",
             "path_overrides =",

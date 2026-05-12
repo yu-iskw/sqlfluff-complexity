@@ -48,7 +48,7 @@ when reconciling report rows with rule failures.
 
 For automation and lightweight CI artifacts, use `--format json`. The top-level payload includes `schema_version` `1.1`, `version` (package version), `tool`, per-file `entries`, and a flat `findings` array built from the same **ComplexityFinding** model as lint and SARIF.
 
-Each finding includes `rule_id`, `level`, `message`, `remediation`, `path`, `line`, `column`, `metric`, `threshold`, `score` (metric actual for threshold rules; aggregate score for CPX_C201), `aggregate_score` (file-level weighted score when applicable), full `metrics` counters, and `contributors` (metric, line, column, segment_type, reason, truncated `raw`).
+Each finding includes `rule_id`, `severity`, `level`, `message`, `remediation`, `path`, `line`, `column`, `metric`, `threshold`, `score` (metric actual for threshold rules; aggregate score for CPX_C201), `aggregate_score` (file-level weighted score when applicable), full `metrics` counters, and `contributors` (metric, line, column, segment_type, reason, truncated `raw`).
 
 Parse failures use `score: null`, `metrics: null` on the entry, and a `CPX_PARSE_ERROR` finding.
 
@@ -71,6 +71,7 @@ Example (excerpt):
   "findings": [
     {
       "rule_id": "CPX_C102",
+      "severity": "warning",
       "level": "warning",
       "message": "CPX_C102: join count 4 exceeds max_joins=2. Consider reducing join fan-in...",
       "remediation": "Consider reducing join fan-in, moving enrichment upstream...",
@@ -149,7 +150,13 @@ sqlfluff-complexity report \
   models/
 ```
 
-SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C110`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, and `properties.remediation`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
+SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C110`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, `properties.remediation`, and `properties.severity`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
+
+SARIF severity mapping is deterministic:
+
+- `info` -> `note`
+- `warning` -> `warning`
+- `error` -> `error`
 
 For copy-paste CI (SARIF upload, changed-file lint patterns), see [Adoption](adoption.md).
 
@@ -180,6 +187,8 @@ Use native SQLFluff rules when:
 - the threshold is ready to enforce
 - developers should receive inline lint feedback
 - `noqa` and normal SQLFluff rule selection should apply
+
+Native SQLFluff lint output still treats emitted violations as failures; the richer severity policy is fully represented in report outputs.
 
 ## Rollout Pattern
 

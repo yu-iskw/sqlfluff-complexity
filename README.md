@@ -52,10 +52,12 @@ For a complete walkthrough, see [docs/quickstart.md](docs/quickstart.md).
 - [Quick start](docs/quickstart.md): install, configure, and run the first lint.
 - [Configuration](docs/configuration.md): thresholds, aggregate weights, [SQLFluff nested config by path](docs/configuration.md#sqlfluff-nested-configuration-by-path), and `path_overrides`.
 - [Rules reference](docs/rules.md): CPX rule codes and what each metric counts.
+- [Metric semantics](docs/metric-semantics.md): source-of-truth metric counting behavior and caveats.
 - [Reporting](docs/reporting.md): console, JSON, SARIF, and HTML report mode.
 - [Adoption](docs/adoption.md): calibration, CI/SARIF examples, before/after SQL vignette.
 - [dbt usage](docs/dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
 - [Dialects](docs/dialects.md): tested dialects and dbt adapter mapping caveats.
+- [Severity policy migration](docs/migration/severity-policy-config.md): breaking config migration for severity bands.
 - [Docs index](docs/index.md): all user, contributor, and design documents.
 - [Internal import migration](docs/migration-internal.md): if you import `sqlfluff_complexity.core` submodules directly, update paths after subpackage refactors.
 
