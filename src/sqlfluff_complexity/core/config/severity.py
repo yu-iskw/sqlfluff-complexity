@@ -62,14 +62,14 @@ def _load_band_payload(raw_value: object, *, config_key: str) -> list[object]:
         raise ValueError(message) from exc
     if not isinstance(payload, list):
         message = f"Invalid {config_key!r} value {raw_value!r}; expected a JSON list."
-        raise ValueError(message)  # noqa: TRY004
+        raise TypeError(message)
     return payload
 
 
 def _parse_band(item: object, *, index: int, config_key: str) -> SeverityBand:
     if not isinstance(item, dict):
         message = f"Invalid {config_key!r}[{index}] value {item!r}; expected an object."
-        raise ValueError(message)  # noqa: TRY004
+        raise TypeError(message)
     if "min" not in item:
         message = f"Invalid {config_key!r}[{index}] value {item!r}; missing required key 'min'."
         raise ValueError(message)
@@ -79,7 +79,7 @@ def _parse_band(item: object, *, index: int, config_key: str) -> SeverityBand:
     min_raw = item["min"]
     if not isinstance(min_raw, int):
         message = f"Invalid {config_key!r}[{index}].min value {min_raw!r}; expected an integer."
-        raise ValueError(message)  # noqa: TRY004
+        raise TypeError(message)
     if min_raw < 0:
         message = f"Invalid {config_key!r}[{index}].min value {min_raw!r}; expected >= 0."
         raise ValueError(message)
@@ -145,4 +145,6 @@ def severity_to_level(severity: Severity) -> Literal["note", "warning", "error"]
     """Map internal severity to legacy/reporting level."""
     if severity == "info":
         return "note"
-    return severity
+    if severity == "warning":
+        return "warning"
+    return "error"

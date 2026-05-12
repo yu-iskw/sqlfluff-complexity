@@ -7,8 +7,6 @@ CPX rules now support explicit severity policy:
 - `severity` (default rule severity): `info`, `warning`, `error`
 - `severity_bands` (JSON array): threshold-based overrides
 
-The project remains SQLFluff parse-tree based and still does **not** use dbt artifacts (`manifest.json`, `run_results.json`, `catalog.json`).
-
 ## Old vs new configuration
 
 Old threshold-only style:
@@ -36,6 +34,8 @@ severity = warning
 severity_bands = [{"min": 61, "severity": "warning"}, {"min": 90, "severity": "error"}]
 complexity_weights = {"joins":2,"subquery_depth":4}
 ```
+
+`complexity_weights` above is intentionally partial; omitted keys continue using packaged defaults.
 
 ## Severity resolution
 

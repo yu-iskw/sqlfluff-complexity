@@ -90,7 +90,7 @@ def _run_config_check(args: argparse.Namespace) -> int:
     try:
         config = load_fluff_config(dialect=args.dialect, config_path=args.config)
         validate_cpx_plugin_config(config)
-    except ValueError as exc:
+    except (TypeError, ValueError) as exc:
         print(f"config-check failed: {exc}", flush=True)
         return 1
     except OSError as exc:

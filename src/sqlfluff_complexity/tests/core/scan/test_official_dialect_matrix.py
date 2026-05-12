@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 
+# P0 officially-supported, fixture-backed dialect subset.
 OFFICIAL_DIALECTS = ("bigquery", "snowflake", "sparksql", "postgres")
 
 
@@ -90,9 +91,19 @@ def test_nested_with_scopes_dependency_depth_independently() -> None:
     assert metrics.cte_dependency_depth == 2
 
 
-def test_dialect_specific_keywords_do_not_inflate_metrics() -> None:
-    """Dialect syntax keywords should parse without spurious metric inflation."""
-    sql = read_sql_fixture("bigquery", "metrics_select_star_except")
-    metrics = _metrics(sql, dialect="bigquery")
-    assert metrics.boolean_operators == 0
-    assert metrics.joins == 0
+@pytest.mark.parametrize(
+    ("dialect", "stem"),
+    [
+        ("bigquery", "metrics_select_star_except"),
+        ("snowflake", "metrics_flatten_lateral"),
+        ("sparksql", "metrics_lateral_view_explode"),
+        ("postgres", "metrics_lateral_join"),
+    ],
+)
+def test_dialect_specific_keywords_do_not_inflate_metrics(dialect: str, stem: str) -> None:
+    """Dialect-specific keywords should not inflate unrelated complexity counters."""
+    sql = read_sql_fixture(dialect, stem)
+    metrics = _metrics(sql, dialect=dialect)
+    expected = load_expected_metrics(dialect, stem)
+    assert metrics.boolean_operators == expected.boolean_operators
+    assert metrics.case_expressions == expected.case_expressions

@@ -28,6 +28,7 @@ from sqlfluff_complexity.core.config.policy import (
     ComplexityPolicy,
     resolve_policy,
 )
+from sqlfluff_complexity.core.config.presets import RULE_CODES
 from sqlfluff_complexity.core.config.scoring import parse_weights
 from sqlfluff_complexity.core.config.severity import (
     resolve_severity,
@@ -658,7 +659,7 @@ def load_fluff_config(*, dialect: str, config_path: Path | None = None) -> Fluff
 def validate_cpx_plugin_config(config: FluffConfig) -> None:
     """Validate CPX-related config keys using existing parsers.
 
-    Raises ValueError with a clear message on invalid weights or path overrides.
+    Raises ValueError/TypeError with a clear message on invalid policy config.
     """
     parse_weights(config.get("complexity_weights", section=("rules", "CPX_C201"), default=None))
     raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
@@ -668,17 +669,5 @@ def validate_cpx_plugin_config(config: FluffConfig) -> None:
         raise ValueError(message)
     base_policy = replace(_threshold_policy_from_config(config), mode=mode)
     resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
-    for rule_code in (
-        "CPX_C101",
-        "CPX_C102",
-        "CPX_C103",
-        "CPX_C104",
-        "CPX_C105",
-        "CPX_C106",
-        "CPX_C107",
-        "CPX_C108",
-        "CPX_C109",
-        "CPX_C110",
-        "CPX_C201",
-    ):
+    for rule_code in RULE_CODES:
         rule_severity_policy_from_config(config, rule_code)

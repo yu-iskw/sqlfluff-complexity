@@ -69,7 +69,7 @@ def test_invalid_default_severity_raises_clear_error() -> None:
     ],
 )
 def test_invalid_severity_bands_raise_clear_errors(value: str, match: str) -> None:
-    with pytest.raises(ValueError, match=match):
+    with pytest.raises((TypeError, ValueError), match=match):
         parse_severity_bands(value, config_key="[sqlfluff:rules:CPX_C102].severity_bands")
 
 

@@ -97,7 +97,7 @@ Scope and parser model:
 - Scope: file/root metric.
 - Caveat: excludes CTE bodies to avoid double-penalizing with `ctes`.
 - Positive: `select * from (select 1) t` → 1.
-- Negative: `with c as (select * from (select 1) t) select * from c` → 0 for CTE-body derived-table counting.
+- Negative: `with c as (select * from (select 1) t) select * from c` → 0 when counting derived tables inside CTE bodies.
 
 ## Aggregate complexity score (`CPX_C201`)
 
