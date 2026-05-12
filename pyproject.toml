@@ -48,7 +48,7 @@ packages = ["src/sqlfluff_complexity"]
 
 [project]
 name = "sqlfluff-complexity"
-version = "0.4.4"
+version = "0.5.0"
 authors = [{ name = "yu-iskw" }]
 readme = "README.md"
 license = { file = "LICENSE" }
