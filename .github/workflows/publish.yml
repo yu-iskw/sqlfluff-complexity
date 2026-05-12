@@ -6,8 +6,13 @@ on:
       - created
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://pypi.org/p/sqlfluff-complexity
+    permissions:
+      id-token: write
     defaults:
       run:
         shell: bash
@@ -23,33 +28,6 @@ jobs:
       - name: Build distributions
         run: |
           uv build
-      - name: Upload distributions
-        uses: actions/upload-artifact@v7
-        with:
-          name: release-distributions
-          path: dist/
-
-  publish:
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    environment:
-      name: release
-      url: https://pypi.org/p/sqlfluff-complexity
-    permissions:
-      id-token: write
-    defaults:
-      run:
-        shell: bash
-    env:
-      PYTHON_PACKAGE_NAME: sqlfluff-complexity
-      PYTHON_NAME_SPACE: sqlfluff_complexity
-    steps:
-      - name: Download distributions
-        uses: actions/download-artifact@v8
-        with:
-          name: release-distributions
-          path: dist/
       - name: Publish
         uses: pypa/gh-action-pypi-publish@v1.14.0
 
