@@ -21,7 +21,7 @@ import json
 from typing import TYPE_CHECKING
 
 from sqlfluff_complexity.cli import _dispatch_cli, main
-from sqlfluff_complexity.core.config.presets import WEIGHT_JSON
+from sqlfluff_complexity.core.config.presets import WEIGHT_JSON, RULE_LIST
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -196,9 +196,7 @@ def test_config_preset_prints_recommended_config(capsys: pytest.CaptureFixture[s
     assert main(["config", "preset", "recommended", "--dialect", "postgres"]) == 0
 
     output = capsys.readouterr().out
-    rules_line = (
-        "rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C111,CPX_C112,CPX_C113,CPX_C201"
-    )
+    rules_line = f"rules = {RULE_LIST}"
     assert "[sqlfluff]" in output
     assert "dialect = postgres" in output
     assert rules_line in output

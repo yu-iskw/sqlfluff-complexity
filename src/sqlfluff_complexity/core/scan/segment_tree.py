@@ -244,8 +244,9 @@ class _MetricCounter:
         parts = key.split(".")
         if len(parts) == 1 and parts[0] in self._cte_aliases:
             return
-        if key not in self._source_relation_names:
-            self._source_relation_names.add(key)
+        previous_len = len(self._source_relation_names)
+        self._source_relation_names.add(key)
+        if len(self._source_relation_names) != previous_len:
             self._add_contributor("source_relations", table_ref, reason="source relation")
 
     def _update_select_targets(self, segment: BaseSegment) -> None:
@@ -439,9 +440,7 @@ def _parent_segment(segment: BaseSegment | None) -> BaseSegment | None:
     if segment is None:
         return None
     parent = segment.get_parent()
-    if isinstance(parent, tuple):
-        return parent[0]
-    return parent
+    return parent[0] if isinstance(parent, tuple) else parent
 
 
 def _segment_has_ancestor_of_type(segment: BaseSegment, segment_type: str) -> bool:

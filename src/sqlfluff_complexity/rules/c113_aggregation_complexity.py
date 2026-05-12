@@ -41,6 +41,6 @@ class Rule_CPX_C113(BaseRule):  # noqa: N801
         """Evaluate the rule."""
         policy = resolve_context_policy(
             context,
-            ComplexityPolicy(max_aggregation_complexity=int(self.max_aggregation_complexity)),
+            ComplexityPolicy(max_aggregation_complexity=self.max_aggregation_complexity),
         )
         return eval_file_root_metric_threshold(context, policy, self._spec)

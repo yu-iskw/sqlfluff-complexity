@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from sqlfluff_complexity import get_rules
-from sqlfluff_complexity.core.config.presets import WEIGHT_JSON
+from sqlfluff_complexity.core.config.presets import WEIGHT_JSON, RULE_LIST
 from sqlfluff_complexity.tests.sqlfluff_helpers import join_sql, lint_sql, rule_violations
 
 ALL_CPX_RULE_CODES = {
@@ -76,10 +76,10 @@ def test_sqlfluff_accepts_all_cpx_rule_codes() -> None:
     """SQLFluff should accept every CPX rule code in normal rule selection config."""
     linted = lint_sql(
         "select 1 as id",
-        """
+        f"""
         [sqlfluff]
         dialect = ansi
-        rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C111,CPX_C112,CPX_C113,CPX_C201
+        rules = {RULE_LIST}
         """,
     )
 

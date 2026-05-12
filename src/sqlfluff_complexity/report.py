@@ -202,10 +202,7 @@ def _dedupe_paths_stable(paths: Sequence[Path]) -> list[Path]:
     """Deduplicate paths by resolved location and return sorted by ``str(path)``."""
     seen: dict[str, Path] = {}
     for path in paths:
-        try:
-            key = str(path.resolve(strict=False))
-        except OSError:
-            key = str(path)
+        key = str(path.resolve(strict=False))
         if key not in seen:
             seen[key] = path
     return sorted(seen.values(), key=str)

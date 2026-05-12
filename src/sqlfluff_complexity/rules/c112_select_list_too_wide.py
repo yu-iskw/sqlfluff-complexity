@@ -41,6 +41,6 @@ class Rule_CPX_C112(BaseRule):  # noqa: N801
         """Evaluate the rule."""
         policy = resolve_context_policy(
             context,
-            ComplexityPolicy(max_select_targets=int(self.max_select_targets)),
+            ComplexityPolicy(max_select_targets=self.max_select_targets),
         )
         return eval_file_root_metric_threshold(context, policy, self._spec)
