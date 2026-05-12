@@ -6,7 +6,6 @@
     finding_count: (entry) => entry.finding_count,
     error_count: (entry) => entry.error_count,
     path: (entry) => entry.path,
-    directory: (entry) => entry.directory,
   };
 
   const state = {
@@ -574,7 +573,6 @@
     const row = document.createElement("tr");
     const columns = [
       { key: "path", label: "Path" },
-      { key: "directory", label: "Directory" },
       { key: "score", label: "Score" },
       { key: "finding_count", label: "Findings" },
       { key: "error_count", label: "Errors" },
@@ -603,8 +601,7 @@
       state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
     } else {
       state.sortKey = key;
-      state.sortDirection =
-        key === "path" || key === "directory" ? "asc" : "desc";
+      state.sortDirection = key === "path" ? "asc" : "desc";
     }
     render();
   }
@@ -616,7 +613,6 @@
     else if (entry.finding_count > 0) row.classList.add("has-findings");
 
     row.appendChild(buildPathCell(entry));
-    row.appendChild(buildTextCell(entry.directory || "."));
     row.appendChild(
       buildTextCell(entry.score == null ? "—" : String(entry.score)),
     );
@@ -679,7 +675,7 @@
     row.id = "detail-" + entry.id;
     row.style.display = "none";
     const cell = document.createElement("td");
-    cell.colSpan = 6;
+    cell.colSpan = 5;
     row.appendChild(cell);
     return row;
   }
@@ -705,6 +701,7 @@
   function buildDetailPanel(entry) {
     const panel = document.createElement("div");
     panel.className = "detail-panel";
+    panel.appendChild(buildDetailPath(entry));
     if (entry.metrics) {
       panel.appendChild(buildMetricsSummary(entry.metrics));
     }
@@ -723,6 +720,20 @@
     }
     panel.appendChild(list);
     return panel;
+  }
+
+  function buildDetailPath(entry) {
+    const div = document.createElement("div");
+    div.className = "detail-path";
+    const label = document.createElement("span");
+    label.className = "label";
+    label.textContent = "Path";
+    const value = document.createElement("span");
+    value.className = "value";
+    value.textContent = entry.path;
+    div.appendChild(label);
+    div.appendChild(value);
+    return div;
   }
 
   function buildMetricsSummary(metrics) {

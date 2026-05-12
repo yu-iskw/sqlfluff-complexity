@@ -239,17 +239,17 @@ table.entries th {
 
 table.entries th:nth-child(1),
 table.entries td:nth-child(1) {
-  width: 42%;
+  width: 58%;
 }
 
 table.entries th:nth-child(2),
 table.entries td:nth-child(2) {
-  width: 24%;
+  width: 10%;
 }
 
 table.entries th:nth-child(3),
 table.entries td:nth-child(3) {
-  width: 9%;
+  width: 12%;
 }
 
 table.entries th:nth-child(4),
@@ -259,12 +259,7 @@ table.entries td:nth-child(4) {
 
 table.entries th:nth-child(5),
 table.entries td:nth-child(5) {
-  width: 8%;
-}
-
-table.entries th:nth-child(6),
-table.entries td:nth-child(6) {
-  width: 7%;
+  width: 10%;
 }
 
 table.entries .cell-text,
@@ -320,31 +315,26 @@ table.entries .toggle-btn {
 @media (max-width: 760px) {
   table.entries th:nth-child(1),
   table.entries td:nth-child(1) {
-    width: 58%;
+    width: 56%;
   }
 
   table.entries th:nth-child(2),
   table.entries td:nth-child(2) {
-    display: none;
+    width: 12%;
   }
 
   table.entries th:nth-child(3),
   table.entries td:nth-child(3) {
-    width: 12%;
+    width: 13%;
   }
 
   table.entries th:nth-child(4),
   table.entries td:nth-child(4) {
-    width: 13%;
+    width: 11%;
   }
 
   table.entries th:nth-child(5),
   table.entries td:nth-child(5) {
-    width: 9%;
-  }
-
-  table.entries th:nth-child(6),
-  table.entries td:nth-child(6) {
     width: 8%;
   }
 }
@@ -372,6 +362,24 @@ table.entries .toggle-btn {
 
 .detail-panel .finding-title {
   font-weight: 600;
+}
+
+.detail-panel .detail-path {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.detail-panel .detail-path .label {
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.detail-panel .detail-path .value {
+  overflow-wrap: anywhere;
 }
 
 .detail-panel .finding-meta {
