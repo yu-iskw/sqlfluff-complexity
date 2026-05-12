@@ -29,6 +29,15 @@ REMEDIATIONS: dict[str, str] = {
         "Consider promoting inline derived tables into named CTEs or intermediate models when they "
         "hide review-critical transformation steps."
     ),
+    "CPX_C111": (
+        "Consider reducing source fan-in, moving enrichment upstream, or splitting the model by domain."
+    ),
+    "CPX_C112": (
+        "Consider narrowing the select list or splitting wide output shaping into smaller models."
+    ),
+    "CPX_C113": (
+        "Consider splitting aggregation into staged summaries or simplifying GROUP BY and HAVING logic."
+    ),
     "CPX_C201": ("Reduce the largest contributing metric first; inspect the metric breakdown and top contributors."),
 }
 

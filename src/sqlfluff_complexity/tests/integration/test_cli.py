@@ -197,12 +197,13 @@ def test_config_preset_prints_recommended_config(capsys: pytest.CaptureFixture[s
 
     output = capsys.readouterr().out
     rules_line = (
-        "rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C201"
+        "rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C111,CPX_C112,CPX_C113,CPX_C201"
     )
     assert "[sqlfluff]" in output
     assert "dialect = postgres" in output
     assert rules_line in output
     assert "[sqlfluff:rules:CPX_C110]" in output
+    assert "[sqlfluff:rules:CPX_C113]" in output
     assert "max_derived_tables = 4" in output
     assert f"complexity_weights = {WEIGHT_JSON}" in output
 

@@ -480,3 +480,106 @@ def test_path_override_report_mode_suppresses_rule_violation() -> None:
     )
 
     assert rule_violations(linted, "CPX_C102") == []
+
+
+def test_c111_reports_source_relation_violation() -> None:
+    """CPX_C111 should fail when distinct source relations exceed the limit."""
+    sql = "select 1 from a join b on 1=1 join c on 1=1 join d on 1=1"
+    linted = lint_sql(
+        sql,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C111
+
+        [sqlfluff:rules:CPX_C111]
+        max_source_relations = 2
+        """,
+    )
+
+    violations = rule_violations(linted, "CPX_C111")
+    assert len(violations) == 1
+    assert "source relation count 4 exceeds max_source_relations=2" in violations[0].desc()
+
+
+def test_c111_passes_when_only_cte_sources() -> None:
+    """CPX_C111 should not count bare references to CTE aliases."""
+    sql = "with x as (select 1) select * from x"
+    linted = lint_sql(
+        sql,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C111
+
+        [sqlfluff:rules:CPX_C111]
+        max_source_relations = 0
+        """,
+    )
+
+    assert rule_violations(linted, "CPX_C111") == []
+
+
+def test_c112_reports_select_list_width_violation() -> None:
+    """CPX_C112 should fail when any SELECT list is wider than max_select_targets."""
+    sql = "select a, b, c, d, e from t"
+    linted = lint_sql(
+        sql,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C112
+
+        [sqlfluff:rules:CPX_C112]
+        max_select_targets = 4
+        """,
+    )
+
+    violations = rule_violations(linted, "CPX_C112")
+    assert len(violations) == 1
+    assert "select list width 5 exceeds max_select_targets=4" in violations[0].desc()
+
+
+def test_c113_reports_aggregation_complexity_violation() -> None:
+    """CPX_C113 should fail when aggregation_complexity exceeds the limit."""
+    sql = "select count(*), sum(x) from t group by a, b having sum(x) > 1"
+    linted = lint_sql(
+        sql,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C113
+
+        [sqlfluff:rules:CPX_C113]
+        max_aggregation_complexity = 7
+        """,
+    )
+
+    violations = rule_violations(linted, "CPX_C113")
+    assert len(violations) == 1
+    assert "aggregation complexity 8 exceeds max_aggregation_complexity=7" in violations[0].desc()
+
+
+def test_path_override_changes_source_relation_limit_for_matching_file() -> None:
+    """path_overrides on CPX_C201 should tighten max_source_relations for CPX_C111."""
+    sql = "select 1 from a join b on 1=1 join c on 1=1"
+    linted = lint_sql(
+        sql,
+        """
+        [sqlfluff]
+        dialect = ansi
+        rules = CPX_C111
+
+        [sqlfluff:rules:CPX_C111]
+        max_source_relations = 8
+
+        [sqlfluff:rules:CPX_C201]
+        path_overrides =
+            models/staging/*.sql:max_source_relations=1
+        """,
+        fname=str(Path("models/staging/orders.sql")),
+    )
+
+    violations = rule_violations(linted, "CPX_C111")
+    assert len(violations) == 1
+    assert "source relation count 3 exceeds max_source_relations=1" in violations[0].desc()

@@ -182,6 +182,12 @@ def test_refactoring_hint_for_derived_tables() -> None:
     assert "intermediate models" in hint
 
 
+def test_refactoring_hint_for_source_relations() -> None:
+    """source_relations contributors should mention join fan-in."""
+    hint = refactoring_hint_for_contributors(["source_relations"])
+    assert "fan-in" in hint
+
+
 def test_refactoring_hint_empty_falls_back() -> None:
     """No known contributors should still yield a short actionable hint."""
     assert "Consider " in refactoring_hint_for_contributors([])

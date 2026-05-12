@@ -4,7 +4,8 @@ SQLFluff rules and reports for finding SQL and dbt models that are too complex t
 
 `sqlfluff-complexity` adds CPX rules to SQLFluff for CTE count, join count, nested
 subquery depth, `CASE` expressions, nested `CASE` depth, boolean predicates, window functions,
-CTE dependency depth, set operations (`UNION` / `INTERSECT` / `EXCEPT`), inline derived tables, and
+CTE dependency depth, set operations (`UNION` / `INTERSECT` / `EXCEPT`), inline derived tables,
+distinct source relations, wide `SELECT` lists, aggregation complexity, and
 an aggregate weighted complexity score. The same metric engine also powers a companion
 `sqlfluff-complexity report` command for non-blocking console, JSON, and SARIF reports.
 
@@ -35,7 +36,7 @@ Then enable CPX rules in `.sqlfluff` and run SQLFluff:
 ```ini
 [sqlfluff]
 dialect = postgres
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C111,CPX_C112,CPX_C113,CPX_C201
 ```
 
 ```bash

@@ -21,6 +21,9 @@ ALL_CPX_RULE_CODES = {
     "CPX_C108",
     "CPX_C109",
     "CPX_C110",
+    "CPX_C111",
+    "CPX_C112",
+    "CPX_C113",
     "CPX_C201",
 }
 ALL_CPX_RULE_LIST = ",".join(sorted(ALL_CPX_RULE_CODES))
@@ -76,7 +79,7 @@ def test_sqlfluff_accepts_all_cpx_rule_codes() -> None:
         """
         [sqlfluff]
         dialect = ansi
-        rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C201
+        rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C111,CPX_C112,CPX_C113,CPX_C201
         """,
     )
 
@@ -242,6 +245,12 @@ def test_all_cpx_rules_report_through_native_lint_on_templated_sql() -> None:
         max_set_operations = 0
         [sqlfluff:rules:CPX_C110]
         max_derived_tables = 0
+        [sqlfluff:rules:CPX_C111]
+        max_source_relations = 0
+        [sqlfluff:rules:CPX_C112]
+        max_select_targets = 0
+        [sqlfluff:rules:CPX_C113]
+        max_aggregation_complexity = 0
         [sqlfluff:rules:CPX_C201]
         max_complexity_score = 0
         mode = enforce

@@ -16,6 +16,9 @@
 | `CPX_C108` | Nested `CASE` depth (`case_expression` nesting)   |      10 | `max_nested_case_depth`    |
 | `CPX_C109` | Set operations (`UNION` / `INTERSECT` / `EXCEPT`) |      12 | `max_set_operations`       |
 | `CPX_C110` | Inline derived tables                             |       4 | `max_derived_tables`       |
+| `CPX_C111` | Distinct source relations (`FROM` / `JOIN`)       |       8 | `max_source_relations`     |
+| `CPX_C112` | Maximum `SELECT` list width                       |      40 | `max_select_targets`       |
+| `CPX_C113` | Aggregation complexity (aggregates + GROUP BY + HAVING/QUALIFY) | 20 | `max_aggregation_complexity` |
 | `CPX_C201` | Aggregate weighted complexity score               |      60 | `max_complexity_score`     |
 
 ## CPX_C101: Too Many CTEs
@@ -177,6 +180,56 @@ alongside `CPX_C101` (`ctes`). See fixture `c110_ctes_not_derived_tables.sql`.
 max_derived_tables = 4
 ```
 
+## CPX_C111: Too Many Source Relations
+
+Flags a file when the count of **distinct** physical relations referenced in `FROM` / `JOIN`
+exceeds `max_source_relations`.
+
+Each distinct `table_reference` counts once (for example `schema.table` is one key). Bare names
+that match a CTE alias defined anywhere in the file are skipped so `FROM my_cte` is not treated as
+an external source. Inline derived tables (`FROM (SELECT ...)`) are excluded here; they are
+covered by `CPX_C110`.
+
+```ini
+[sqlfluff:rules:CPX_C111]
+max_source_relations = 8
+```
+
+## CPX_C112: Select List Too Wide
+
+Flags a file when any `select_clause` has more than `max_select_targets` direct
+`select_clause_element` children. `SELECT *` counts as one target.
+
+```ini
+[sqlfluff:rules:CPX_C112]
+max_select_targets = 40
+```
+
+## CPX_C113: Aggregation Complexity Too High
+
+Flags a file when **`aggregation_complexity`** exceeds `max_aggregation_complexity`.
+
+The metric is:
+
+```text
+aggregate_functions
++ group_by_expressions
++ 3 * having_clauses
++ 3 * qualify_clauses
+```
+
+- **Aggregate functions:** `function` segments whose `function_name` is a known aggregate
+  (`COUNT`, `SUM`, `AVG`, …) and that do **not** contain an `over_clause` (windowed aggregates are
+  counted under `CPX_C106`, not here).
+- **GROUP BY expressions:** direct grouping children under `groupby_clause` (for example
+  `column_reference`, `expression`, `literal`).
+- **HAVING / QUALIFY:** each `having_clause` or `qualify_clause` segment adds three to the score.
+
+```ini
+[sqlfluff:rules:CPX_C113]
+max_aggregation_complexity = 20
+```
+
 ## CPX_C201: Aggregate Complexity Score Too High
 
 Flags a statement when the weighted aggregate complexity score exceeds `max_complexity_score`.
@@ -188,7 +241,7 @@ Violation messages include the computed score, the configured `max_complexity_sc
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
+complexity_weights = {"aggregation_complexity":0,"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"select_targets":0,"set_operation_count":2,"source_relations":0,"subquery_depth":4,"window_functions":2}
 mode = enforce
 ```
 
@@ -207,6 +260,9 @@ ctes * ctes_weight
 + set_operation_count * set_operation_count_weight
 + expression_depth * expression_depth_weight
 + derived_tables * derived_tables_weight
++ source_relations * source_relations_weight
++ select_targets * select_targets_weight
++ aggregation_complexity * aggregation_complexity_weight
 ```
 
 See [configuration](configuration.md) for path overrides and report-mode rollout patterns.

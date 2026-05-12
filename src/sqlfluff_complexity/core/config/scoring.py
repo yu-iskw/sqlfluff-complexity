@@ -5,16 +5,19 @@ from __future__ import annotations
 import json
 
 DEFAULT_WEIGHTS: dict[str, int] = {
-    "ctes": 2,
-    "joins": 2,
-    "subquery_depth": 4,
-    "case_expressions": 2,
+    "aggregation_complexity": 0,
     "boolean_operators": 1,
-    "window_functions": 2,
+    "case_expressions": 2,
     "cte_dependency_depth": 2,
-    "set_operation_count": 2,
-    "expression_depth": 1,
+    "ctes": 2,
     "derived_tables": 2,
+    "expression_depth": 1,
+    "joins": 2,
+    "select_targets": 0,
+    "set_operation_count": 2,
+    "source_relations": 0,
+    "subquery_depth": 4,
+    "window_functions": 2,
 }
 
 VALID_WEIGHT_KEYS = frozenset(DEFAULT_WEIGHTS)

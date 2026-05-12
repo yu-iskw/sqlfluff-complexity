@@ -38,6 +38,9 @@ def _sarif_rules() -> list[dict[str, Any]]:
         "CPX_C108",
         "CPX_C109",
         "CPX_C110",
+        "CPX_C111",
+        "CPX_C112",
+        "CPX_C113",
         "CPX_C201",
         "CPX_PARSE_ERROR",
     )
@@ -99,6 +102,7 @@ def findings_to_sarif_payload(findings: Sequence[ComplexityFinding]) -> dict[str
             if agg is not None:
                 prop["score"] = agg
             prop["metrics"] = {
+                "aggregation_complexity": finding.metrics.aggregation_complexity,
                 "boolean_operators": finding.metrics.boolean_operators,
                 "case_expressions": finding.metrics.case_expressions,
                 "cte_dependency_depth": finding.metrics.cte_dependency_depth,
@@ -106,7 +110,9 @@ def findings_to_sarif_payload(findings: Sequence[ComplexityFinding]) -> dict[str
                 "derived_tables": finding.metrics.derived_tables,
                 "expression_depth": finding.metrics.expression_depth,
                 "joins": finding.metrics.joins,
+                "select_targets": finding.metrics.select_targets,
                 "set_operation_count": finding.metrics.set_operation_count,
+                "source_relations": finding.metrics.source_relations,
                 "subqueries": finding.metrics.subqueries,
                 "subquery_depth": finding.metrics.subquery_depth,
                 "window_functions": finding.metrics.window_functions,

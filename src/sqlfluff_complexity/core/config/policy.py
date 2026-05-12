@@ -17,6 +17,9 @@ POLICY_INTEGER_KEYS = frozenset(
         "max_nested_case_depth",
         "max_set_operations",
         "max_derived_tables",
+        "max_source_relations",
+        "max_select_targets",
+        "max_aggregation_complexity",
         "max_complexity_score",
     },
 )
@@ -38,6 +41,9 @@ class ComplexityPolicy:
     max_nested_case_depth: int = 10
     max_set_operations: int = 12
     max_derived_tables: int = 4
+    max_source_relations: int = 8
+    max_select_targets: int = 40
+    max_aggregation_complexity: int = 20
     max_complexity_score: int = 60
     mode: str = "enforce"
 

@@ -13,6 +13,8 @@ from sqlfluff_complexity.core.analysis import (
 from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 from sqlfluff_complexity.core.model.structural_metrics import (
     StructuralScanResult,
+    _cte_alias,
+    _normalize_identifier,
     merge_structural_scan,
 )
 
@@ -20,6 +22,84 @@ if TYPE_CHECKING:
     from sqlfluff.core.parser.segments.base import BaseSegment
 
 BOOLEAN_OPERATOR_RAW = {"AND", "OR"}
+
+# Aggregate ``function`` segments whose ``function_name`` matches (no ``over_clause`` child).
+_AGGREGATE_FUNCTION_NAMES = frozenset(
+    {
+        "APPROX_COUNT_DISTINCT",
+        "ARRAY_AGG",
+        "AVG",
+        "COUNT",
+        "COUNTIF",
+        "GROUP_CONCAT",
+        "LISTAGG",
+        "MAX",
+        "MIN",
+        "STDDEV",
+        "STDDEV_POP",
+        "STDDEV_SAMP",
+        "STRING_AGG",
+        "SUM",
+        "VAR_POP",
+        "VAR_SAMP",
+        "VARIANCE",
+    },
+)
+
+# Direct children of ``groupby_clause`` that count as grouping keys (skip punctuation/keywords).
+_GROUPING_ELEMENT_TYPES = frozenset(
+    {
+        "boolean_literal",
+        "bracketed",
+        "case_expression",
+        "column_reference",
+        "expression",
+        "function",
+        "literal",
+        "null_literal",
+        "numeric_literal",
+        "parameter",
+        "quoted_identifier",
+        "wildcard_expression",
+    },
+)
+
+_HAVING_OR_QUALIFY_WEIGHT = 3
+
+
+def _gather_all_cte_aliases(root: BaseSegment) -> frozenset[str]:
+    """Collect every CTE alias in the tree (used to skip bare ``FROM cte`` source counts)."""
+    names: set[str] = set()
+    stack: list[BaseSegment] = [root]
+    while stack:
+        seg = stack.pop()
+        if getattr(seg, "type", "") == "common_table_expression":
+            alias = _cte_alias(seg)
+            if alias:
+                names.add(alias)
+        stack.extend(getattr(seg, "segments", ()) or ())
+    return frozenset(names)
+
+
+def _relation_key_from_table_reference(table_ref: BaseSegment) -> str:
+    """Normalized relation key (``schema.table`` or single name) for distinct source counting."""
+    parts: list[str] = []
+    for child in getattr(table_ref, "segments", ()) or ():
+        if getattr(child, "type", "") == "identifier":
+            name = _normalize_identifier(getattr(child, "raw", "") or "")
+            if name:
+                parts.append(name)
+    if parts:
+        return ".".join(parts)
+    raw = (getattr(table_ref, "raw", "") or "").strip()
+    return _normalize_identifier(raw)
+
+
+def _function_name_upper(function_segment: BaseSegment) -> str:
+    for child in getattr(function_segment, "segments", ()) or ():
+        if getattr(child, "type", "") == "function_name":
+            return (getattr(child, "raw_upper", "") or "").strip()
+    return ""
 
 
 def _has_descendant_type(segment: BaseSegment, segment_type: str) -> bool:
@@ -47,7 +127,8 @@ def _direct_child_of_type(segment: BaseSegment, segment_type: str) -> BaseSegmen
 class _MetricCounter:
     """Stateful collector for one SQLFluff segment tree walk."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, cte_aliases: frozenset[str]) -> None:
+        self._cte_aliases = cte_aliases
         self.ctes = 0
         self.joins = 0
         self.subqueries = 0
@@ -56,8 +137,15 @@ class _MetricCounter:
         self.boolean_operators = 0
         self.window_functions = 0
         self.derived_tables = 0
+        self._source_relation_names: set[str] = set()
+        self.select_targets = 0
+        self.aggregation_complexity = 0
         self._structural = StructuralScanResult(0, 0, 0)
         self.contributors: list[MetricContributor] = []
+
+    @property
+    def source_relations(self) -> int:
+        return len(self._source_relation_names)
 
     @property
     def cte_dependency_depth(self) -> int:
@@ -130,6 +218,74 @@ class _MetricCounter:
         )
         return active_selects + 1, nested_depth
 
+    def _is_aggregate_function_without_over(self, segment: BaseSegment) -> bool:
+        if getattr(segment, "type", "") != "function":
+            return False
+        if _has_descendant_type(segment, "over_clause"):
+            return False
+        name = _function_name_upper(segment)
+        return name in _AGGREGATE_FUNCTION_NAMES
+
+    def _record_source_relation(self, segment: BaseSegment, under_cte_scope: bool) -> None:
+        """Count one distinct physical relation from ``from_expression_element``."""
+        if getattr(segment, "type", "") != "from_expression_element":
+            return
+        if self._is_derived_table(segment, under_cte_scope):
+            return
+        table_expression = _direct_child_of_type(segment, "table_expression")
+        if table_expression is None:
+            return
+        table_ref = _direct_child_of_type(table_expression, "table_reference")
+        if table_ref is None:
+            return
+        key = _relation_key_from_table_reference(table_ref)
+        if not key:
+            return
+        parts = key.split(".")
+        if len(parts) == 1 and parts[0] in self._cte_aliases:
+            return
+        if key not in self._source_relation_names:
+            self._source_relation_names.add(key)
+            self._add_contributor("source_relations", table_ref, reason="source relation")
+
+    def _update_select_targets(self, segment: BaseSegment) -> None:
+        if getattr(segment, "type", "") != "select_clause":
+            return
+        count = sum(
+            1
+            for child in getattr(segment, "segments", ()) or ()
+            if getattr(child, "type", "") == "select_clause_element"
+        )
+        if count > self.select_targets:
+            self.select_targets = count
+            self._add_contributor("select_targets", segment, reason="select list width")
+
+    def _count_groupby_elements(self, segment: BaseSegment) -> None:
+        if getattr(segment, "type", "") != "groupby_clause":
+            return
+        n = sum(
+            1
+            for child in getattr(segment, "segments", ()) or ()
+            if getattr(child, "type", "") in _GROUPING_ELEMENT_TYPES
+        )
+        if n:
+            self.aggregation_complexity += n
+            self._add_contributor("aggregation_complexity", segment, reason="group by expressions")
+
+    def _count_having_or_qualify(self, segment: BaseSegment) -> None:
+        st = getattr(segment, "type", "")
+        if st not in {"having_clause", "qualify_clause"}:
+            return
+        self.aggregation_complexity += _HAVING_OR_QUALIFY_WEIGHT
+        reason = "having clause" if st == "having_clause" else "qualify clause"
+        self._add_contributor("aggregation_complexity", segment, reason=reason)
+
+    def _count_aggregate_function(self, segment: BaseSegment) -> None:
+        if not self._is_aggregate_function_without_over(segment):
+            return
+        self.aggregation_complexity += 1
+        self._add_contributor("aggregation_complexity", segment, reason="aggregate function")
+
     def _is_boolean_operator(self, segment: BaseSegment) -> bool:
         return (
             getattr(segment, "type", "") == "binary_operator"
@@ -151,7 +307,12 @@ class _MetricCounter:
         segment_type: str,
         under_cte_scope: bool,
     ) -> None:
-        if segment_type == "join_clause":
+        if segment_type == "from_expression_element":
+            self._record_source_relation(segment, under_cte_scope)
+            if self._is_derived_table(segment, under_cte_scope):
+                self.derived_tables += 1
+                self._add_contributor("derived_tables", segment, reason="derived table")
+        elif segment_type == "join_clause":
             self.joins += 1
             self._add_contributor("joins", segment, reason="join clause")
         elif segment_type == "case_expression":
@@ -160,6 +321,14 @@ class _MetricCounter:
         elif segment_type == "over_clause":
             self.window_functions += 1
             self._add_contributor("window_functions", segment, reason="window over clause")
+        elif segment_type == "select_clause":
+            self._update_select_targets(segment)
+        elif segment_type == "groupby_clause":
+            self._count_groupby_elements(segment)
+        elif segment_type in {"having_clause", "qualify_clause"}:
+            self._count_having_or_qualify(segment)
+        elif segment_type == "function":
+            self._count_aggregate_function(segment)
         elif self._is_boolean_operator(segment):
             self.boolean_operators += 1
             self._add_contributor(
@@ -167,9 +336,6 @@ class _MetricCounter:
                 segment,
                 reason="boolean and/or operator",
             )
-        elif self._is_derived_table(segment, under_cte_scope):
-            self.derived_tables += 1
-            self._add_contributor("derived_tables", segment, reason="derived table")
 
     def _add_structural_contributor(
         self,
@@ -240,12 +406,16 @@ class _MetricCounter:
             set_operation_count=self.set_operation_count,
             expression_depth=self.expression_depth,
             derived_tables=self.derived_tables,
+            source_relations=self.source_relations,
+            select_targets=self.select_targets,
+            aggregation_complexity=self.aggregation_complexity,
         )
 
 
 def analyze_segment_tree(root: BaseSegment) -> ComplexityAnalysis:
     """Collect metrics and per-segment contributors from a SQLFluff segment tree."""
-    counter = _MetricCounter()
+    cte_aliases = _gather_all_cte_aliases(root)
+    counter = _MetricCounter(cte_aliases=cte_aliases)
     counter.walk(
         root,
         active_selects=0,

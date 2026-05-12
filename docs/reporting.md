@@ -16,8 +16,8 @@ The console output includes one row per file:
 
 ```text
 sqlfluff-complexity report
-path score ctes joins subquery_depth case_expressions boolean_operators window_functions cte_dependency_depth set_operation_count expression_depth derived_tables
-models/orders.sql 14 1 2 0 1 3 1 2 0 1 0
+path score ctes joins subquery_depth case_expressions boolean_operators window_functions cte_dependency_depth set_operation_count expression_depth derived_tables source_relations select_targets aggregation_complexity
+models/orders.sql 14 1 2 0 1 3 1 2 0 1 0 2 3 0
 ```
 
 When findings exist, each rule line may append a short bracketed contributor summary (`line` / `col` / segment type) so reviewers can jump to the SQLFluff segments that drove the metric.
@@ -82,17 +82,20 @@ Example (excerpt):
       "score": 4,
       "aggregate_score": 42,
       "metrics": {
+        "aggregation_complexity": 0,
+        "boolean_operators": 0,
+        "case_expressions": 0,
+        "cte_dependency_depth": 0,
         "ctes": 0,
         "derived_tables": 0,
+        "expression_depth": 0,
         "joins": 4,
+        "select_targets": 0,
+        "set_operation_count": 0,
+        "source_relations": 0,
         "subqueries": 0,
         "subquery_depth": 0,
-        "case_expressions": 0,
-        "boolean_operators": 0,
-        "window_functions": 0,
-        "cte_dependency_depth": 0,
-        "set_operation_count": 0,
-        "expression_depth": 0
+        "window_functions": 0
       },
       "contributors": [
         {
@@ -123,7 +126,7 @@ sqlfluff-complexity report \
   models/
 ```
 
-SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C110`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, and `properties.remediation`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
+SARIF `2.1.0` includes `runs[0].tool.driver.name` `sqlfluff-complexity`, **rules** metadata for `CPX_C101`–`CPX_C113`, `CPX_C201`, and `CPX_PARSE_ERROR` (with remediation in `help` / `fullDescription`), and **results** with `ruleId`, `level`, `message.text`, `locations[].physicalLocation` (`artifactLocation.uri` plus `region.startLine` / `startColumn`). When metrics exist, each result includes `properties.score` (aggregate complexity score), `properties.metrics`, and `properties.remediation`. Parse-error results omit `properties` so automation can distinguish read/parse failures.
 
 For copy-paste CI (SARIF upload, changed-file lint patterns), see [Adoption](adoption.md).
 

@@ -1,4 +1,5 @@
 {
+  "aggregation_complexity": 0,
   "boolean_operators": 0,
   "case_expressions": 1,
   "cte_dependency_depth": 0,
@@ -6,7 +7,9 @@
   "derived_tables": 0,
   "expression_depth": 1,
   "joins": 0,
+  "select_targets": 1,
   "set_operation_count": 0,
+  "source_relations": 0,
   "subqueries": 1,
   "subquery_depth": 1,
   "window_functions": 0

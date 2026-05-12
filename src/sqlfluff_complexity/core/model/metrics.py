@@ -24,6 +24,9 @@ class ComplexityMetrics:
     set_operation_count: int = 0
     expression_depth: int = 0
     derived_tables: int = 0
+    source_relations: int = 0
+    select_targets: int = 0
+    aggregation_complexity: int = 0
 
     def score(self, weights: Mapping[str, int]) -> int:
         """Compute a weighted aggregate complexity score."""
@@ -38,11 +41,15 @@ class ComplexityMetrics:
             + self.set_operation_count * weights.get("set_operation_count", 0)
             + self.expression_depth * weights.get("expression_depth", 0)
             + self.derived_tables * weights.get("derived_tables", 0)
+            + self.source_relations * weights.get("source_relations", 0)
+            + self.select_targets * weights.get("select_targets", 0)
+            + self.aggregation_complexity * weights.get("aggregation_complexity", 0)
         )
 
     def to_report_counters(self) -> dict[str, int]:
         """Counters for report JSON/SARIF and ``sqlfluff-complexity report`` rows."""
         return {
+            "aggregation_complexity": self.aggregation_complexity,
             "boolean_operators": self.boolean_operators,
             "case_expressions": self.case_expressions,
             "cte_dependency_depth": self.cte_dependency_depth,
@@ -50,7 +57,9 @@ class ComplexityMetrics:
             "derived_tables": self.derived_tables,
             "expression_depth": self.expression_depth,
             "joins": self.joins,
+            "select_targets": self.select_targets,
             "set_operation_count": self.set_operation_count,
+            "source_relations": self.source_relations,
             "subqueries": self.subqueries,
             "subquery_depth": self.subquery_depth,
             "window_functions": self.window_functions,
@@ -65,5 +74,7 @@ class ComplexityMetrics:
             f"window_functions={self.window_functions}, "
             f"cte_dependency_depth={self.cte_dependency_depth}, "
             f"set_operation_count={self.set_operation_count}, "
-            f"expression_depth={self.expression_depth}, derived_tables={self.derived_tables}"
+            f"expression_depth={self.expression_depth}, derived_tables={self.derived_tables}, "
+            f"source_relations={self.source_relations}, select_targets={self.select_targets}, "
+            f"aggregation_complexity={self.aggregation_complexity}"
         )

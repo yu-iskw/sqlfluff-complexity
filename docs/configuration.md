@@ -7,7 +7,7 @@
 ```ini
 [sqlfluff]
 dialect = snowflake
-rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C201
+rules = CPX_C101,CPX_C102,CPX_C103,CPX_C104,CPX_C105,CPX_C106,CPX_C107,CPX_C108,CPX_C109,CPX_C110,CPX_C111,CPX_C112,CPX_C113,CPX_C201
 ```
 
 You can also enable only the rules you are ready to enforce:
@@ -34,6 +34,9 @@ The plugin default config sets these limits:
 | `CPX_C108` | `max_nested_case_depth`    |      10 |
 | `CPX_C109` | `max_set_operations`       |      12 |
 | `CPX_C110` | `max_derived_tables`       |       4 |
+| `CPX_C111` | `max_source_relations`     |       8 |
+| `CPX_C112` | `max_select_targets`       |      40 |
+| `CPX_C113` | `max_aggregation_complexity` |    20 |
 | `CPX_C201` | `max_complexity_score`     |      60 |
 
 Example override:
@@ -50,14 +53,16 @@ max_subquery_depth = 2
 
 `CPX_C201` computes a weighted aggregate score from the same metrics used by the individual rules.
 The default weights keep mature high-signal metrics stable while adding modest nonzero weights for
-CTE dependency depth, set operations, expression depth, and derived tables.
+CTE dependency depth, set operations, expression depth, and derived tables. Newer metrics
+(`source_relations`, `select_targets`, `aggregation_complexity`) default to weight `0` so existing
+aggregate score budgets stay comparable; opt in by setting nonzero weights in `complexity_weights`.
 
 Default weights (`complexity_weights` is a **JSON object** string: standard JSON with double-quoted keys and no trailing commas):
 
 ```ini
 [sqlfluff:rules:CPX_C201]
 max_complexity_score = 60
-complexity_weights = {"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"set_operation_count":2,"subquery_depth":4,"window_functions":2}
+complexity_weights = {"aggregation_complexity":0,"boolean_operators":1,"case_expressions":2,"cte_dependency_depth":2,"ctes":2,"derived_tables":2,"expression_depth":1,"joins":2,"select_targets":0,"set_operation_count":2,"source_relations":0,"subquery_depth":4,"window_functions":2}
 mode = enforce
 ```
 
@@ -115,6 +120,9 @@ Supported override keys:
 - `max_nested_case_depth`
 - `max_set_operations`
 - `max_derived_tables`
+- `max_source_relations`
+- `max_select_targets`
+- `max_aggregation_complexity`
 - `max_complexity_score`
 - `mode`
 

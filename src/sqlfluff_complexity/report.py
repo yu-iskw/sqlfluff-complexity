@@ -141,6 +141,30 @@ REPORT_LIMITS = (
         "max_derived_tables",
         message_label="derived table count",
     ),
+    ReportLimit(
+        "CPX_C111",
+        "source_relations",
+        "max_source_relations",
+        "Source relation count",
+        "max_source_relations",
+        message_label="source relation count",
+    ),
+    ReportLimit(
+        "CPX_C112",
+        "select_targets",
+        "max_select_targets",
+        "Select list width",
+        "max_select_targets",
+        message_label="select list width",
+    ),
+    ReportLimit(
+        "CPX_C113",
+        "aggregation_complexity",
+        "max_aggregation_complexity",
+        "Aggregation complexity",
+        "max_aggregation_complexity",
+        message_label="aggregation complexity",
+    ),
 )
 
 
@@ -450,6 +474,14 @@ def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
         max_nested_case_depth=_config_int(config, "CPX_C108", "max_nested_case_depth", 10),
         max_set_operations=_config_int(config, "CPX_C109", "max_set_operations", 12),
         max_derived_tables=_config_int(config, "CPX_C110", "max_derived_tables", 4),
+        max_source_relations=_config_int(config, "CPX_C111", "max_source_relations", 8),
+        max_select_targets=_config_int(config, "CPX_C112", "max_select_targets", 40),
+        max_aggregation_complexity=_config_int(
+            config,
+            "CPX_C113",
+            "max_aggregation_complexity",
+            20,
+        ),
         max_complexity_score=_config_int(
             config,
             "CPX_C201",
@@ -540,7 +572,8 @@ def _format_console_entry(entry: ReportEntry) -> list[str]:
         f"{metrics.subquery_depth} {metrics.case_expressions} "
         f"{metrics.boolean_operators} {metrics.window_functions} "
         f"{metrics.cte_dependency_depth} {metrics.set_operation_count} "
-        f"{metrics.expression_depth} {metrics.derived_tables}"
+        f"{metrics.expression_depth} {metrics.derived_tables} "
+        f"{metrics.source_relations} {metrics.select_targets} {metrics.aggregation_complexity}"
     )
     lines = [header_line]
     for finding in entry.findings:
@@ -557,7 +590,8 @@ def format_console_report(report: ComplexityReport) -> str:
     """Format a complexity report for terminal output."""
     column_headers = (
         "path score ctes joins subquery_depth case_expressions boolean_operators window_functions "
-        "cte_dependency_depth set_operation_count expression_depth derived_tables"
+        "cte_dependency_depth set_operation_count expression_depth derived_tables "
+        "source_relations select_targets aggregation_complexity"
     )
     lines = [
         "sqlfluff-complexity report",

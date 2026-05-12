@@ -25,6 +25,9 @@ _REFACTORING_PHRASES: dict[str, str] = {
     "set_operation_count": "simplifying stacked set operations",
     "expression_depth": "flattening nested CASE expressions",
     "derived_tables": "extracting inline derived tables into named intermediate models",
+    "source_relations": "reducing FROM/JOIN source fan-in or moving joins upstream",
+    "select_targets": "narrowing wide SELECT lists or splitting shaping into smaller models",
+    "aggregation_complexity": "simplifying GROUP BY, HAVING, QUALIFY, or aggregate expressions",
 }
 
 

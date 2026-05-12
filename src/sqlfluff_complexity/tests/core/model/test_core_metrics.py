@@ -51,6 +51,22 @@ def test_complexity_metrics_reports_derived_tables() -> None:
     assert "derived_tables=2" in metrics.format_breakdown()
 
 
+def test_complexity_metrics_reports_new_file_level_metrics() -> None:
+    """Report counters and breakdown should expose source, select width, and aggregation metrics."""
+    metrics = ComplexityMetrics(
+        source_relations=3,
+        select_targets=12,
+        aggregation_complexity=5,
+    )
+    counters = metrics.to_report_counters()
+    assert counters["source_relations"] == 3
+    assert counters["select_targets"] == 12
+    assert counters["aggregation_complexity"] == 5
+    assert "source_relations=3" in metrics.format_breakdown()
+    assert "select_targets=12" in metrics.format_breakdown()
+    assert "aggregation_complexity=5" in metrics.format_breakdown()
+
+
 def test_parse_weights_overrides_defaults() -> None:
     """JSON weight objects should override only supplied keys."""
     weights = parse_weights('{"joins": 5, "boolean_operators": 0}')
@@ -118,6 +134,34 @@ def test_collect_metrics_from_sqlfluff_segment_tree() -> None:
     sql = read_sql_fixture(dialect, stem)
     expected = load_expected_metrics(dialect, stem)
     assert collect_metrics(_parse_sql(sql, dialect=dialect)) == expected
+
+
+def test_collect_metrics_source_relations_distinct_and_schema_qualified() -> None:
+    """source_relations counts distinct table keys including schema-qualified names."""
+    sql = "select 1 from a join b on 1=1 join public.c on 1=1"
+    metrics = collect_metrics(_parse_sql(sql))
+    assert metrics.source_relations == 3
+
+
+def test_collect_metrics_source_relations_skip_cte_alias() -> None:
+    """Bare FROM to a CTE alias should not count as a physical source relation."""
+    sql = "with x as (select 1) select * from x join y on 1=1"
+    metrics = collect_metrics(_parse_sql(sql))
+    assert metrics.source_relations == 1
+
+
+def test_collect_metrics_select_targets_is_max_width() -> None:
+    """select_targets is the maximum width of any select_clause in the file."""
+    sql = "select 1, 2, 3 from t where exists (select x, y from u)"
+    metrics = collect_metrics(_parse_sql(sql))
+    assert metrics.select_targets == 3
+
+
+def test_collect_metrics_aggregation_complexity_formula() -> None:
+    """aggregation_complexity counts aggregates, GROUP BY keys, and weighted HAVING."""
+    sql = "select count(*), sum(x) from t group by a, b having sum(x) > 1"
+    metrics = collect_metrics(_parse_sql(sql))
+    assert metrics.aggregation_complexity == 8
 
 
 def test_collect_metrics_tracks_nested_subquery_depth() -> None:

@@ -66,6 +66,15 @@ def get_rules() -> list[type[BaseRule]]:
     from sqlfluff_complexity.rules.c110_derived_tables import (  # noqa: PLC0415
         Rule_CPX_C110,
     )
+    from sqlfluff_complexity.rules.c111_too_many_source_relations import (  # noqa: PLC0415
+        Rule_CPX_C111,
+    )
+    from sqlfluff_complexity.rules.c112_select_list_too_wide import (  # noqa: PLC0415
+        Rule_CPX_C112,
+    )
+    from sqlfluff_complexity.rules.c113_aggregation_complexity import (  # noqa: PLC0415
+        Rule_CPX_C113,
+    )
     from sqlfluff_complexity.rules.c201_aggregate_score import (  # noqa: PLC0415
         Rule_CPX_C201,
     )
@@ -81,6 +90,9 @@ def get_rules() -> list[type[BaseRule]]:
         Rule_CPX_C108,
         Rule_CPX_C109,
         Rule_CPX_C110,
+        Rule_CPX_C111,
+        Rule_CPX_C112,
+        Rule_CPX_C113,
         Rule_CPX_C201,
     ]
 
@@ -129,6 +141,23 @@ def get_configs_info() -> dict[str, dict[str, Any]]:
         },
         "max_derived_tables": {
             "definition": "Maximum inline derived tables allowed in one parsed SQL file.",
+        },
+        "max_source_relations": {
+            "definition": (
+                "Maximum distinct source relations (FROM/JOIN base tables) allowed in one parsed file."
+            ),
+        },
+        "max_select_targets": {
+            "definition": (
+                "Maximum SELECT list width (``select_clause_element`` count) allowed in any one "
+                "select clause in the file."
+            ),
+        },
+        "max_aggregation_complexity": {
+            "definition": (
+                "Maximum aggregation complexity score (aggregate calls, GROUP BY keys, weighted "
+                "HAVING/QUALIFY clauses) allowed in one parsed file."
+            ),
         },
         "max_complexity_score": {
             "definition": "Maximum aggregate complexity score allowed in one statement.",

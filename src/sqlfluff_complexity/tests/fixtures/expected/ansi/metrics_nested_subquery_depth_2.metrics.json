@@ -1,13 +1,16 @@
 {
+  "aggregation_complexity": 0,
+  "boolean_operators": 0,
+  "case_expressions": 0,
+  "cte_dependency_depth": 0,
   "ctes": 0,
+  "derived_tables": 2,
+  "expression_depth": 0,
   "joins": 0,
+  "select_targets": 1,
+  "set_operation_count": 0,
+  "source_relations": 1,
   "subqueries": 2,
   "subquery_depth": 2,
-  "case_expressions": 0,
-  "boolean_operators": 0,
-  "window_functions": 0,
-  "cte_dependency_depth": 0,
-  "set_operation_count": 0,
-  "expression_depth": 0,
-  "derived_tables": 2
+  "window_functions": 0
 }
