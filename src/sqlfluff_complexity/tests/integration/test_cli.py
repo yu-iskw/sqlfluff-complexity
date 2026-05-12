@@ -110,6 +110,35 @@ def test_report_writes_sarif_without_sql_text(tmp_path: Path) -> None:
     assert "joins" in c102_results[0]["properties"]["metrics"]
 
 
+def test_report_writes_html(tmp_path: Path) -> None:
+    """The CLI should emit a standalone HTML report with embedded data."""
+    sql_file = tmp_path / "model.sql"
+    sql_file.write_text("select 1\n", encoding="utf-8")
+    output_file = tmp_path / "complexity.html"
+
+    assert (
+        main(
+            [
+                "report",
+                "--dialect",
+                "ansi",
+                "--format",
+                "html",
+                "--output",
+                str(output_file),
+                str(sql_file),
+            ],
+        )
+        == 0
+    )
+
+    html = output_file.read_text(encoding="utf-8")
+    assert html.startswith("<!doctype html>")
+    assert "sqlfluff-complexity report" in html
+    assert 'id="report-data"' in html
+    assert str(sql_file) in html
+
+
 def test_report_json_roundtrip(tmp_path: Path) -> None:
     """JSON report should parse and include metrics for valid SQL."""
     sql_file = tmp_path / "m.sql"

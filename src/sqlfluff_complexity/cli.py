@@ -27,6 +27,7 @@ from sqlfluff_complexity.report import (
     analyze_paths,
     expand_report_paths,
     format_console_report,
+    format_html_report,
     format_json_report,
     format_sarif_report,
     load_fluff_config,
@@ -35,6 +36,13 @@ from sqlfluff_complexity.report import (
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+REPORT_FORMATTERS = {
+    "console": format_console_report,
+    "html": format_html_report,
+    "json": format_json_report,
+    "sarif": format_sarif_report,
+}
 
 
 def _first_directory_arg(paths: Sequence[Path]) -> Path | None:
@@ -46,12 +54,9 @@ def _first_directory_arg(paths: Sequence[Path]) -> Path | None:
 
 
 def _format_report(report: ComplexityReport, output_format: str) -> str:
-    if output_format == "console":
-        return format_console_report(report)
-    if output_format == "json":
-        return format_json_report(report)
-    if output_format == "sarif":
-        return format_sarif_report(report)
+    formatter = REPORT_FORMATTERS.get(output_format)
+    if formatter is not None:
+        return formatter(report)
 
     message = f"Unsupported report format: {output_format}"
     raise ValueError(message)
@@ -149,7 +154,7 @@ def _build_parser() -> argparse.ArgumentParser:
     report_parser.add_argument("--config", type=Path, help="SQLFluff config file to apply.")
     report_parser.add_argument(
         "--format",
-        choices=("console", "json", "sarif"),
+        choices=tuple(REPORT_FORMATTERS),
         default="console",
         dest="output_format",
         help="Report output format.",

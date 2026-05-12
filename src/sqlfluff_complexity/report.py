@@ -37,6 +37,7 @@ from sqlfluff_complexity.core.messages.violation_messages import (
 )
 from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
+from sqlfluff_complexity.reporting.html import format_html_report as _format_html_report
 from sqlfluff_complexity.reporting.json import findings_to_json_payload
 from sqlfluff_complexity.reporting.sarif import findings_to_sarif_payload
 
@@ -573,6 +574,11 @@ def format_sarif_report(report: ComplexityReport) -> str:
     all_findings = [f for e in report.entries for f in e.findings]
     sarif = findings_to_sarif_payload(all_findings)
     return json.dumps(sarif, indent=2, sort_keys=True)
+
+
+def format_html_report(report: ComplexityReport) -> str:
+    """Format a complexity report as a standalone interactive HTML dashboard."""
+    return _format_html_report(report)
 
 
 def _finding_to_canonical_dict(finding: ComplexityFinding) -> dict[str, object]:

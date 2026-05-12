@@ -110,6 +110,32 @@ Example (excerpt):
 }
 ```
 
+## HTML Report
+
+Generate a standalone interactive dashboard:
+
+```bash
+sqlfluff-complexity report \
+  --dialect postgres \
+  --config .sqlfluff \
+  --format html \
+  --output complexity.html \
+  models/
+```
+
+The generated HTML file is self-contained. It does not require `sqlfluff-complexity`, a
+local server, external CSS/JavaScript, or network access to view. This makes it suitable
+for local triage and CI artifact uploads.
+
+The dashboard is summary-first for large projects: it opens with file/finding counts,
+score distribution, rule breakdowns, and directory hotspots, then lets you filter,
+sort, paginate, and expand file rows for findings, remediation, metrics, and contributor
+metadata.
+
+The HTML report is metadata-first. It includes paths, metrics, scores, findings,
+remediation, and contributor snippets already captured by the report engine, but it does
+not embed full SQL source files by default.
+
 ## SARIF Report
 
 Generate SARIF for code-scanning workflows:
@@ -146,6 +172,7 @@ Use report mode when:
 
 - you want baseline metrics before enabling enforcement
 - CI should publish findings without failing immediately
+- you want a standalone HTML artifact for interactive review
 - you want SARIF artifacts for code-scanning review
 
 Use native SQLFluff rules when:
