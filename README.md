@@ -53,6 +53,7 @@ For a complete walkthrough, see [docs/quickstart.md](docs/quickstart.md).
 - [Configuration](docs/configuration.md): thresholds, aggregate weights, [SQLFluff nested config by path](docs/configuration.md#sqlfluff-nested-configuration-by-path), and `path_overrides`.
 - [Rules reference](docs/rules.md): CPX rule codes and what each metric counts.
 - [Reporting](docs/reporting.md): console, JSON, SARIF, and HTML report mode.
+- [Python API](docs/python-api.md): stable programmatic imports (today: `report` pipeline and related config helpers; more subcommands documented here as they ship).
 - [Adoption](docs/adoption.md): calibration, CI/SARIF examples, before/after SQL vignette.
 - [dbt usage](docs/dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
 - [Dialects](docs/dialects.md): tested dialects and dbt adapter mapping caveats.

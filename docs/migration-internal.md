@@ -4,6 +4,7 @@ The **public** surface of this package is unchanged for normal use:
 
 - SQLFluff entry point: `sqlfluff_complexity` (plugin hooks, rules, default config).
 - CLI: `sqlfluff-complexity` / `sqlfluff_complexity.cli`.
+- Stable programmatic imports: `sqlfluff_complexity.report` (CLI parity for `sqlfluff-complexity report` today; additional subcommands may document other modules later — see [Python API](python-api.md)).
 
 If you import **`sqlfluff_complexity.core`** submodules directly (for example in a fork, test harness, or custom tool), import paths were reorganized into domain subpackages. Update imports as below.
 

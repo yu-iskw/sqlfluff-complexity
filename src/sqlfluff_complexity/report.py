@@ -647,3 +647,18 @@ def validate_cpx_plugin_config(config: FluffConfig) -> None:
         raise ValueError(message)
     base_policy = replace(_threshold_policy_from_config(config), mode=mode)
     resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
+
+
+__all__ = (
+    "ComplexityReport",
+    "ReportEntry",
+    "analyze_paths",
+    "analyze_paths_findings",
+    "expand_report_paths",
+    "format_console_report",
+    "format_html_report",
+    "format_json_report",
+    "format_sarif_report",
+    "load_fluff_config",
+    "validate_cpx_plugin_config",
+)

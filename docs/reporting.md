@@ -4,6 +4,8 @@ The native CPX rules are for enforcement through `sqlfluff lint`. The companion 
 
 Report mode uses the same SQLFluff parser, metric collector, scoring weights, thresholds, and path overrides as the native rules. **No dbt artifacts** (`manifest.json`, `run_results.json`, `catalog.json`, or DAG metadata) are read; analysis is SQLFluff parse-tree only.
 
+For the Python API for the `report` command (scripts, CI, agent skills), see [Python API](python-api.md) (Report command section).
+
 ## Console Report
 
 Analyze one or more SQL files:
