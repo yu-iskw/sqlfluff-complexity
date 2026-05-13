@@ -8,6 +8,7 @@ Start with [README](../README.md) for the project overview. These pages provide 
 - [Configuration](configuration.md): thresholds, aggregate weights, and path overrides.
 - [Rules reference](rules.md): CPX rule codes and metrics.
 - [Reporting](reporting.md): console, JSON, SARIF, and HTML report mode.
+- [Python API](python-api.md): stable imports mirroring the CLI; today covers the `report` command and related helpers, with room for future subcommands.
 - [Adoption](adoption.md): calibration playbook, CI recipes, before/after examples.
 - [dbt usage](dbt.md): SQLFluff dbt templater compatibility and v1 boundaries.
 - [Dialects](dialects.md): tested dialects and SQLFluff/dbt mapping caveats.
