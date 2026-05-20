@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -68,6 +69,20 @@ def test_html_payload_includes_summary_entries_and_findings(tmp_path: Path) -> N
     assert payload["findings"][0]["rule_id"] == "CPX_C102"
     rule_ids = {rule["rule_id"] for rule in payload["rules"]}
     assert "CPX_C102" in rule_ids
+
+
+def test_html_payload_includes_scan_roots(tmp_path: Path) -> None:
+    """HTML metadata carries CLI scan roots for short path display."""
+    models = tmp_path / "models"
+    models.mkdir()
+    sql_file = models / "orders.sql"
+    sql_file.write_text("select 1\n", encoding="utf-8")
+    report = replace(
+        analyze_paths([sql_file], dialect="ansi"),
+        scan_roots=(str(models.absolute()),),
+    )
+    payload = build_html_report_payload(report)
+    assert payload["metadata"]["scan_roots"] == [str(models.absolute())]
 
 
 def test_format_html_report_outputs_standalone_document(tmp_path: Path) -> None:
@@ -237,3 +252,15 @@ def test_html_assets_are_inlined(tmp_path: Path) -> None:
     assert script_block.strip(), "JavaScript asset should be inlined and non-empty"
     assert "init" in script_block, "Inlined JS should expose the dashboard init function"
     assert "entryHasDetails" in script_block
+    assert "prepareScanRoots" in script_block
+    assert "Weighted complexity score" in script_block
+    assert "th[data-help]" in style_block
+    assert "#section-entries > .body" in style_block
+    assert "DEFAULT_PAGE_SIZE = 50" in script_block
+    assert "display_path" in script_block
+    assert "Full paths" in script_block
+    assert '[data-theme="dark"]' in style_block
+    assert "applyTheme" in script_block
+    assert "Theme" in script_block
+    assert "Filtered files by directory" not in script_block
+    assert "topDirectoriesFromEntries" not in script_block

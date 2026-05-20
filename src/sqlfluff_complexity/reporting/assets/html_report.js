@@ -8,16 +8,107 @@
     path: (entry) => entry.path,
   };
 
+  const ENTRY_COLUMNS = [
+    {
+      key: "path",
+      label: "Path",
+      help: "File path analyzed in this report.",
+    },
+    {
+      key: "score",
+      label: "Score",
+      help: "Weighted complexity score (CPX_C201). Can be above zero even when no rules fired.",
+    },
+    {
+      key: "finding_count",
+      label: "Findings",
+      help: "Number of rule threshold violations in this file.",
+    },
+    {
+      key: "error_count",
+      label: "Errors",
+      help: "Parse or read failures; score and metrics may be missing.",
+    },
+    { key: null, label: "" },
+  ];
+
+  const DEFAULT_PAGE_SIZE = 50;
+
+  const PATH_DISPLAY = { short: "short", full: "full" };
+
+  const THEME = { system: "system", light: "light", dark: "dark" };
+
+  function normalizePathSeparators(path) {
+    return (path || "").replace(/\\/g, "/");
+  }
+
+  function splitPathSegments(path) {
+    const norm = normalizePathSeparators(path);
+    const absolute = norm.startsWith("/");
+    const segments = norm.split("/").filter(Boolean);
+    return { absolute, segments };
+  }
+
+  function longestCommonPathPrefix(paths) {
+    if (!paths.length) return "";
+    const first = splitPathSegments(paths[0]);
+    let parts = first.segments.slice();
+    const absolute = first.absolute;
+    for (let i = 1; i < paths.length; i++) {
+      const other = splitPathSegments(paths[i]);
+      if (other.absolute !== absolute) return "";
+      let j = 0;
+      while (j < parts.length && j < other.length && parts[j] === other[j]) j++;
+      parts = parts.slice(0, j);
+      if (!parts.length) return "";
+    }
+    if (!parts.length) return "";
+    const joined = parts.join("/") + "/";
+    return absolute ? "/" + joined : joined;
+  }
+
+  function prepareScanRoots(rawRoots) {
+    return rawRoots
+      .map((r) => normalizePathSeparators(r).replace(/\/+$/, ""))
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length);
+  }
+
+  function stripScanRoot(normPath, roots) {
+    for (const root of roots) {
+      if (normPath === root) return "";
+      if (normPath.startsWith(root + "/")) {
+        return normPath.slice(root.length + 1);
+      }
+    }
+    return null;
+  }
+
+  function pathForDisplay(entry, commonPrefix, mode, scanRoots) {
+    const full = entry.path || "";
+    if (mode === PATH_DISPLAY.full) return full;
+    const norm = normalizePathSeparators(full);
+    const fromRoot = stripScanRoot(norm, scanRoots);
+    if (fromRoot !== null) {
+      return fromRoot || entry.filename || full;
+    }
+    if (!commonPrefix || !norm.startsWith(commonPrefix)) return full;
+    const rest = norm.slice(commonPrefix.length).replace(/^\//, "");
+    return rest || entry.filename || full;
+  }
+
   const state = {
     query: "",
     rule: "",
     directory: "",
     onlyFindings: false,
     onlyErrors: false,
+    pathDisplay: PATH_DISPLAY.short,
+    theme: THEME.system,
     sortKey: "score",
     sortDirection: "desc",
     page: 1,
-    pageSize: 100,
+    pageSize: DEFAULT_PAGE_SIZE,
   };
 
   let reportData = null;
@@ -25,6 +116,15 @@
   let renderTimer = null;
   let visibleEntriesCache = null;
   let visibleEntriesCacheKey = "";
+
+  function applyTheme() {
+    const root = document.documentElement;
+    if (state.theme === THEME.system) {
+      root.removeAttribute("data-theme");
+    } else {
+      root.setAttribute("data-theme", state.theme);
+    }
+  }
 
   function init() {
     const node = document.getElementById("report-data");
@@ -40,15 +140,38 @@
     }
     reportData.entries = normalizeEntries(reportData.entries || []);
     findingIndex = indexFindings(reportData.findings || []);
+    applyTheme();
     buildShell();
     render();
   }
 
   function normalizeEntries(entries) {
-    return entries.map((entry) => ({
-      ...entry,
-      search_path: (entry.path || "").toLowerCase(),
-    }));
+    const paths = entries.map((e) => e.path || "");
+    const commonPrefix = longestCommonPathPrefix(paths);
+    const scanRoots = prepareScanRoots(
+      (reportData.metadata && reportData.metadata.scan_roots) || [],
+    );
+    return entries.map((entry) => {
+      const display = pathForDisplay(
+        entry,
+        commonPrefix,
+        state.pathDisplay,
+        scanRoots,
+      );
+      const full = (entry.path || "").toLowerCase();
+      return {
+        ...entry,
+        display_path: display,
+        search_path: (full + "\n" + display.toLowerCase()).trim(),
+      };
+    });
+  }
+
+  function applyPathDisplay() {
+    reportData.entries = normalizeEntries(reportData.entries);
+    visibleEntriesCache = null;
+    visibleEntriesCacheKey = "";
+    render();
   }
 
   function indexFindings(findings) {
@@ -72,7 +195,6 @@
     app.appendChild(buildSection("summary", "Summary"));
     app.appendChild(buildSection("charts", "At a glance"));
     app.appendChild(buildSection("controls", "Filters"));
-    app.appendChild(buildSection("directories", "Top directories"));
     app.appendChild(buildSection("entries", "Files"));
     renderControls();
   }
@@ -120,7 +242,6 @@
     renderSummary(sorted);
     renderCharts(sorted);
     syncControls();
-    renderDirectoryRollups();
     renderEntries(sorted, totalPages);
   }
 
@@ -254,12 +375,6 @@
         })),
       ),
     );
-    grid.appendChild(
-      buildBarChart(
-        "Filtered files by directory",
-        topDirectoriesFromEntries(filtered),
-      ),
-    );
     body.appendChild(grid);
   }
 
@@ -303,17 +418,6 @@
     row.appendChild(track);
     row.appendChild(countEl);
     return row;
-  }
-
-  function topDirectoriesFromEntries(entries) {
-    const counter = new Map();
-    for (const entry of entries) {
-      counter.set(entry.directory, (counter.get(entry.directory) || 0) + 1);
-    }
-    return Array.from(counter.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([directory, count]) => ({ label: directory || ".", count }));
   }
 
   function renderControls() {
@@ -372,6 +476,33 @@
       ),
     );
     wrapper.appendChild(
+      buildCheckboxControl(
+        "Full paths",
+        state.pathDisplay === PATH_DISPLAY.full,
+        (checked) => {
+          state.pathDisplay = checked ? PATH_DISPLAY.full : PATH_DISPLAY.short;
+          state.page = 1;
+          applyPathDisplay();
+        },
+      ),
+    );
+    wrapper.appendChild(
+      buildSelectControl(
+        "Theme",
+        "theme",
+        [
+          { value: THEME.system, label: "System" },
+          { value: THEME.light, label: "Light" },
+          { value: THEME.dark, label: "Dark" },
+        ],
+        state.theme,
+        (value) => {
+          state.theme = value;
+          applyTheme();
+        },
+      ),
+    );
+    wrapper.appendChild(
       buildSelectControl(
         "Page size",
         "page-size",
@@ -383,7 +514,7 @@
         ],
         String(state.pageSize),
         (value) => {
-          state.pageSize = Number(value) || 100;
+          state.pageSize = Number(value) || DEFAULT_PAGE_SIZE;
           state.page = 1;
           render();
         },
@@ -474,67 +605,13 @@
     setControlValue("query", state.query);
     setControlValue("rule", state.rule);
     setControlValue("directory", state.directory);
+    setControlValue("theme", state.theme);
     setControlValue("page-size", String(state.pageSize));
   }
 
   function setControlValue(id, value) {
     const control = document.getElementById("control-" + id);
     if (control && control.value !== value) control.value = value;
-  }
-
-  function renderDirectoryRollups() {
-    const body = bodyOf("directories");
-    if (!body) return;
-    body.innerHTML = "";
-    const list = document.createElement("div");
-    list.className = "directory-list";
-    const top = (reportData.directories || []).slice(0, 10);
-    if (!top.length) {
-      const empty = document.createElement("div");
-      empty.className = "empty-state";
-      empty.textContent = "No directories";
-      body.appendChild(empty);
-      return;
-    }
-    for (const directory of top) {
-      list.appendChild(buildDirectoryRow(directory));
-    }
-    body.appendChild(list);
-  }
-
-  function buildDirectoryRow(directory) {
-    const row = document.createElement("button");
-    row.type = "button";
-    row.className = "directory-row";
-    row.setAttribute(
-      "aria-pressed",
-      state.directory === directory.path ? "true" : "false",
-    );
-    const fullPath = directory.path || ".";
-    row.title = fullPath;
-    const path = document.createElement("div");
-    path.className = "path";
-    path.textContent = fullPath;
-    const files = document.createElement("div");
-    files.className = "stat";
-    files.textContent = directory.files + " files";
-    const findings = document.createElement("div");
-    findings.className = "stat";
-    findings.textContent = directory.findings + " findings";
-    const max = document.createElement("div");
-    max.className = "stat";
-    max.textContent = "max " + directory.max_score;
-    row.appendChild(path);
-    row.appendChild(files);
-    row.appendChild(findings);
-    row.appendChild(max);
-    row.addEventListener("click", () => {
-      state.directory =
-        state.directory === directory.path ? "" : directory.path;
-      state.page = 1;
-      render();
-    });
-    return row;
   }
 
   function renderEntries(sorted, totalPages) {
@@ -571,18 +648,16 @@
 
   function buildHeaderRow() {
     const row = document.createElement("tr");
-    const columns = [
-      { key: "path", label: "Path" },
-      { key: "score", label: "Score" },
-      { key: "finding_count", label: "Findings" },
-      { key: "error_count", label: "Errors" },
-      { key: null, label: "" },
-    ];
-    for (const column of columns) {
+    for (const column of ENTRY_COLUMNS) {
       const th = document.createElement("th");
       th.textContent = column.label;
       if (column.key) {
         th.setAttribute("data-sort-key", column.key);
+        if (column.help) {
+          th.setAttribute("data-help", column.help);
+          th.title = column.help;
+          th.tabIndex = 0;
+        }
         if (state.sortKey === column.key) {
           th.setAttribute(
             "aria-sort",
@@ -638,7 +713,7 @@
     }
     const path = document.createElement("span");
     path.className = "path-text";
-    path.textContent = entry.path;
+    path.textContent = entry.display_path ?? entry.path;
     cell.appendChild(path);
     return cell;
   }

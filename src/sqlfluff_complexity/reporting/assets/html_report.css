@@ -15,8 +15,30 @@
   --bar-bg: #eef0f5;
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Dark tokens: keep in sync with the system @media block below. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f1218;
+  --fg: #e6ebf2;
+  --muted: #9aa3b1;
+  --border: #2a3140;
+  --accent: #6c8fff;
+  --accent-soft: #1c2540;
+  --warning: #f1c473;
+  --warning-soft: #2c2412;
+  --error: #ff8b7d;
+  --error-soft: #38181a;
+  --ok: #66d391;
+  --bar: #6c8fff;
+  --bar-bg: #1b2030;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     --bg: #0f1218;
     --fg: #e6ebf2;
     --muted: #9aa3b1;
@@ -90,6 +112,10 @@ section h2 {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+}
+
+#section-entries > .body {
+  overflow-x: auto;
 }
 
 .summary-grid {
@@ -237,9 +263,50 @@ table.entries th {
   white-space: nowrap;
 }
 
+table.entries th[data-help] {
+  position: relative;
+}
+
+table.entries th[data-help]::before {
+  content: attr(data-help);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  z-index: 2;
+  max-width: 280px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 0.75rem;
+  font-weight: normal;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+table.entries th[data-help]:hover::before,
+table.entries th[data-help]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  table.entries th[data-help]::before {
+    transition: none;
+  }
+}
+
 table.entries th:nth-child(1),
 table.entries td:nth-child(1) {
-  width: 58%;
+  width: 54%;
 }
 
 table.entries th:nth-child(2),
@@ -259,7 +326,7 @@ table.entries td:nth-child(4) {
 
 table.entries th:nth-child(5),
 table.entries td:nth-child(5) {
-  width: 10%;
+  width: 14%;
 }
 
 table.entries .cell-text,
@@ -315,7 +382,7 @@ table.entries .toggle-btn {
 @media (max-width: 760px) {
   table.entries th:nth-child(1),
   table.entries td:nth-child(1) {
-    width: 56%;
+    width: 52%;
   }
 
   table.entries th:nth-child(2),
@@ -335,7 +402,7 @@ table.entries .toggle-btn {
 
   table.entries th:nth-child(5),
   table.entries td:nth-child(5) {
-    width: 8%;
+    width: 12%;
   }
 }
 
@@ -430,47 +497,6 @@ table.entries .toggle-btn {
   padding: 24px;
   text-align: center;
   color: var(--muted);
-}
-
-.directory-list {
-  display: grid;
-  gap: 6px;
-}
-
-.directory-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
-  gap: 12px;
-  align-items: baseline;
-  width: 100%;
-  font: inherit;
-  font-size: 0.85rem;
-  text-align: left;
-  padding: 4px 8px;
-  border-radius: 4px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  background: transparent;
-  color: inherit;
-}
-
-.directory-row:hover,
-.directory-row[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.directory-row .path {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.directory-row .stat {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .tag {

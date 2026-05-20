@@ -25,7 +25,7 @@ from sqlfluff.core.plugin import hookimpl
 try:
     __version__ = importlib.metadata.version("sqlfluff-complexity")
 except importlib.metadata.PackageNotFoundError:
-    __version__ = "0.0.0"
+    __version__ = "0.5.4"
 
 if TYPE_CHECKING:
     from sqlfluff.core.rules import BaseRule
