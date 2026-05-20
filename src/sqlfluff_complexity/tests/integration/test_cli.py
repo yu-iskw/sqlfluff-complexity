@@ -20,18 +20,28 @@ import argparse
 import json
 from typing import TYPE_CHECKING
 
+import pytest
+
+import sqlfluff_complexity
 from sqlfluff_complexity.cli import _dispatch_cli, main
 from sqlfluff_complexity.core.config.presets import WEIGHT_JSON
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    import pytest
-
 
 def test_main_exits_successfully() -> None:
     """The initialized package CLI should be callable."""
     assert main([]) == 0
+
+
+def test_main_version_flag(capsys: pytest.CaptureFixture[str]) -> None:
+    """--version prints the package version and exits successfully."""
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--version"])
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out.strip()
+    assert out == f"sqlfluff-complexity {sqlfluff_complexity.__version__}"
 
 
 def test_dispatch_no_subcommand_returns_zero() -> None:
