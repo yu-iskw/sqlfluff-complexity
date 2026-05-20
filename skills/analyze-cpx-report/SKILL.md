@@ -22,7 +22,7 @@ From the directory that contains this `SKILL.md`, scripts live under `scripts/`.
 | Script | Role |
 | ------ | ---- |
 | [`scripts/ensure-json-report.sh`](scripts/ensure-json-report.sh) | Resolve cache path, reuse JSON if within TTL, else run `sqlfluff-complexity report --format json`. **Stdout:** single line, absolute path to the JSON file. **Stderr:** status messages. |
-| [`scripts/cache-path.sh`](scripts/cache-path.sh) | Print cache path only (same key as ensure). Requires the same environment variables as `ensure-json-report.sh` for dialect/config/recursive. Args: report path list. |
+| [`scripts/cache-path.sh`](scripts/cache-path.sh) | Print cache path only (same key as ensure; does **not** create directories). Requires the same environment variables as `ensure-json-report.sh` for dialect/config/recursive. Args: report path list. |
 | [`scripts/is-cache-fresh.sh`](scripts/is-cache-fresh.sh) | Exit `0` if the given cache file exists and is **strictly younger** than `CPX_REPORT_CACHE_TTL_SECONDS` (default 300); otherwise exit `1`. |
 
 ### Example

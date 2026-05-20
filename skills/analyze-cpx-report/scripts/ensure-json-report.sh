@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 # Run sqlfluff-complexity report --format json or reuse a cache file within TTL.
 # Prints the absolute cache path as the only stdout line. Status 0 on success.
-#
-# Usage: ensure-json-report.sh [options] [--] PATH [PATH...]
-# Options: -d|--dialect D, -c|--config FILE, -r|--recursive, --force, -h|--help
-#
-# Environment (optional): CPX_REPORT_CACHE_TTL_SECONDS, CPX_REPORT_CACHE_DIR,
-# CPX_REPORT_PREFIX (e.g. "uv run" split on whitespace before sqlfluff-complexity),
-# CPX_REPORT_FORCE=1 to skip cache (same as --force).
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -23,7 +16,7 @@ Prints the absolute cache path as the only stdout line.
 
 Options:
   -d, --dialect D     SQLFluff dialect (default: ansi)
-  -c, --config FILE   SQLFluff config path
+  -c, --config FILE   SQLFluff config file
   -r, --recursive     Pass -r to report (required for directory trees)
       --force         Ignore cache and regenerate
   -h, --help          Show this help
@@ -89,21 +82,21 @@ if [[ -n "$config" ]]; then
   export CPX_REPORT_CONFIG
   CPX_REPORT_CONFIG=$(cpx_abspath "$config")
 else
-  unset CPX_REPORT_CONFIG || true
+  unset CPX_REPORT_CONFIG
 fi
 if [[ "$recursive" == true ]]; then
   export CPX_REPORT_RECURSIVE=1
 else
-  unset CPX_REPORT_RECURSIVE || true
+  unset CPX_REPORT_RECURSIVE
 fi
 
-cache_file=$("$SCRIPT_DIR/cache-path.sh" "${paths[@]}")
+cache_file=$(cpx_cache_json_path "${paths[@]}")
 
 if [[ "${CPX_REPORT_FORCE:-}" == "1" || "${CPX_REPORT_FORCE:-}" == "true" ]]; then
   force=true
 fi
 
-if [[ "$force" == false ]] && [[ -f "$cache_file" ]] && "$SCRIPT_DIR/is-cache-fresh.sh" "$cache_file"; then
+if [[ "$force" == false ]] && [[ -f "$cache_file" ]] && cpx_is_cache_fresh "$cache_file"; then
   echo "Using cached report: $cache_file" >&2
   printf '%s\n' "$cache_file"
   exit 0
@@ -133,6 +126,7 @@ if [[ "$recursive" == true ]]; then
 fi
 _cmd+=(-- "${paths[@]}")
 
+mkdir -p -- "$(dirname -- "$cache_file")"
 echo "Generating report to $cache_file" >&2
 "${_cmd[@]}"
 printf '%s\n' "$cache_file"
