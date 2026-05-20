@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlfluff_complexity.report import expand_report_paths
+from sqlfluff_complexity.report import cli_scan_roots, expand_report_paths
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -72,3 +72,30 @@ def test_expand_recursive_dedupes_overlapping_directories(tmp_path: Path) -> Non
 def test_expand_recursive_empty_directory(tmp_path: Path) -> None:
     """An empty tree contributes no paths."""
     assert expand_report_paths([tmp_path], recursive=True) == []
+
+
+def test_cli_scan_roots_directory_argument(tmp_path: Path) -> None:
+    """A directory CLI argument resolves to that directory as the scan root."""
+    models = tmp_path / "models"
+    models.mkdir()
+    roots = cli_scan_roots([models])
+    assert roots == (str(models.absolute()),)
+
+
+def test_cli_scan_roots_file_argument_uses_parent(tmp_path: Path) -> None:
+    """A file CLI argument uses its parent directory as the scan root."""
+    sql_file = tmp_path / "models" / "orders.sql"
+    sql_file.parent.mkdir(parents=True)
+    sql_file.write_text("select 1", encoding="utf-8")
+    roots = cli_scan_roots([sql_file])
+    assert roots == (str(sql_file.parent.absolute()),)
+
+
+def test_cli_scan_roots_longest_root_first(tmp_path: Path) -> None:
+    """Nested scan roots are ordered longest-first for prefix matching."""
+    outer = tmp_path / "models"
+    inner = outer / "staging"
+    inner.mkdir(parents=True)
+    roots = cli_scan_roots([outer, inner])
+    assert roots[0] == str(inner.absolute())
+    assert str(outer.absolute()) in roots

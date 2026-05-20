@@ -32,6 +32,7 @@ def test_report_module___all___matches_documented_public_names() -> None:
         "ReportEntry",
         "analyze_paths",
         "analyze_paths_findings",
+        "cli_scan_roots",
         "expand_report_paths",
         "format_console_report",
         "format_html_report",

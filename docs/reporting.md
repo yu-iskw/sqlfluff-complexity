@@ -130,10 +130,16 @@ local server, external CSS/JavaScript, or network access to view. This makes it 
 for local triage and CI artifact uploads.
 
 The dashboard is summary-first for large projects: it opens with file/finding counts,
-score distribution, rule breakdowns, and directory hotspots, then lets you filter,
+score distribution, rule breakdowns, and directory filtering, then lets you filter,
 sort, paginate, and expand file rows for findings, remediation, metrics, and contributor
 metadata. Rows with a non-zero score can be expanded even when no rules fired; parse
-and read errors remain expandable via **Details**.
+and read errors remain expandable via **Details**. Files table column headers (Path,
+Score, Findings, Errors) show short help on hover or keyboard focus. By default, the
+Files table shortens paths relative to **report command path arguments** (for example
+`models/`) when possible, then by the longest common prefix among analyzed files; enable
+**Full paths** in Filters to show absolute paths. Hover a path cell for the full path.
+The report follows your system light/dark appearance by default; use **Theme** in
+Filters to force Light or Dark.
 
 The HTML report is metadata-first. It includes paths, metrics, scores, findings,
 remediation, and contributor snippets already captured by the report engine, but it does

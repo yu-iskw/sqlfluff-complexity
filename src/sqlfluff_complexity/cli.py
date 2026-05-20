@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -26,6 +27,7 @@ from sqlfluff_complexity.core.config.presets import preset_names, render_preset_
 from sqlfluff_complexity.report import (
     ComplexityReport,
     analyze_paths,
+    cli_scan_roots,
     expand_report_paths,
     format_console_report,
     format_html_report,
@@ -75,6 +77,7 @@ def _run_report(args: argparse.Namespace) -> int:
 
     paths = expand_report_paths(args.paths, recursive=args.recursive)
     report = analyze_paths(paths, dialect=args.dialect, config_path=args.config)
+    report = replace(report, scan_roots=cli_scan_roots(args.paths))
     output = _format_report(report, args.output_format)
 
     if args.output is None:

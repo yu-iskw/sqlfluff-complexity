@@ -273,6 +273,7 @@ def build_html_report_payload(report: ComplexityReportLike) -> dict[str, Any]:
             "title": _REPORT_TITLE,
             "tool": "sqlfluff-complexity",
             "version": __version__,
+            "scan_roots": list(getattr(report, "scan_roots", ()) or ()),
         },
         "summary": _summary_payload(report.entries, findings),
         "score_buckets": _score_buckets(report.entries),

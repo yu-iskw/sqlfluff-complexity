@@ -166,6 +166,7 @@ class ComplexityReport:
 
     entries: list[ReportEntry]
     complexity_weights: dict[str, int] = field(default_factory=_default_complexity_weights)
+    scan_roots: tuple[str, ...] = ()
 
     @property
     def has_errors(self) -> bool:
@@ -213,6 +214,15 @@ def expand_report_paths(paths: Sequence[Path], *, recursive: bool) -> list[Path]
             collected.append(path)
 
     return _dedupe_paths_stable(collected)
+
+
+def cli_scan_roots(paths: Sequence[Path]) -> tuple[str, ...]:
+    """Directory roots from ``report`` CLI path arguments (before expansion).
+
+    Uses ``absolute()`` rather than ``resolve()`` so roots match ``entry.path`` on macOS ``/tmp``.
+    """
+    roots = {str(path.absolute() if path.is_dir() else path.parent.absolute()) for path in paths}
+    return tuple(sorted(roots, key=lambda item: (-len(item), item)))
 
 
 def _parse_error_finding(path_str: str, message: str) -> ComplexityFinding:
@@ -663,6 +673,7 @@ __all__ = (
     "ReportEntry",
     "analyze_paths",
     "analyze_paths_findings",
+    "cli_scan_roots",
     "expand_report_paths",
     "format_console_report",
     "format_html_report",
