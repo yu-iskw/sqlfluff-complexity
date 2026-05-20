@@ -11,11 +11,13 @@ Use this skill when an agent (or user) needs **insights from `sqlfluff-complexit
 ## Prerequisites
 
 - `sqlfluff-complexity` on `PATH`, unless `CPX_REPORT_PREFIX` supplies a prefix (for example `uv run`).
-- `python3` on `PATH` (used by the scripts for cache keys and mtime checks).
+- **Bash** (scripts use bash-only features such as `mapfile`).
+- For cache file names: **one of** `sha256sum`, `openssl dgst -sha256`, or `shasum -a 256` on `PATH`.
+- For freshness checks: **`stat`** with GNU (`stat -c %Y`) or BSD (`stat -f %m`) semantics.
 
 ## Utility scripts (preferred)
 
-From the directory that contains this `SKILL.md`, scripts live under `scripts/`. **Execute** them (do not paste duplicated logic into chat):
+From the directory that contains this `SKILL.md`, scripts live under `scripts/`. **Execute** them (do not paste duplicated logic into chat). There is **no Python** in this skill: helpers live in [`scripts/lib.sh`](scripts/lib.sh) (sourced by the other scripts; do not run it as a standalone program).
 
 | Script | Role |
 | ------ | ---- |

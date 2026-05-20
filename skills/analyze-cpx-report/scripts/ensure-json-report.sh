@@ -11,6 +11,8 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=lib.sh
+source "${SCRIPT_DIR}/lib.sh"
 
 usage() {
   cat <<'USAGE'
@@ -28,11 +30,9 @@ Options:
 
 Environment: CPX_REPORT_CACHE_TTL_SECONDS (default 300), CPX_REPORT_CACHE_DIR,
 CPX_REPORT_PREFIX (e.g. "uv run"), CPX_REPORT_FORCE=1.
-USAGE
-}
 
-to_abs() {
-  python3 -c 'import os, sys; print(os.path.abspath(sys.argv[1]))' "$1"
+Requires bash plus sha256sum, openssl dgst, or shasum -a 256 (see lib.sh).
+USAGE
 }
 
 dialect=ansi
@@ -87,7 +87,7 @@ fi
 export CPX_REPORT_DIALECT=$dialect
 if [[ -n "$config" ]]; then
   export CPX_REPORT_CONFIG
-  CPX_REPORT_CONFIG=$(to_abs "$config")
+  CPX_REPORT_CONFIG=$(cpx_abspath "$config")
 else
   unset CPX_REPORT_CONFIG || true
 fi

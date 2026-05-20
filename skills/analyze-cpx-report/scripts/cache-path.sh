@@ -4,19 +4,32 @@
 # CPX_REPORT_RECURSIVE (optional, non-empty => recursive scan in key),
 # CPX_REPORT_CACHE_DIR (optional). Positional args: same path list as report.
 set -euo pipefail
-exec python3 -c '
-import hashlib
-import os
-import sys
-import tempfile
 
-dialect = os.environ.get("CPX_REPORT_DIALECT", "ansi")
-cfg = os.environ.get("CPX_REPORT_CONFIG", "")
-rec = os.environ.get("CPX_REPORT_RECURSIVE", "")
-paths = sorted({os.path.abspath(p) for p in sys.argv[1:]})
-key = "|".join([os.getcwd(), dialect, cfg, rec] + paths)
-digest = hashlib.sha256(key.encode()).hexdigest()[:20]
-base = os.environ.get("CPX_REPORT_CACHE_DIR") or tempfile.gettempdir()
-os.makedirs(base, exist_ok=True)
-print(os.path.join(base, f"sqlfluff-complexity-report-{digest}.json"))
-' -- "$@"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=lib.sh
+source "${SCRIPT_DIR}/lib.sh"
+
+dialect=${CPX_REPORT_DIALECT:-ansi}
+cfg=${CPX_REPORT_CONFIG:-}
+rec=${CPX_REPORT_RECURSIVE:-}
+
+abs=()
+for p in "$@"; do
+  abs+=("$(cpx_abspath "$p")")
+done
+
+mapfile -t sorted < <(printf '%s\n' "${abs[@]}" | LC_ALL=C sort -u)
+cwd=$(pwd -P)
+
+digest=$(
+  {
+    printf '%s\n' "$cwd" "$dialect" "$cfg" "$rec"
+    ((${#sorted[@]} > 0)) && printf '%s\n' "${sorted[@]}"
+  } | cpx_sha256_key20
+)
+
+base=$(cpx_default_cache_base)
+mkdir -p -- "$base"
+# Trim trailing slash from base for predictable join
+base=${base%/}
+printf '%s/sqlfluff-complexity-report-%s.json\n' "$base" "$digest"
