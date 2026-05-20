@@ -8,6 +8,16 @@ All notable changes to this project are documented in this file.
 
 - **`complexity_weights` is JSON-only.** The comma-separated `key:value` form is removed. Set `complexity_weights` to a JSON object string (for example `{"joins":2,"derived_tables":0}`) or `{}` for defaults. Migrate existing `ctes:2,joins:2,...` values to the equivalent JSON object.
 
+## 0.5.2
+
+### Added
+
+- CLI `--version` flag prints the installed package version.
+
+### Changed
+
+- HTML report: **Details** is available when aggregate score is positive (not only when findings exist); scored files with no threshold violations show a score-context summary in the expanded panel.
+
 ## 0.4.1
 
 ### Patch notes

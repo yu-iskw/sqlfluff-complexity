@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from sqlfluff_complexity import __version__
 from sqlfluff_complexity.core.config.presets import preset_names, render_preset_config
 from sqlfluff_complexity.report import (
     ComplexityReport,
@@ -136,6 +137,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sqlfluff-complexity",
         description="SQLFluff plugin for SQL and dbt model complexity rules.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show package version and exit.",
     )
     subparsers = parser.add_subparsers(dest="command")
 

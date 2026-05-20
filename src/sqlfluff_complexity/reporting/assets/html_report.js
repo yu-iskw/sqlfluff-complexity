@@ -653,9 +653,14 @@
     return cell;
   }
 
+  function entryHasDetails(entry) {
+    if (entry.has_errors) return true;
+    return entry.score != null && entry.score > 0;
+  }
+
   function buildToggleCell(entry) {
     const cell = document.createElement("td");
-    if (!entry.finding_count && !entry.has_errors) {
+    if (!entryHasDetails(entry)) {
       cell.textContent = "";
       return cell;
     }
@@ -698,19 +703,46 @@
     button.setAttribute("aria-expanded", "true");
   }
 
+  function buildScoreContext(entry) {
+    const ctx = entry.score_context;
+    if (!ctx) return null;
+    const block = document.createElement("div");
+    block.className = "score-context";
+    const scoreLine = document.createElement("div");
+    scoreLine.textContent = "Aggregate score: " + entry.score;
+    block.appendChild(scoreLine);
+    if (ctx.note) {
+      const note = document.createElement("div");
+      note.className = "finding-meta";
+      note.textContent = ctx.note;
+      block.appendChild(note);
+    }
+    if (ctx.contributors) {
+      const drivers = document.createElement("div");
+      drivers.className = "finding-meta";
+      drivers.textContent = "Top contributors: " + ctx.contributors;
+      block.appendChild(drivers);
+    }
+    return block;
+  }
+
   function buildDetailPanel(entry) {
     const panel = document.createElement("div");
     panel.className = "detail-panel";
     panel.appendChild(buildDetailPath(entry));
+    const scoreCtx = buildScoreContext(entry);
+    if (scoreCtx) panel.appendChild(scoreCtx);
     if (entry.metrics) {
       panel.appendChild(buildMetricsSummary(entry.metrics));
     }
     const findings = findingIndex.byEntry.get(entry.id) || [];
     if (!findings.length) {
-      const empty = document.createElement("div");
-      empty.className = "empty-state";
-      empty.textContent = "No findings recorded.";
-      panel.appendChild(empty);
+      if (!entry.score_context) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = "No findings recorded.";
+        panel.appendChild(empty);
+      }
       return panel;
     }
     const list = document.createElement("ul");
