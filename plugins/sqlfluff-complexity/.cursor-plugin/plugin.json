@@ -1,0 +1,10 @@
+{
+  "name": "sqlfluff-complexity",
+  "version": "0.5.1",
+  "description": "Agent skills for adopting and tuning sqlfluff-complexity CPX rules in SQLFluff and dbt projects.",
+  "author": {
+    "name": "yu-iskw"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://github.com/yu-iskw/sqlfluff-complexity"
+}

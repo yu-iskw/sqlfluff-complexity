@@ -5,7 +5,7 @@ description: Guide users through configuring sqlfluff-complexity for a SQLFluff 
 
 # Configure CPX
 
-This skill is for **consumer** SQLFluff projects (install by copying or linking into your agent tool’s skills directory, for example `.claude/skills/` or Cursor project skills).
+This skill is for **consumer** SQLFluff and dbt projects. Install it via the **sqlfluff-complexity** agent plugin (Claude Code, Cursor, or Codex) from this repository’s marketplace, or point your agent at `plugins/sqlfluff-complexity/` in a checkout. See [docs/adoption.md](https://github.com/yu-iskw/sqlfluff-complexity/blob/main/docs/adoption.md#coding-agent-plugin).
 
 Use this skill when a user asks to configure, tune, adopt, or roll out `sqlfluff-complexity` rules for a project.
 
