@@ -133,3 +133,15 @@ make test-dbt-templater
 ```
 
 Coding-agent instructions and project conventions live in [AGENTS.md](AGENTS.md).
+
+## Agent plugin
+
+End-user agent skills live under [`plugins/sqlfluff-complexity/`](plugins/sqlfluff-complexity/). When you bump `[project].version` in `pyproject.toml`, update `version` in all three plugin manifests under that directory and in the repo marketplace files (`.claude-plugin/`, `.cursor-plugin/`, `.codex-plugin/`).
+
+After changing plugin or marketplace files, run:
+
+```bash
+./scripts/validate-agent-plugin-manifests.sh
+```
+
+Maintainer-only skills stay in [`.claude/skills/`](.claude/skills/); do not move them into the distributable plugin unless they are meant for downstream SQLFluff projects.

@@ -134,7 +134,8 @@ Some tools load mirrored skills under `.agents/skills/` instead of `.claude/`. O
 
 ### Where things live (quick map)
 
-- **[`skills/`](skills/)** — User-installable agent skills for adopting CPX in **other** repositories (for example [`skills/configure-cpx/`](skills/configure-cpx/)); copy or link into your tool’s skills directory
+- **[`plugins/sqlfluff-complexity/`](plugins/sqlfluff-complexity/)** — Distributable coding-agent plugin (Claude Code, Cursor, Codex) with end-user skills such as [`configure-cpx`](plugins/sqlfluff-complexity/skills/configure-cpx/SKILL.md); install via repo [`.claude-plugin/`](.claude-plugin/marketplace.json), [`.cursor-plugin/`](.cursor-plugin/marketplace.json), or [`.codex-plugin/`](.codex-plugin/marketplace.json) marketplaces (see [docs/adoption.md](docs/adoption.md#coding-agent-plugin))
+- **[`skills/`](skills/)** — Redirect to the agent plugin ([`skills/README.md`](skills/README.md)); not a second copy of skill definitions
 - **This file** — Stack, `make` targets, style, testing, security, git, ADR pointers, Claude subagent/skill tables
 - **[CLAUDE.md](CLAUDE.md)** + **[`.claude/`](.claude/)** — Claude Code entrypoint and automation layout (see CLAUDE.md for directory breakdown and self-improvement rules)
 - **`.agents/skills/`** — Skills for tools that do not read `.claude/` (e.g. `postmortem`); may mirror `.claude/skills/`

@@ -1,0 +1,22 @@
+{
+  "name": "sqlfluff-complexity-plugins",
+  "metadata": {
+    "description": "Agent plugins for sqlfluff-complexity (Codex)"
+  },
+  "owner": {
+    "name": "yu-iskw"
+  },
+  "plugins": [
+    {
+      "name": "sqlfluff-complexity",
+      "description": "Configure and roll out CPX rules in SQLFluff/dbt projects",
+      "source": "./plugins/sqlfluff-complexity",
+      "version": "0.5.1",
+      "author": {
+        "name": "yu-iskw"
+      },
+      "license": "Apache-2.0",
+      "repository": "https://github.com/yu-iskw/sqlfluff-complexity"
+    }
+  ]
+}

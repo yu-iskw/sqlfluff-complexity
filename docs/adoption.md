@@ -2,6 +2,26 @@
 
 This page complements [Reporting](reporting.md) and [Configuration](configuration.md) with a practical rollout path: measure first, tune thresholds, then enforce.
 
+## Coding agent plugin
+
+The [`configure-cpx`](../plugins/sqlfluff-complexity/skills/configure-cpx/SKILL.md) skill helps coding agents walk through presets, reports, nested config, and rollout. It ships in the **sqlfluff-complexity** agent plugin at [`plugins/sqlfluff-complexity/`](../plugins/sqlfluff-complexity/) (Claude Code, Cursor, and Codex manifests).
+
+### Install
+
+1. Install the Python package in the target project (`pip install sqlfluff-complexity` or `uv add --dev sqlfluff-complexity`).
+2. Add the plugin from this repository:
+   - **Claude Code:** register the repo marketplace (`.claude-plugin/marketplace.json`), install the `sqlfluff-complexity` plugin, and enable it in settings; or run with `claude --plugin-dir /path/to/sqlfluff-complexity/plugins/sqlfluff-complexity`.
+   - **Cursor:** use `.cursor-plugin/marketplace.json` or install `plugins/sqlfluff-complexity` from a local checkout (see [Cursor plugins](https://cursor.com/docs/plugins)).
+   - **Codex:** use `.codex-plugin/marketplace.json` or point Codex at the same plugin directory per [Codex plugins](https://developers.openai.com/codex/guides/plugins).
+
+Validate manifests locally from a checkout:
+
+```bash
+./scripts/validate-agent-plugin-manifests.sh
+```
+
+Invoke the skill when configuring CPX (for example `/configure-cpx` in Claude Code). The skill does not replace `sqlfluff-complexity config preset` or `config-check`; it guides an agent through those commands.
+
 ## Calibration playbook
 
 1. **Install** `sqlfluff-complexity` next to SQLFluff (see [Quick start](quickstart.md)).
