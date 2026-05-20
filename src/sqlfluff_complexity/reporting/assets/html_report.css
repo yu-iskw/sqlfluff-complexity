@@ -382,6 +382,11 @@ table.entries .toggle-btn {
   overflow-wrap: anywhere;
 }
 
+.detail-panel .score-context {
+  margin: 8px 0;
+  font-size: 0.85rem;
+}
+
 .detail-panel .finding-meta {
   font-size: 0.8rem;
   color: var(--muted);

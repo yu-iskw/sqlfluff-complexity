@@ -28,7 +28,7 @@ from sqlfluff_complexity.core.config.policy import (
     ComplexityPolicy,
     resolve_policy,
 )
-from sqlfluff_complexity.core.config.scoring import parse_weights
+from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS, parse_weights
 from sqlfluff_complexity.core.messages.findings import ComplexityFinding, SourceLocation
 from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
 from sqlfluff_complexity.core.messages.violation_messages import (
@@ -47,6 +47,10 @@ if TYPE_CHECKING:
 
 DEFAULT_MAX_JOINS = 8
 DEFAULT_MAX_COMPLEXITY_SCORE = 60
+
+
+def _default_complexity_weights() -> dict[str, int]:
+    return DEFAULT_WEIGHTS.copy()
 
 
 @dataclass(frozen=True)
@@ -161,6 +165,7 @@ class ComplexityReport:
     """Report data for a set of SQL file paths."""
 
     entries: list[ReportEntry]
+    complexity_weights: dict[str, int] = field(default_factory=_default_complexity_weights)
 
     @property
     def has_errors(self) -> bool:
@@ -516,7 +521,11 @@ def analyze_paths(paths: Sequence[Path], *, dialect: str, config_path: Path | No
     """Analyze SQL file paths with SQLFluff and collect complexity metrics."""
     config = _build_config(dialect=dialect, config_path=config_path)
     linter = Linter(config=config)
-    return ComplexityReport(entries=[_analyze_path(path, linter, config) for path in paths])
+    weights = _weights_from_config(config)
+    return ComplexityReport(
+        entries=[_analyze_path(path, linter, config) for path in paths],
+        complexity_weights=weights,
+    )
 
 
 def _console_message_line(rule_id: str, message: str) -> str:

@@ -21,6 +21,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS
 from sqlfluff_complexity.core.model.metrics import ComplexityMetrics
 from sqlfluff_complexity.report import (
     ComplexityReport,
@@ -140,9 +141,61 @@ def test_html_report_records_parse_errors(tmp_path: Path) -> None:
     assert entry["score"] is None
     assert entry["metrics"] is None
     assert entry["has_errors"] is True
+    assert entry["score_context"] is None
     rule_ids = {finding["rule_id"] for finding in payload["findings"]}
     assert "CPX_PARSE_ERROR" in rule_ids
     assert payload["summary"]["parse_error_count"] >= 1
+
+
+def test_html_entry_score_context_when_scored_without_findings() -> None:
+    """Scored files with no threshold findings get drill-down score context."""
+    entry = ReportEntry(
+        path=Path("models/mart/orders.sql"),
+        metrics=ComplexityMetrics(joins=3),
+        score=6,
+        findings=[],
+    )
+    report = ComplexityReport(entries=[entry], complexity_weights=DEFAULT_WEIGHTS.copy())
+    payload = build_html_report_payload(report)
+
+    ctx = payload["entries"][0]["score_context"]
+    assert ctx is not None
+    assert ctx["note"] == "No rule thresholds exceeded."
+    assert "joins=6" in ctx["contributors"]
+
+
+def test_html_entry_no_score_context_when_zero_score() -> None:
+    """Zero-score files omit score context."""
+    entry = ReportEntry(
+        path=Path("models/mart/clean.sql"),
+        metrics=ComplexityMetrics(),
+        score=0,
+        findings=[],
+    )
+    payload = build_html_report_payload(ComplexityReport(entries=[entry]))
+
+    assert payload["entries"][0]["score_context"] is None
+
+
+def test_html_entry_no_score_context_when_findings_present(tmp_path: Path) -> None:
+    """Threshold findings already explain the row; omit score-only context."""
+    sql_file = tmp_path / "model.sql"
+    sql_file.write_text(
+        "select * from a join b on a.id = b.id\n",
+        encoding="utf-8",
+    )
+    cfg = tmp_path / ".sqlfluff"
+    cfg.write_text("[sqlfluff:rules:CPX_C102]\nmax_joins = 0\n", encoding="utf-8")
+
+    payload = build_html_report_payload(
+        analyze_paths([sql_file], dialect="ansi", config_path=cfg),
+    )
+
+    entry = payload["entries"][0]
+    assert entry["finding_count"] >= 1
+    assert entry["score"] is not None
+    assert entry["score"] > 0
+    assert entry["score_context"] is None
 
 
 def test_html_payload_handles_large_report_shape() -> None:
@@ -183,3 +236,4 @@ def test_html_assets_are_inlined(tmp_path: Path) -> None:
     script_block = after_data.split("<script>", 1)[1].split("</script>", 1)[0]
     assert script_block.strip(), "JavaScript asset should be inlined and non-empty"
     assert "init" in script_block, "Inlined JS should expose the dashboard init function"
+    assert "entryHasDetails" in script_block

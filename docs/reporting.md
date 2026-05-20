@@ -132,7 +132,8 @@ for local triage and CI artifact uploads.
 The dashboard is summary-first for large projects: it opens with file/finding counts,
 score distribution, rule breakdowns, and directory hotspots, then lets you filter,
 sort, paginate, and expand file rows for findings, remediation, metrics, and contributor
-metadata.
+metadata. Rows with a non-zero score can be expanded even when no rules fired; parse
+and read errors remain expandable via **Details**.
 
 The HTML report is metadata-first. It includes paths, metrics, scores, findings,
 remediation, and contributor snippets already captured by the report engine, but it does

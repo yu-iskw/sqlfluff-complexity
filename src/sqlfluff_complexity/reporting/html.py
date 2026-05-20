@@ -30,9 +30,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from sqlfluff_complexity import __version__
+from sqlfluff_complexity.core.analysis import explain_score_contributors
+from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
     from typing import Protocol
 
     from sqlfluff_complexity.core.analysis import MetricContributor
@@ -82,7 +84,23 @@ def _directory_key(path: Path) -> str:
     return parent or "."
 
 
-def _entry_payload(index: int, entry: ReportEntryLike) -> dict[str, Any]:
+def _score_context_payload(
+    entry: ReportEntryLike,
+    weights: Mapping[str, int],
+) -> dict[str, str] | None:
+    if entry.score is None or entry.score <= 0 or entry.metrics is None or entry.findings:
+        return None
+    return {
+        "note": "No rule thresholds exceeded.",
+        "contributors": explain_score_contributors(entry.metrics, weights, max_items=3),
+    }
+
+
+def _entry_payload(
+    index: int,
+    entry: ReportEntryLike,
+    weights: Mapping[str, int],
+) -> dict[str, Any]:
     metrics = entry.metrics.to_report_counters() if entry.metrics is not None else None
     return {
         "id": index,
@@ -94,6 +112,7 @@ def _entry_payload(index: int, entry: ReportEntryLike) -> dict[str, Any]:
         "finding_count": len(entry.findings),
         "error_count": len(entry.errors),
         "has_errors": bool(entry.errors),
+        "score_context": _score_context_payload(entry, weights),
     }
 
 
@@ -241,7 +260,8 @@ def _rule_rollups(findings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def build_html_report_payload(report: ComplexityReportLike) -> dict[str, Any]:
     """Build the internal HTML view payload (not a public schema)."""
-    entries = [_entry_payload(index, entry) for index, entry in enumerate(report.entries)]
+    weights = getattr(report, "complexity_weights", None) or DEFAULT_WEIGHTS
+    entries = [_entry_payload(index, entry, weights) for index, entry in enumerate(report.entries)]
     findings = [
         _finding_payload(entry_index, finding)
         for entry_index, entry in enumerate(report.entries)
