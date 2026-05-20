@@ -104,7 +104,7 @@ Do not read dbt artifacts (`manifest.json`, etc.).
 3. For each hotspot: path, aggregate score, top 2–3 standout metrics, one plain-language review-risk line (from `findings` / `remediation`, not parser internals).
 4. Do not embed full SQL unless the user asks.
 
-### Example output
+### Sample hotspot digest
 
 ```markdown
 ## Hotspot digest
@@ -144,7 +144,7 @@ Include when relevant:
 
 - Rollout order: report-only baseline → individual high-signal rules → `CPX_C201` after aggregate score is calibrated.
 
-### Example output
+### Sample threshold tuning output
 
 ```markdown
 ## Threshold tuning
