@@ -142,3 +142,16 @@ Some tools load mirrored skills under `.agents/skills/` instead of `.claude/`. O
 - **`.gemini/settings.json`** — Gemini CLI project context
 - **`.cursor/rules/`** — Optional Cursor rules (e.g. Always Apply); see [Cursor: Rules](https://cursor.com/docs/rules)
 - **[`.codex/config.toml`](.codex/config.toml)** — Optional Codex defaults (sandbox, approvals); links above under **OpenAI Codex**
+
+## Learned User Preferences
+
+- For HTML report and UI work, prefer detailed plans with simple, minimal implementations; the user often asks not to over-implement.
+- Use structured option analysis (e.g. `/problem-solving`) before non-trivial HTML report UX changes.
+- When executing an attached plan, do not edit files under `.cursor/plans/`; use existing todos and mark them in progress.
+
+## Learned Workspace Facts
+
+- dbt model folders often bundle model SQL, `schema.yml`, and docs markdown; HTML directory rollups keyed on the immediate parent path do not represent that per-model layout well.
+- The HTML report no longer includes a Top directories panel (removed after dbt folder-layout mismatch).
+- The HTML Files table default page size is 50 (`DEFAULT_PAGE_SIZE` in `html_report.js`).
+- HTML reports are often reviewed in narrow embeds (~500px, e.g. Cursor preview); Files table layout must keep controls such as Details inside section borders.
