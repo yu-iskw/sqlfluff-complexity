@@ -3,14 +3,14 @@ name: agent-plugin
 on:
   pull_request:
     paths:
-      - "plugins/**"
-      - ".claude-plugin/**"
-      - ".cursor-plugin/**"
-      - ".codex-plugin/**"
-      - "scripts/validate-agent-plugin-manifests.sh"
-      - "scripts/validate-claude-plugin-manifest.sh"
-      - "scripts/validate-cursor-plugin-manifest.sh"
-      - "scripts/validate-codex-plugin-manifest.sh"
+      - plugins/**
+      - .claude-plugin/**
+      - .cursor-plugin/**
+      - .codex-plugin/**
+      - scripts/validate-agent-plugin-manifests.sh
+      - scripts/validate-claude-plugin-manifest.sh
+      - scripts/validate-cursor-plugin-manifest.sh
+      - scripts/validate-codex-plugin-manifest.sh
 
 jobs:
   validate:

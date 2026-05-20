@@ -12,7 +12,7 @@ The [`configure-cpx`](../plugins/sqlfluff-complexity/skills/configure-cpx/SKILL.
 2. Add the plugin from this repository:
    - **Claude Code:** register the repo marketplace (`.claude-plugin/marketplace.json`), install the `sqlfluff-complexity` plugin, and enable it in settings; or run with `claude --plugin-dir /path/to/sqlfluff-complexity/plugins/sqlfluff-complexity`.
    - **Cursor:** use `.cursor-plugin/marketplace.json` or install `plugins/sqlfluff-complexity` from a local checkout (see [Cursor plugins](https://cursor.com/docs/plugins)).
-   - **Codex:** use `.codex-plugin/marketplace.json` or point Codex at the same plugin directory per [Codex plugins](https://developers.openai.com/codex/guides/plugins).
+   - **Codex:** use `.codex-plugin/marketplace.json` or point Codex at the same plugin directory per [Codex plugins](https://developers.openai.com/codex/plugins).
 
 Validate manifests locally from a checkout:
 
