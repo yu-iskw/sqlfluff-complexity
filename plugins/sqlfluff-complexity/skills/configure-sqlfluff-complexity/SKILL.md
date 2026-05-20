@@ -1,9 +1,9 @@
 ---
-name: configure-cpx
+name: configure-sqlfluff-complexity
 description: Guide users through configuring sqlfluff-complexity for a SQLFluff project by sampling reports, choosing a preset, explaining thresholds, per-directory strictness (nested .sqlfluff vs path_overrides), validating config, and recommending gradual CI rollout.
 ---
 
-# Configure CPX
+# Configure sqlfluff-complexity
 
 This skill is for **consumer** SQLFluff and dbt projects. Install it via the **sqlfluff-complexity** agent plugin (Claude Code, Cursor, or Codex) from this repository’s marketplace, or point your agent at `plugins/sqlfluff-complexity/` in a checkout. See [docs/adoption.md](https://github.com/yu-iskw/sqlfluff-complexity/blob/main/docs/adoption.md#coding-agent-plugin).
 
@@ -27,6 +27,8 @@ Use this skill when a user asks to configure, tune, adopt, or roll out `sqlfluff
    ```bash
    sqlfluff-complexity report --dialect <dialect> --format json <paths>
    ```
+
+   For repeated analysis with a cached JSON `--output` file (hotspot digest and tuning without re-running every turn), use **`analyze-complexity-report`**.
 
 5. Recommend a preset:
    - `report_only` for baselining or CI visibility without enforcement.

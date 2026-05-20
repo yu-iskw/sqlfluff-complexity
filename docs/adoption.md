@@ -4,7 +4,7 @@ This page complements [Reporting](reporting.md) and [Configuration](configuratio
 
 ## Coding agent plugin
 
-The [`configure-cpx`](../plugins/sqlfluff-complexity/skills/configure-cpx/SKILL.md) skill helps coding agents walk through presets, reports, nested config, and rollout. It ships in the **sqlfluff-complexity** agent plugin at [`plugins/sqlfluff-complexity/`](../plugins/sqlfluff-complexity/) (Claude Code, Cursor, and Codex manifests).
+The [`configure-sqlfluff-complexity`](../plugins/sqlfluff-complexity/skills/configure-sqlfluff-complexity/SKILL.md) skill helps coding agents walk through presets, reports, nested config, and rollout. The [`analyze-complexity-report`](../plugins/sqlfluff-complexity/skills/analyze-complexity-report/SKILL.md) skill analyzes JSON report output (hotspot digest and threshold tuning): it reuses the user’s `--output` file when it is no older than five minutes, otherwise runs `sqlfluff-complexity report`. Keep that JSON local (for example `complexity.json`) and out of git—add it to `.gitignore` in the consumer project. Both skills ship in the **sqlfluff-complexity** agent plugin at [`plugins/sqlfluff-complexity/`](../plugins/sqlfluff-complexity/) (Claude Code, Cursor, and Codex manifests).
 
 ### Install
 
@@ -20,7 +20,7 @@ Validate manifests locally from a checkout:
 ./scripts/validate-agent-plugin-manifests.sh
 ```
 
-Invoke the skill when configuring CPX (for example `/configure-cpx` in Claude Code). The skill does not replace `sqlfluff-complexity config preset` or `config-check`; it guides an agent through those commands.
+Invoke `configure-sqlfluff-complexity` when configuring CPX (for example `/configure-sqlfluff-complexity` in Claude Code). Invoke `analyze-complexity-report` when reviewing hotspots or tuning thresholds from a report (for example `/analyze-complexity-report`). Neither skill replaces `sqlfluff-complexity config preset` or `config-check`; they guide an agent through those commands.
 
 ## Calibration playbook
 
