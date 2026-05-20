@@ -24,9 +24,9 @@ All notable changes to this project are documented in this file.
 
 - CLI `--version` flag prints the installed package version.
 
-### Changed
+### HTML report
 
-- HTML report: **Details** is available when aggregate score is positive (not only when findings exist); scored files with no threshold violations show a score-context summary in the expanded panel.
+- **Details** is available when aggregate score is positive (not only when findings exist); scored files with no threshold violations show a score-context summary in the expanded panel.
 
 ## 0.4.1
 

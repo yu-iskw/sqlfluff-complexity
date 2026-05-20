@@ -4,7 +4,7 @@
 
 # Claude Code (this repository)
 
-The `@AGENTS.md` import inlines that file at session start (Claude Code reads this file, not [AGENTS.md](AGENTS.md) alone; see [Anthropic: CLAUDE.md](https://docs.anthropic.com/en/docs/claude-code/claude-md)). Put **only** material that is specific to Claude Code below.
+The `@AGENTS.md` import inlines that file at session start (Claude Code reads this file, not [AGENTS.md](AGENTS.md) alone; see [Claude Code: CLAUDE.md](https://code.claude.com/docs/en/claude-md)). Put **only** material that is specific to Claude Code below. <!-- markdown-link-check-disable-line -->:q
 
 ## What lives under `.claude/`
 
