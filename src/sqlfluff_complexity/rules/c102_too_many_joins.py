@@ -23,7 +23,6 @@ from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
 from sqlfluff_complexity.core.config.rule_registry import metric_rule_spec
-from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree, is_nested_select_statement
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     metric_lint_result_outer_select_only,
@@ -53,14 +52,5 @@ class Rule_CPX_C102(BaseRule):  # noqa: N801
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
-        if is_nested_select_statement(context.segment):
-            return None
         policy = resolve_context_policy(context, ComplexityPolicy(max_joins=int(self.max_joins)))
-        analysis = analyze_segment_tree(context.segment)
-        return metric_lint_result_outer_select_only(
-            context,
-            analysis.metrics,
-            policy,
-            self._spec,
-            precomputed_analysis=analysis,
-        )
+        return metric_lint_result_outer_select_only(context, policy, self._spec)

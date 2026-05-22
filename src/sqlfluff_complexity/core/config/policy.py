@@ -6,6 +6,8 @@ import fnmatch
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
+from sqlfluff_complexity.core.config.rule_registry import CPX_AGGREGATE_RULE_ID, METRIC_RULE_DEFINITIONS
+
 if TYPE_CHECKING:
     from sqlfluff.core import FluffConfig
     from sqlfluff.core.rules.context import RuleContext
@@ -151,34 +153,22 @@ def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> 
 def threshold_policy_from_fluff_config(config: FluffConfig) -> ComplexityPolicy:
     """Numeric CPX thresholds from FluffConfig (uses :class:`ComplexityPolicy` field defaults)."""
     defaults = ComplexityPolicy()
-    return ComplexityPolicy(
-        max_ctes=_config_int(config, "CPX_C101", "max_ctes", defaults.max_ctes),
-        max_joins=_config_int(config, "CPX_C102", "max_joins", defaults.max_joins),
-        max_subquery_depth=_config_int(config, "CPX_C103", "max_subquery_depth", defaults.max_subquery_depth),
-        max_case_expressions=_config_int(config, "CPX_C104", "max_case_expressions", defaults.max_case_expressions),
-        max_boolean_operators=_config_int(
+    values: dict[str, int] = {}
+    for definition in METRIC_RULE_DEFINITIONS:
+        default_value = int(getattr(defaults, definition.policy_key))
+        values[definition.policy_key] = _config_int(
             config,
-            "CPX_C105",
-            "max_boolean_operators",
-            defaults.max_boolean_operators,
-        ),
-        max_window_functions=_config_int(config, "CPX_C106", "max_window_functions", defaults.max_window_functions),
-        max_cte_dependency_depth=_config_int(
-            config,
-            "CPX_C107",
-            "max_cte_dependency_depth",
-            defaults.max_cte_dependency_depth,
-        ),
-        max_nested_case_depth=_config_int(config, "CPX_C108", "max_nested_case_depth", defaults.max_nested_case_depth),
-        max_set_operations=_config_int(config, "CPX_C109", "max_set_operations", defaults.max_set_operations),
-        max_derived_tables=_config_int(config, "CPX_C110", "max_derived_tables", defaults.max_derived_tables),
-        max_complexity_score=_config_int(
-            config,
-            "CPX_C201",
-            "max_complexity_score",
-            defaults.max_complexity_score,
-        ),
+            definition.rule_id,
+            definition.config_key,
+            default_value,
+        )
+    values["max_complexity_score"] = _config_int(
+        config,
+        CPX_AGGREGATE_RULE_ID,
+        "max_complexity_score",
+        defaults.max_complexity_score,
     )
+    return ComplexityPolicy(**values)
 
 
 def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:

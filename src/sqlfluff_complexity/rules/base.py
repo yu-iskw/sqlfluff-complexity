@@ -22,8 +22,6 @@ from sqlfluff_complexity.core.scan.segment_tree import (
 resolve_context_policy = _cpx_policy.resolve_context_policy
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from sqlfluff.core.parser.segments.base import BaseSegment
     from sqlfluff.core.rules.context import RuleContext
 
@@ -192,40 +190,22 @@ def eval_file_root_metric_threshold(
     )
 
 
-def _metric_lint_result_skip_when(  # noqa: PLR0913
-    context: RuleContext,
-    metrics: ComplexityMetrics,
-    policy: ComplexityPolicy,
-    spec: MetricRuleSpec,
-    skip_when: Callable[[BaseSegment], bool],
-    *,
-    precomputed_analysis: ComplexityAnalysis | None = None,
-) -> LintResult | None:
-    if skip_when(context.segment):
-        return None
-    return metric_lint_result(
-        context,
-        metrics,
-        policy,
-        spec,
-        precomputed_analysis=precomputed_analysis,
-    )
-
-
 def metric_lint_result_outer_select_only(
     context: RuleContext,
-    metrics: ComplexityMetrics,
     policy: ComplexityPolicy,
     spec: MetricRuleSpec,
-    *,
-    precomputed_analysis: ComplexityAnalysis | None = None,
 ) -> LintResult | None:
-    """Like ``metric_lint_result`` but skip nested ``select_statement`` crawl hits."""
-    return _metric_lint_result_skip_when(
+    """Evaluate a metric threshold on an outer ``select_statement`` crawl hit only.
+
+    Skips nested ``select_statement`` segments and avoids ``analyze_segment_tree`` on them.
+    """
+    if is_nested_select_statement(context.segment):
+        return None
+    analysis = analyze_segment_tree(context.segment)
+    return metric_lint_result(
         context,
-        metrics,
+        analysis.metrics,
         policy,
         spec,
-        is_nested_select_statement,
-        precomputed_analysis=precomputed_analysis,
+        precomputed_analysis=analysis,
     )
