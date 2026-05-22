@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, TextIO
 from urllib.parse import quote
 
+from sqlfluff_complexity.core.config.rule_registry import SARIF_RULE_IDS
 from sqlfluff_complexity.core.messages.findings import ComplexityFinding
 from sqlfluff_complexity.core.messages.remediation import REMEDIATIONS
 
@@ -27,21 +28,7 @@ def _sarif_rule_metadata(rule_id: str) -> dict[str, Any]:
 
 
 def _sarif_rules() -> list[dict[str, Any]]:
-    rule_ids = (
-        "CPX_C101",
-        "CPX_C102",
-        "CPX_C103",
-        "CPX_C104",
-        "CPX_C105",
-        "CPX_C106",
-        "CPX_C107",
-        "CPX_C108",
-        "CPX_C109",
-        "CPX_C110",
-        "CPX_C201",
-        "CPX_PARSE_ERROR",
-    )
-    rules = [_sarif_rule_metadata(rid) for rid in rule_ids if rid != "CPX_PARSE_ERROR"]
+    rules = [_sarif_rule_metadata(rid) for rid in SARIF_RULE_IDS if rid != "CPX_PARSE_ERROR"]
     rules.append(
         {
             "fullDescription": {"text": "SQLFluff could not parse the input."},
@@ -98,19 +85,7 @@ def findings_to_sarif_payload(findings: Sequence[ComplexityFinding]) -> dict[str
             agg = finding.aggregate_score if finding.aggregate_score is not None else finding.score
             if agg is not None:
                 prop["score"] = agg
-            prop["metrics"] = {
-                "boolean_operators": finding.metrics.boolean_operators,
-                "case_expressions": finding.metrics.case_expressions,
-                "cte_dependency_depth": finding.metrics.cte_dependency_depth,
-                "ctes": finding.metrics.ctes,
-                "derived_tables": finding.metrics.derived_tables,
-                "expression_depth": finding.metrics.expression_depth,
-                "joins": finding.metrics.joins,
-                "set_operation_count": finding.metrics.set_operation_count,
-                "subqueries": finding.metrics.subqueries,
-                "subquery_depth": finding.metrics.subquery_depth,
-                "window_functions": finding.metrics.window_functions,
-            }
+            prop["metrics"] = finding.metrics.to_report_counters()
             prop["remediation"] = finding.remediation
             body["properties"] = prop
         results.append(body)

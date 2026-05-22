@@ -13,6 +13,7 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import RootOnlyCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
+from sqlfluff_complexity.core.config.rule_registry import metric_rule_spec
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     eval_file_root_metric_threshold,
@@ -34,13 +35,7 @@ class Rule_CPX_C110(BaseRule):  # noqa: N801
     targets_templated = True
     max_derived_tables: int
 
-    _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(
-        rule_id="CPX_C110",
-        metric_name="derived_tables",
-        config_key="max_derived_tables",
-        policy_key="max_derived_tables",
-        description_label="derived table count",
-    )
+    _spec: ClassVar[MetricRuleSpec] = metric_rule_spec("CPX_C110")
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""

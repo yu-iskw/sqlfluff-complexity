@@ -8,6 +8,7 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import RootOnlyCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
+from sqlfluff_complexity.core.config.rule_registry import metric_rule_spec
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     eval_file_root_metric_threshold,
@@ -29,13 +30,7 @@ class Rule_CPX_C108(BaseRule):  # noqa: N801
     targets_templated = True
     max_nested_case_depth: int
 
-    _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(
-        rule_id="CPX_C108",
-        metric_name="expression_depth",
-        config_key="max_nested_case_depth",
-        policy_key="max_nested_case_depth",
-        description_label="nested CASE depth",
-    )
+    _spec: ClassVar[MetricRuleSpec] = metric_rule_spec("CPX_C108")
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""

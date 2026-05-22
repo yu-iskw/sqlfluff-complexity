@@ -8,6 +8,7 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import RootOnlyCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
+from sqlfluff_complexity.core.config.rule_registry import metric_rule_spec
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     eval_file_root_metric_threshold,
@@ -29,13 +30,7 @@ class Rule_CPX_C109(BaseRule):  # noqa: N801
     targets_templated = True
     max_set_operations: int
 
-    _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(
-        rule_id="CPX_C109",
-        metric_name="set_operation_count",
-        config_key="max_set_operations",
-        policy_key="max_set_operations",
-        description_label="set operation count",
-    )
+    _spec: ClassVar[MetricRuleSpec] = metric_rule_spec("CPX_C109")
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""

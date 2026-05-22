@@ -14,21 +14,24 @@ from sqlfluff.core.parser.segments.base import BaseSegment
 from sqlfluff_complexity import __version__
 from sqlfluff_complexity.core.analysis import (
     MetricContributor,
-    explain_score_contributors,
-    format_contributor_examples,
     format_contributor_summary,
-    ranked_weighted_contributions,
-    refactoring_hint_for_contributors,
     segment_position,
-    weighted_contributor_samples,
 )
 from sqlfluff_complexity.core.config.cpx_config import contributor_display_settings
 from sqlfluff_complexity.core.config.policy import (
+    CPX_GLOBAL_CONFIG_SECTION,
     POLICY_MODES,
     ComplexityPolicy,
     resolve_policy,
+    threshold_policy_from_fluff_config,
 )
+from sqlfluff_complexity.core.config.rule_registry import REPORT_LIMITS, ReportLimit
 from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS, parse_weights
+from sqlfluff_complexity.core.messages.c201_messages import (
+    C201ViolationParams,
+    build_c201_violation_message,
+    pick_c201_report_contributors,
+)
 from sqlfluff_complexity.core.messages.findings import ComplexityFinding, SourceLocation
 from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
 from sqlfluff_complexity.core.messages.violation_messages import (
@@ -45,108 +48,8 @@ if TYPE_CHECKING:
     from sqlfluff.core.types import ConfigMappingType
 
 
-DEFAULT_MAX_JOINS = 8
-DEFAULT_MAX_COMPLEXITY_SCORE = 60
-
-
 def _default_complexity_weights() -> dict[str, int]:
     return DEFAULT_WEIGHTS.copy()
-
-
-@dataclass(frozen=True)
-class ReportLimit:
-    """One report threshold check."""
-
-    rule_id: str
-    metric_name: str
-    policy_key: str
-    label: str
-    config_key: str
-    message_label: str
-
-
-REPORT_LIMITS = (
-    ReportLimit(
-        "CPX_C101",
-        "ctes",
-        "max_ctes",
-        "CTE count",
-        "max_ctes",
-        message_label="cte count",
-    ),
-    ReportLimit(
-        "CPX_C102",
-        "joins",
-        "max_joins",
-        "Join count",
-        "max_joins",
-        message_label="join count",
-    ),
-    ReportLimit(
-        "CPX_C103",
-        "subquery_depth",
-        "max_subquery_depth",
-        "Nested subquery depth",
-        "max_subquery_depth",
-        message_label="nested subquery depth",
-    ),
-    ReportLimit(
-        "CPX_C104",
-        "case_expressions",
-        "max_case_expressions",
-        "CASE expression count",
-        "max_case_expressions",
-        message_label="CASE expression count",
-    ),
-    ReportLimit(
-        "CPX_C105",
-        "boolean_operators",
-        "max_boolean_operators",
-        "Boolean operator count",
-        "max_boolean_operators",
-        message_label="boolean operator count",
-    ),
-    ReportLimit(
-        "CPX_C106",
-        "window_functions",
-        "max_window_functions",
-        "Window function count",
-        "max_window_functions",
-        message_label="window function count",
-    ),
-    ReportLimit(
-        "CPX_C107",
-        "cte_dependency_depth",
-        "max_cte_dependency_depth",
-        "CTE dependency depth",
-        "max_cte_dependency_depth",
-        message_label="CTE dependency depth",
-    ),
-    ReportLimit(
-        "CPX_C108",
-        "expression_depth",
-        "max_nested_case_depth",
-        "Nested CASE depth",
-        "max_nested_case_depth",
-        message_label="nested CASE depth",
-    ),
-    ReportLimit(
-        "CPX_C109",
-        "set_operation_count",
-        "max_set_operations",
-        "Set operation count",
-        "max_set_operations",
-        message_label="set operation count",
-    ),
-    ReportLimit(
-        "CPX_C110",
-        "derived_tables",
-        "max_derived_tables",
-        "Derived table count",
-        "max_derived_tables",
-        message_label="derived table count",
-    ),
-)
 
 
 @dataclass(frozen=True)
@@ -337,45 +240,20 @@ def _c201_finding(
         contributors=contributors,
     )
 
-    if not show_c201 or max_c201 < 1:
-        message = (
-            f"CPX_C201: aggregate complexity score {score} exceeds max_complexity_score={threshold}. "
-            f"{rem} Metrics: {metrics.format_breakdown()}."
-        )
-        return ComplexityFinding(
-            rule_id="CPX_C201",
-            metric="complexity_score",
-            message=message,
-            remediation=rem,
-            location=loc,
-            metrics=metrics,
+    message = build_c201_violation_message(
+        C201ViolationParams(
             score=score,
-            threshold=threshold,
-            contributors=(),
-            level="warning",
-            aggregate_score=score,
-        )
-
-    top_n = max_c201
-    explain = explain_score_contributors(metrics, weights, max_items=top_n)
-    top_keys = [name for name, _ in ranked_weighted_contributions(metrics, weights)[:top_n]]
-    hint = refactoring_hint_for_contributors(top_keys)
-    examples = format_contributor_examples(
-        contributors,
-        weights,
-        max_items=top_n,
+            limit=threshold,
+            metrics=metrics,
+            weights=weights,
+            contributors=contributors,
+            show_contributors=show_c201,
+            max_contributors=max_c201,
+        ),
     )
-    examples_clause = f" {examples}" if examples else ""
-    message = (
-        f"CPX_C201: aggregate complexity score {score} exceeds max_complexity_score={threshold}. "
-        f"{rem} Metrics: {metrics.format_breakdown()}. "
-        f"Top contributors: {explain}.{examples_clause} {hint}"
-    )
-    picked = weighted_contributor_samples(
-        contributors,
-        weights,
-        max_items=top_n,
-    )
+    picked: tuple[MetricContributor, ...] = ()
+    if show_c201 and max_c201 >= 1:
+        picked = pick_c201_report_contributors(contributors, weights, max_items=max_c201)
 
     return ComplexityFinding(
         rule_id="CPX_C201",
@@ -393,7 +271,7 @@ def _c201_finding(
 
 
 def _weights_from_config(config: FluffConfig) -> dict[str, int]:
-    raw_weights = config.get("complexity_weights", section=("rules", "CPX_C201"), default=None)
+    raw_weights = config.get("complexity_weights", section=CPX_GLOBAL_CONFIG_SECTION, default=None)
     return parse_weights(raw_weights)
 
 
@@ -448,36 +326,9 @@ def _findings_for_file(
     return findings
 
 
-def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> int:
-    value = config.get(key, section=("rules", rule_code), default=default)
-    return int(value)
-
-
-def _threshold_policy_from_config(config: FluffConfig) -> ComplexityPolicy:
-    """Numeric CPX thresholds from FluffConfig (default ``mode`` for report scoring)."""
-    return ComplexityPolicy(
-        max_ctes=_config_int(config, "CPX_C101", "max_ctes", 8),
-        max_joins=_config_int(config, "CPX_C102", "max_joins", DEFAULT_MAX_JOINS),
-        max_subquery_depth=_config_int(config, "CPX_C103", "max_subquery_depth", 3),
-        max_case_expressions=_config_int(config, "CPX_C104", "max_case_expressions", 10),
-        max_boolean_operators=_config_int(config, "CPX_C105", "max_boolean_operators", 20),
-        max_window_functions=_config_int(config, "CPX_C106", "max_window_functions", 10),
-        max_cte_dependency_depth=_config_int(config, "CPX_C107", "max_cte_dependency_depth", 5),
-        max_nested_case_depth=_config_int(config, "CPX_C108", "max_nested_case_depth", 10),
-        max_set_operations=_config_int(config, "CPX_C109", "max_set_operations", 12),
-        max_derived_tables=_config_int(config, "CPX_C110", "max_derived_tables", 4),
-        max_complexity_score=_config_int(
-            config,
-            "CPX_C201",
-            "max_complexity_score",
-            DEFAULT_MAX_COMPLEXITY_SCORE,
-        ),
-    )
-
-
 def _policy_for_path(config: FluffConfig, path: Path) -> ComplexityPolicy:
-    base_policy = _threshold_policy_from_config(config)
-    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
+    base_policy = threshold_policy_from_fluff_config(config)
+    raw_overrides = config.get("path_overrides", section=CPX_GLOBAL_CONFIG_SECTION, default="")
     return resolve_policy(base_policy, raw_overrides, str(path))
 
 
@@ -658,13 +509,13 @@ def validate_cpx_plugin_config(config: FluffConfig) -> None:
 
     Raises ValueError with a clear message on invalid weights or path overrides.
     """
-    parse_weights(config.get("complexity_weights", section=("rules", "CPX_C201"), default=None))
-    raw_overrides = config.get("path_overrides", section=("rules", "CPX_C201"), default="")
-    mode = str(config.get("mode", section=("rules", "CPX_C201"), default="enforce"))
+    parse_weights(config.get("complexity_weights", section=CPX_GLOBAL_CONFIG_SECTION, default=None))
+    raw_overrides = config.get("path_overrides", section=CPX_GLOBAL_CONFIG_SECTION, default="")
+    mode = str(config.get("mode", section=CPX_GLOBAL_CONFIG_SECTION, default="enforce"))
     if mode not in POLICY_MODES:
         message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
         raise ValueError(message)
-    base_policy = replace(_threshold_policy_from_config(config), mode=mode)
+    base_policy = replace(threshold_policy_from_fluff_config(config), mode=mode)
     resolve_policy(base_policy, raw_overrides, "__config_check__.sql")
 
 

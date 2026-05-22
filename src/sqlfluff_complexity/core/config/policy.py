@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import fnmatch
 from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlfluff.core import FluffConfig
+    from sqlfluff.core.rules.context import RuleContext
 
 POLICY_INTEGER_KEYS = frozenset(
     {
@@ -22,6 +27,9 @@ POLICY_INTEGER_KEYS = frozenset(
 )
 POLICY_KEYS = POLICY_INTEGER_KEYS | {"mode"}
 POLICY_MODES = frozenset({"enforce", "report"})
+
+# Global CPX mode and path_overrides are stored under the aggregate rule section in SQLFluff config.
+CPX_GLOBAL_CONFIG_SECTION = ("rules", "CPX_C201")
 
 
 @dataclass(frozen=True)
@@ -133,3 +141,53 @@ def resolve_policy(
     if best_override is None:
         return base_policy
     return replace(base_policy, **best_override)
+
+
+def _config_int(config: FluffConfig, rule_code: str, key: str, default: int) -> int:
+    value = config.get(key, section=("rules", rule_code), default=default)
+    return int(value)
+
+
+def threshold_policy_from_fluff_config(config: FluffConfig) -> ComplexityPolicy:
+    """Numeric CPX thresholds from FluffConfig (uses :class:`ComplexityPolicy` field defaults)."""
+    defaults = ComplexityPolicy()
+    return ComplexityPolicy(
+        max_ctes=_config_int(config, "CPX_C101", "max_ctes", defaults.max_ctes),
+        max_joins=_config_int(config, "CPX_C102", "max_joins", defaults.max_joins),
+        max_subquery_depth=_config_int(config, "CPX_C103", "max_subquery_depth", defaults.max_subquery_depth),
+        max_case_expressions=_config_int(config, "CPX_C104", "max_case_expressions", defaults.max_case_expressions),
+        max_boolean_operators=_config_int(
+            config,
+            "CPX_C105",
+            "max_boolean_operators",
+            defaults.max_boolean_operators,
+        ),
+        max_window_functions=_config_int(config, "CPX_C106", "max_window_functions", defaults.max_window_functions),
+        max_cte_dependency_depth=_config_int(
+            config,
+            "CPX_C107",
+            "max_cte_dependency_depth",
+            defaults.max_cte_dependency_depth,
+        ),
+        max_nested_case_depth=_config_int(config, "CPX_C108", "max_nested_case_depth", defaults.max_nested_case_depth),
+        max_set_operations=_config_int(config, "CPX_C109", "max_set_operations", defaults.max_set_operations),
+        max_derived_tables=_config_int(config, "CPX_C110", "max_derived_tables", defaults.max_derived_tables),
+        max_complexity_score=_config_int(
+            config,
+            "CPX_C201",
+            "max_complexity_score",
+            defaults.max_complexity_score,
+        ),
+    )
+
+
+def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:
+    """Resolve path-specific policy for a SQLFluff rule context."""
+    mode = context.config.get("mode", section=CPX_GLOBAL_CONFIG_SECTION, default=base_policy.mode)
+    if mode not in POLICY_MODES:
+        message = f"Complexity policy mode must be one of {sorted(POLICY_MODES)}."
+        raise ValueError(message)
+    base_policy = replace(base_policy, mode=mode)
+    raw_overrides = context.config.get("path_overrides", section=CPX_GLOBAL_CONFIG_SECTION, default="")
+    path = str(context.path) if context.path is not None else None
+    return resolve_policy(base_policy, raw_overrides, path)
