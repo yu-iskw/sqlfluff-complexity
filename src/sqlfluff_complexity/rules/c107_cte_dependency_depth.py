@@ -12,7 +12,7 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
-from sqlfluff_complexity.core.messages.remediation import remediation_for_rule
+from sqlfluff_complexity.core.messages.c107_messages import build_c107_violation_message
 from sqlfluff_complexity.core.model.structural_metrics import (
     cte_dependency_depth_for_with_clause,
     direct_child_common_table_expressions,
@@ -56,7 +56,6 @@ class Rule_CPX_C107(BaseRule):  # noqa: N801
         if actual <= limit:
             return None
 
-        rem = remediation_for_rule("CPX_C107")
-        description = f"CPX_C107: CTE dependency depth is {actual}, exceeding max_cte_dependency_depth={limit}. {rem}"
+        description = build_c107_violation_message(actual=actual, limit=limit)
         anchor = _anchor_cte_dependency_violation(context.segment)
         return LintResult(anchor=anchor, description=description)

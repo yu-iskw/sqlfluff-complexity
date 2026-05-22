@@ -1,4 +1,9 @@
-"""Canonical CPX rule metadata (threshold rules, report checks, SARIF, presets)."""
+"""Canonical CPX rule metadata (threshold rules, report checks, SARIF, presets).
+
+Structural fields (threshold keys, metric names, eval scope, SARIF ids) live here.
+Human-readable SQLFluff plugin definitions in ``get_configs_info()`` remain in
+``sqlfluff_complexity.__init__`` by design.
+"""
 
 from __future__ import annotations
 
