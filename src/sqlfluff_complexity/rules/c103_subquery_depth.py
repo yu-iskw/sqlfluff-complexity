@@ -8,7 +8,8 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
-from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
+from sqlfluff_complexity.core.config.rule_registry import metric_rule_spec
+from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree, is_nested_select_statement
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     metric_lint_result_outer_select_only,
@@ -30,16 +31,12 @@ class Rule_CPX_C103(BaseRule):  # noqa: N801
     targets_templated = True
     max_subquery_depth: int
 
-    _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(
-        rule_id="CPX_C103",
-        metric_name="subquery_depth",
-        config_key="max_subquery_depth",
-        policy_key="max_subquery_depth",
-        description_label="nested subquery depth",
-    )
+    _spec: ClassVar[MetricRuleSpec] = metric_rule_spec("CPX_C103")
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
+        if is_nested_select_statement(context.segment):
+            return None
         policy = resolve_context_policy(
             context,
             ComplexityPolicy(max_subquery_depth=int(self.max_subquery_depth)),

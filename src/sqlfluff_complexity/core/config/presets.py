@@ -5,22 +5,11 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from sqlfluff_complexity.core.config.policy import ComplexityPolicy
+from sqlfluff_complexity.core.config.rule_registry import CPX_RULE_IDS, METRIC_RULES_BY_ID
 from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS
 
-RULE_CODES = (
-    "CPX_C101",
-    "CPX_C102",
-    "CPX_C103",
-    "CPX_C104",
-    "CPX_C105",
-    "CPX_C106",
-    "CPX_C107",
-    "CPX_C108",
-    "CPX_C109",
-    "CPX_C110",
-    "CPX_C201",
-)
-
+RULE_CODES = CPX_RULE_IDS
 RULE_LIST = ",".join(RULE_CODES)
 WEIGHT_JSON = json.dumps(DEFAULT_WEIGHTS, separators=(",", ":"), sort_keys=True)
 
@@ -43,10 +32,29 @@ class CpxPreset:
     mode: str = "enforce"
 
 
+def _preset_from_policy(policy: ComplexityPolicy, *, mode: str = "enforce") -> CpxPreset:
+    return CpxPreset(
+        policy.max_ctes,
+        policy.max_joins,
+        policy.max_subquery_depth,
+        policy.max_case_expressions,
+        policy.max_boolean_operators,
+        policy.max_window_functions,
+        policy.max_cte_dependency_depth,
+        policy.max_nested_case_depth,
+        policy.max_set_operations,
+        policy.max_derived_tables,
+        policy.max_complexity_score,
+        mode=mode,
+    )
+
+
+_RECOMMENDED = ComplexityPolicy()
+
 PRESETS: dict[str, CpxPreset] = {
-    "report_only": CpxPreset(8, 8, 3, 10, 20, 10, 5, 10, 12, 4, 60, mode="report"),
+    "report_only": _preset_from_policy(_RECOMMENDED, mode="report"),
     "lenient": CpxPreset(12, 12, 4, 16, 32, 16, 7, 12, 18, 6, 90),
-    "recommended": CpxPreset(8, 8, 3, 10, 20, 10, 5, 10, 12, 4, 60),
+    "recommended": _preset_from_policy(_RECOMMENDED),
     "strict": CpxPreset(5, 5, 2, 6, 12, 6, 3, 6, 8, 2, 40),
 }
 
@@ -59,14 +67,14 @@ def preset_names() -> tuple[str, ...]:
 
 
 def _rule_section(rule_id: str, key: str, value: int) -> str:
-    return "\n".join(
-        [
-            f"[sqlfluff:rules:{rule_id}]",
-            f"{key} = {value}",
-            "show_contributors = true",
-            "max_contributors = 3",
-        ],
-    )
+    lines = [
+        f"[sqlfluff:rules:{rule_id}]",
+        f"{key} = {value}",
+    ]
+    definition = METRIC_RULES_BY_ID.get(rule_id)
+    if definition is None or definition.supports_contributors:
+        lines.extend(["show_contributors = true", "max_contributors = 3"])
+    return "\n".join(lines)
 
 
 def _aggregate_section(preset: CpxPreset) -> str:

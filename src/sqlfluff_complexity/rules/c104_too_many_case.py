@@ -8,7 +8,8 @@ from sqlfluff.core.rules import BaseRule, LintResult, RuleContext
 from sqlfluff.core.rules.crawlers import SegmentSeekerCrawler
 
 from sqlfluff_complexity.core.config.policy import ComplexityPolicy
-from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
+from sqlfluff_complexity.core.config.rule_registry import metric_rule_spec
+from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree, is_nested_select_statement
 from sqlfluff_complexity.rules.base import (
     MetricRuleSpec,
     metric_lint_result_outer_select_only,
@@ -30,16 +31,12 @@ class Rule_CPX_C104(BaseRule):  # noqa: N801
     targets_templated = True
     max_case_expressions: int
 
-    _spec: ClassVar[MetricRuleSpec] = MetricRuleSpec(
-        rule_id="CPX_C104",
-        metric_name="case_expressions",
-        config_key="max_case_expressions",
-        policy_key="max_case_expressions",
-        description_label="CASE expression count",
-    )
+    _spec: ClassVar[MetricRuleSpec] = metric_rule_spec("CPX_C104")
 
     def _eval(self, context: RuleContext) -> LintResult | None:
         """Evaluate the rule."""
+        if is_nested_select_statement(context.segment):
+            return None
         policy = resolve_context_policy(
             context,
             ComplexityPolicy(max_case_expressions=int(self.max_case_expressions)),

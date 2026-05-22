@@ -151,7 +151,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     report_parser = subparsers.add_parser(
         "report",
-        help="Report SQL complexity metrics for one or more files.",
+        help=(
+            "Report file-level complexity rollups for one or more SQL files "
+            "(threshold findings use whole-file metrics; see ADR 0007 for lint vs report scope)."
+        ),
     )
     report_parser.add_argument("paths", nargs="+", type=Path, help="SQL file paths to analyze.")
     report_parser.add_argument(

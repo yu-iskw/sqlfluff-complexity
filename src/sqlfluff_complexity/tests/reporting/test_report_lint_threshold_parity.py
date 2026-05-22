@@ -1,4 +1,4 @@
-"""Report vs lint threshold parity for file-level CPX rules."""
+"""Report vs lint threshold parity and documented scope contracts (ADR 0007)."""
 
 from __future__ import annotations
 
@@ -161,3 +161,68 @@ path_overrides =
         assert "set operation count 2 exceeds max_set_operations=1" in report_findings[0].message
     finally:
         os.chdir(cwd)
+
+
+def test_report_matches_lint_c102_joins_single_statement(tmp_path: Path) -> None:
+    """One-statement file: outer-select lint counts match file-level report rollup."""
+    sql = read_sql_fixture("ansi", "c102_joins_two")
+    sql_path = tmp_path / "model.sql"
+    sql_path.write_text(sql, encoding="utf-8")
+    cfg = tmp_path / ".sqlfluff"
+    cfg_text = """
+[sqlfluff]
+dialect = ansi
+
+[sqlfluff:rules:CPX_C102]
+max_joins = 1
+"""
+    cfg.write_text(cfg_text, encoding="utf-8")
+
+    report = analyze_paths([sql_path], dialect="ansi", config_path=cfg)
+    report_findings = [f for e in report.entries for f in e.findings if f.rule_id == "CPX_C102"]
+    linted = lint_sql(sql, cfg_text, fname=str(sql_path))
+    lint_v = rule_violations(linted, "CPX_C102")
+
+    assert len(report_findings) == 1
+    assert len(lint_v) == 1
+    assert report_findings[0].threshold == 1
+    assert "join count 2 exceeds max_joins=1" in report_findings[0].message
+
+
+def test_report_c107_file_rollup_vs_lint_per_with_clause(tmp_path: Path) -> None:
+    """Lint evaluates each WITH; report emits one file-level finding from max depth (ADR 0007)."""
+    sql = textwrap.dedent(
+        """
+        WITH outer_wrap AS (
+          WITH
+            a AS (SELECT 1 AS id),
+            b AS (SELECT * FROM a),
+            c AS (SELECT * FROM b),
+            d AS (SELECT * FROM c)
+          SELECT * FROM d
+        )
+        SELECT * FROM outer_wrap
+        """
+    ).strip()
+    sql_path = tmp_path / "model.sql"
+    sql_path.write_text(sql, encoding="utf-8")
+    cfg = tmp_path / ".sqlfluff"
+    cfg_text = """
+[sqlfluff]
+dialect = ansi
+rules = CPX_C107
+
+[sqlfluff:rules:CPX_C107]
+max_cte_dependency_depth = 0
+"""
+    cfg.write_text(cfg_text, encoding="utf-8")
+
+    report = analyze_paths([sql_path], dialect="ansi", config_path=cfg)
+    report_findings = [f for e in report.entries for f in e.findings if f.rule_id == "CPX_C107"]
+    linted = lint_sql(sql, cfg_text, fname=str(sql_path))
+    lint_v = rule_violations(linted, "CPX_C107")
+
+    assert len(lint_v) == 2
+    assert len(report_findings) == 1
+    assert report_findings[0].score == 4
+    assert "CTE dependency depth 4 exceeds max_cte_dependency_depth=0" in report_findings[0].message
