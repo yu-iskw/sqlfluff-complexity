@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from textwrap import dedent
-from pathlib import Path
+from typing import TYPE_CHECKING
+
+from sqlfluff.core import Linter
 
 from sqlfluff_complexity.core.config.scoring import DEFAULT_WEIGHTS
 from sqlfluff_complexity.core.messages.c201_messages import C201ViolationParams, build_c201_violation_message
@@ -11,11 +13,12 @@ from sqlfluff_complexity.core.scan.segment_tree import analyze_segment_tree
 from sqlfluff_complexity.report import analyze_paths
 from sqlfluff_complexity.tests.sqlfluff_helpers import lint_sql, rule_violations
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 def test_build_c201_message_without_contributors() -> None:
     sql = "select 1"
-    from sqlfluff.core import Linter
-
     tree = Linter(dialect="ansi").parse_string(sql).tree
     assert tree is not None
     analysis = analyze_segment_tree(tree)
