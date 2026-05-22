@@ -14,10 +14,10 @@ Developers often assume `sqlfluff lint` and `sqlfluff-complexity report` will fl
 
 We treat **lint** and **report** as complementary products with different evaluation scopes:
 
-| Surface | Scope | Threshold application |
-| ------- | ----- | --------------------- |
-| **`sqlfluff lint` (CPX rules)** | SQLFluff crawler targets: per `with_compound_statement` (C101, C107), per outer `select_statement` (C102–C106, C201), or file root (C108–C110) | Violations anchored to the crawl segment (or file root for C108–C110) |
-| **`sqlfluff-complexity report`** | Whole file parse tree | At most one finding per metric rule per file, using **file-level** aggregates from `ComplexityMetrics` |
+| Surface                          | Scope                                                                                                                                          | Threshold application                                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **`sqlfluff lint` (CPX rules)**  | SQLFluff crawler targets: per `with_compound_statement` (C101, C107), per outer `select_statement` (C102–C106, C201), or file root (C108–C110) | Violations anchored to the crawl segment (or file root for C108–C110)                                  |
+| **`sqlfluff-complexity report`** | Whole file parse tree                                                                                                                          | At most one finding per metric rule per file, using **file-level** aggregates from `ComplexityMetrics` |
 
 Shared invariants (unchanged from ADR 0002):
 
