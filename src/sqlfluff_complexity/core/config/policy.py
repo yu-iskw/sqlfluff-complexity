@@ -168,7 +168,7 @@ def threshold_policy_from_fluff_config(config: FluffConfig) -> ComplexityPolicy:
         "max_complexity_score",
         defaults.max_complexity_score,
     )
-    return ComplexityPolicy(**values)
+    return replace(defaults, **values)
 
 
 def resolve_context_policy(context: RuleContext, base_policy: ComplexityPolicy) -> ComplexityPolicy:
