@@ -229,5 +229,3 @@ def metric_lint_result_outer_select_only(
         is_nested_select_statement,
         precomputed_analysis=precomputed_analysis,
     )
-
-
