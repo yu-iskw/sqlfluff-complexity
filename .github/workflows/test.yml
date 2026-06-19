@@ -25,7 +25,7 @@ jobs:
       PYTHON_PACKAGE_NAME: sqlfluff_complexity
       PYTEST_XDIST_WORKERS: "0"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
