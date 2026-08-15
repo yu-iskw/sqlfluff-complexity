@@ -3,6 +3,15 @@
   "enableSharedBuildCache": true,
   "networkPolicy": {
     "default": "deny",
-    "allow": ["github.com", "pypi.org", "*.trunk.io"]
+    "allow": [
+      "github.com",
+      "api.github.com",
+      "codeload.github.com",
+      "*.githubusercontent.com",
+      "pypi.org",
+      "files.pythonhosted.org",
+      "astral.sh",
+      "*.trunk.io"
+    ]
   }
 }
