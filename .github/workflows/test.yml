@@ -14,9 +14,24 @@ on:
   push:
     branches:
       - main
+    paths:
+      - .github/workflows/test.yml
+      - Makefile
+      - dev/test_python.sh
+      - noxfile.py
+      - pyproject.toml
+      - src/sqlfluff_complexity/**/*.py
+      - src/sqlfluff_complexity/tests/fixtures/**
+      - .pylintrc
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -45,7 +60,3 @@ jobs:
       - name: Test build
         run: |
           uv run bash dev/build.sh
-      # - name: Test installation
-      #   run: |
-      #     pip install -e .
-      #     python -c 'import ${{ env.PYTHON_PACKAGE_NAME }}'
