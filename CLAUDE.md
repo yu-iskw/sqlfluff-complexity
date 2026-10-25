@@ -1,6 +1,7 @@
+# CLAUDE.md
+
 @AGENTS.md
 
-<!-- markdownlint-disable-file MD041 -->
 <!-- AGENTS.md is canonical for every coding agent. Put only Claude Code–specific notes below. -->
 
 ## Claude Code
