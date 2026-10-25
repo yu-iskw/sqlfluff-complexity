@@ -1,10 +1,12 @@
-<!-- markdownlint-disable-file MD041 -->
+# CLAUDE.md
 
 @AGENTS.md
 
-# Claude Code (this repository)
+<!-- AGENTS.md is canonical for every coding agent. Put only Claude Code–specific notes below. -->
 
-The `@AGENTS.md` import inlines that file at session start (Claude Code reads this file, not [AGENTS.md](AGENTS.md) alone; see [Claude Code: CLAUDE.md](https://code.claude.com/docs/en/claude-md)). Put **only** material that is specific to Claude Code below. <!-- markdown-link-check-disable-line -->:q
+## Claude Code
+
+The `@AGENTS.md` import inlines that file at session start (Claude Code reads this file, not [AGENTS.md](AGENTS.md) alone; see [Claude Code: CLAUDE.md](https://code.claude.com/docs/en/claude-md)). Put **only** material that is specific to Claude Code below. <!-- markdown-link-check-disable-line -->
 
 ## What lives under `.claude/`
 
